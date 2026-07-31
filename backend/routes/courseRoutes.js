@@ -27,7 +27,7 @@ router.delete('/:id', protect, authorize('admin'), deleteCourse);
 router.post(
   '/:courseId/materials',
   protect,
-  authorize('admin'),
+  authorize('admin', 'teacher'),   // ← add 'teacher'
   upload.single('file'),
   addMaterial
 );
@@ -35,7 +35,7 @@ router.get('/:courseId/materials', protect, getMaterials);
 router.delete(
   '/:courseId/materials/:materialId',
   protect,
-  authorize('admin'),
+  authorize('admin', 'teacher'),   // ← add 'teacher'
   deleteMaterial
 );
 

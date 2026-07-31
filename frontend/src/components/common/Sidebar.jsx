@@ -1,34 +1,22 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
-import {
-  FiHome,
-  FiUsers,
-  FiBook,
-  FiGrid,
-  FiClipboard,
-  FiAward,
-  FiCalendar,
-  FiLogOut,
-  FiCheckSquare,
-} from 'react-icons/fi';
+import { FiHome, FiUsers, FiBook, FiGrid, FiClipboard, FiAward, FiCalendar, FiLogOut, FiCheckSquare, FiFolder , FiBell} from 'react-icons/fi';
 
 const Sidebar = ({ role }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const adminLinks = [
-    { to: '/admin', icon: <FiHome />, label: 'Dashboard' },
-    { to: '/admin/users', icon: <FiUsers />, label: 'Users' },
-    { to: '/admin/classes', icon: <FiGrid />, label: 'Classes' },
-    { to: '/admin/courses', icon: <FiBook />, label: 'Courses' },
-    { to: '/admin/assignments', icon: <FiClipboard />, label: 'Assignments' },
-    { to: '/admin/assessment', icon: <FiClipboard />, label: 'Assessment Config' },
-    { to: '/admin/scores', icon: <FiClipboard />, label: 'Enter Scores' },
-    { to: '/admin/ranking', icon: <FiAward />, label: 'Ranking' },
-    { to: '/admin/attendance', icon: <FiCheckSquare />, label: 'Attendance' },
-    { to: '/admin/practices', icon: <FiCalendar />, label: 'Practice Days' },
-  ];
+  { to: '/admin', icon: <FiHome />, label: 'Dashboard' },
+  { to: '/admin/users', icon: <FiUsers />, label: 'Users' },
+  { to: '/admin/classes', icon: <FiGrid />, label: 'Classes' },
+  { to: '/admin/courses', icon: <FiBook />, label: 'Courses' },
+  { to: '/admin/scores', icon: <FiClipboard />, label: 'Enter Scores' },
+  { to: '/admin/ranking', icon: <FiAward />, label: 'Ranking' },
+  { to: '/admin/attendance', icon: <FiCheckSquare />, label: 'Attendance' },
+  { to: '/admin/practices', icon: <FiCalendar />, label: 'Practice Days' },
+];
 
   const teacherLinks = [
     { to: '/teacher', icon: <FiHome />, label: 'Dashboard' },
@@ -40,12 +28,14 @@ const Sidebar = ({ role }) => {
   ];
 
   const studentLinks = [
-    { to: '/student', icon: <FiHome />, label: 'Dashboard' },
-    { to: '/student/marks', icon: <FiClipboard />, label: 'My Marks' },
-    { to: '/student/rank', icon: <FiAward />, label: 'My Rank' },
-    { to: '/student/attendance', icon: <FiCheckSquare />, label: 'My Attendance' },
-    { to: '/student/practices', icon: <FiCalendar />, label: 'Practice Days' },
-  ];
+  { to: '/student', icon: <FiHome />, label: 'Dashboard' },
+  { to: '/student/marks', icon: <FiClipboard />, label: 'My Marks' },
+  { to: '/student/rank', icon: <FiAward />, label: 'My Rank' },
+  { to: '/student/attendance', icon: <FiCheckSquare />, label: 'My Attendance' },
+  { to: '/student/materials', icon: <FiFolder />, label: 'Materials' },   // new
+  { to: '/student/practices', icon: <FiCalendar />, label: 'Practice Days' },
+  { to: '/student/notifications', icon: <FiBell />, label: 'Notifications' },
+];
 
   const links = role === 'admin' ? adminLinks : role === 'teacher' ? teacherLinks : studentLinks;
 

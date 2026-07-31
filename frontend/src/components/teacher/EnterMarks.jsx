@@ -3,6 +3,9 @@ import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import EmptyState from '../common/EmptyState';
 
+// 🌄 Background image shown before any assignment is selected
+const BACKGROUND_IMAGE = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQUgBDixxPesefod7AUSte7eApcia7_n5VZUp6I16ar1XpdpE-6fIMwP6M&s';
+
 const EnterMarks = () => {
   const { user } = useContext(AuthContext);
 
@@ -141,67 +144,83 @@ const EnterMarks = () => {
       {error && <div className="error-message">{error}</div>}
       {successMsg && <div className="success-message">{successMsg}</div>}
 
-      {/* If config loaded and students present, show table */}
-      {config && students.length > 0 && !loading && (
-        <div className="table-container" style={{ marginTop: '1rem' }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Student</th>
-                {config.components.map((comp) => (
-                  <th key={comp.name}>
-                    {comp.name} <br />
-                    <small>(max {comp.maxScore})</small>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student) => (
-                <tr key={student._id}>
-                  <td>{student.fullName}</td>
+      {/* Background placeholder when no assignment selected */}
+      {!selectedAssignment ? (
+        <div
+          className="selection-placeholder"
+          style={{
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url('${BACKGROUND_IMAGE}')`,
+          }}
+        >
+          <p>Please select a course and class to enter marks</p>
+        </div>
+      ) : (
+        /* If config loaded and students present, show table */
+        config && students.length > 0 && !loading && (
+          <div className="table-container" style={{ marginTop: '1rem' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
                   {config.components.map((comp) => (
-                    <td key={comp.name}>
-                      <input
-                        type="number"
-                        min="0"
-                        max={comp.maxScore}
-                        step="any"
-                        value={scores[`${student._id}-${comp.name}`] || ''}
-                        onChange={(e) =>
-                          handleScoreChange(student._id, comp.name, e.target.value)
-                        }
-                        style={{ width: '80px', padding: '0.4rem', borderRadius: '6px', border: '1px solid #ccc' }}
-                      />
-                    </td>
+                    <th key={comp.name}>
+                      {comp.name} <br />
+                      <small>(max {comp.maxScore})</small>
+                    </th>
                   ))}
                 </tr>
+              </thead>
+              <tbody>
+                {students.map((student) => (
+                  <tr key={student._id}>
+                    <td>{student.fullName}</td>
+                    {config.components.map((comp) => (
+                      <td key={comp.name}>
+                        <input
+                          type="number"
+                          min="0"
+                          max={comp.maxScore}
+                          step="any"
+                          value={scores[`${student._id}-${comp.name}`] || ''}
+                          onChange={(e) =>
+                            handleScoreChange(student._id, comp.name, e.target.value)
+                          }
+                          style={{
+                            width: '80px',
+                            padding: '0.4rem',
+                            borderRadius: '6px',
+                            border: '1px solid #ccc',
+                          }}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Save buttons */}
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+              {config.components.map((comp) => (
+                <button
+                  key={comp.name}
+                  className="btn btn-primary"
+                  onClick={() => submitComponentScores(comp.name)}
+                >
+                  Save {comp.name}
+                </button>
               ))}
-            </tbody>
-          </table>
-
-          {/* Save buttons */}
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-            {config.components.map((comp) => (
-              <button
-                key={comp.name}
-                className="btn btn-primary"
-                onClick={() => submitComponentScores(comp.name)}
-              >
-                Save {comp.name}
-              </button>
-            ))}
+            </div>
           </div>
-        </div>
+        )
       )}
 
-      {/* Fallback if config missing but no loading */}
-      {!loading && !config && selectedAssignment && !error && (
-        <EmptyState message="Select a class to begin entering marks." />
+      {/* Fallback if no students or config */}
+      {!loading && selectedAssignment && !config && !error && (
+        <EmptyState message="Set up assessment configuration for this class before entering marks." />
       )}
 
-      {/* If no students */}
-      {!loading && config && students.length === 0 && (
+      {!loading && selectedAssignment && config && students.length === 0 && (
         <EmptyState message="No students found in this class." />
       )}
     </div>

@@ -5,6 +5,8 @@ import MyMarks from '../components/student/MyMarks';
 import MyRank from '../components/student/MyRank';
 import PracticeCalendar from '../components/student/PracticeCalendar';
 import AttendanceHistory from '../components/student/AttendanceHistory';
+import StudentCourseMaterials from '../components/student/StudentCourseMaterials';
+import Notifications from '../components/student/Notifications';
 
 const StudentPage = () => (
   <div className="app-layout">
@@ -14,10 +16,13 @@ const StudentPage = () => (
         <Route index element={<StudentDashboard />} />
         <Route path="marks" element={<MyMarks />} />
         <Route path="rank" element={<MyRank />} />
-        <Route path="practices" element={<PracticeCalendar />} />
         <Route path="attendance" element={<AttendanceHistory />} />
+        <Route path="practices" element={<PracticeCalendar />} />
+        <Route path="materials" element={<StudentCourseMaterials />} /> 
+        <Route path="notifications" element={<Notifications />} />
       </Routes>
     </main>
   </div>
 );
+
 export default StudentPage;

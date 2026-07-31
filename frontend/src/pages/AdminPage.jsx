@@ -18,19 +18,17 @@ const AdminPage = () => (
     <Sidebar role="admin" />
     <main className="main-content">
       <Routes>
-        <Route index element={<AdminDashboard />} />
-        <Route path="users/:id" element={<StudentDetail />} /> {/* new */}
-        <Route path="users" element={<ManageUsers />} />
-        <Route path="classes" element={<ManageClasses />} />
-        <Route path="courses/:id" element={<CourseDetail />} />
-        <Route path="courses" element={<CoursesPage />} />
-        <Route path="assignments" element={<TeacherAssignments />} />
-        <Route path="assessment" element={<AssessmentConfig />} />
-        <Route path="scores" element={<EnterScores />} />
-        <Route path="ranking" element={<FullRanking />} />
-        <Route path="practices" element={<PracticeScheduler />} />
-        <Route path="attendance" element={<TakeAttendance />} />
-      </Routes>
+  <Route index element={<AdminDashboard />} />
+  <Route path="users/:id" element={<StudentDetail />} />
+  <Route path="users" element={<ManageUsers />} />
+  <Route path="classes" element={<ManageClasses />} />
+  <Route path="courses/:id" element={<CourseDetail />} />
+  <Route path="courses" element={<CoursesPage />} />
+  <Route path="scores" element={<EnterScores />} />
+  <Route path="ranking" element={<FullRanking />} />
+  <Route path="attendance" element={<TakeAttendance />} />
+  <Route path="practices" element={<PracticeScheduler />} />
+</Routes>
     </main>
   </div>
 );

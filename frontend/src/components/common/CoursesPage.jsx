@@ -5,9 +5,12 @@ import AuthContext from '../../context/AuthContext';
 import api from '../../services/api';
 import EmptyState from '../common/EmptyState';
 
+const BACKGROUND_IMAGE = 'https://media.gettyimages.com/id/1225376317/photo/orthodox-priest-holding-the-hand-cross-abuna-yemata-guh-church-tigray-region-ethiopia.jpg?s=612x612&w=0&k=20&c=7Xw2Q6HAldczpV5JAYU_TY2ZebpNKhsE2SFtH3KYzqo=';
+
 const CoursesPage = () => {
   const { user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin';
+  const isTeacher = user?.role === 'teacher';
   const navigate = useNavigate();
 
   const [courses, setCourses] = useState([]);
@@ -29,6 +32,7 @@ const CoursesPage = () => {
   }, []);
 
   const openNewForm = () => {
+    if (!isAdmin) return;
     setEditCourse(null);
     setFormData({ name: '', code: '', description: '' });
     setShowForm(true);
@@ -68,17 +72,23 @@ const CoursesPage = () => {
     }
   };
 
-  const handleManage = (courseId) => {
-    navigate(`/admin/courses/${courseId}`);
+  const handleCourseClick = (courseId) => {
+    if (isAdmin) {
+      navigate(`/admin/courses/${courseId}`);
+    } else if (isTeacher) {
+      navigate(`/teacher/courses/${courseId}`);
+    }
   };
 
   return (
     <div>
-      <h2 className="page-title">Courses {!isAdmin && '(My Courses)'}</h2>
+      <h2 className="page-title">{isTeacher ? 'My Courses' : 'Courses'}</h2>
 
-      <button className="btn btn-primary" onClick={openNewForm}>
-        <FiPlus /> Add Course
-      </button>
+      {isAdmin && (
+        <button className="btn btn-primary" onClick={openNewForm}>
+          <FiPlus /> Add Course
+        </button>
+      )}
 
       {showForm && (
         <div className="modal-backdrop" onClick={() => setShowForm(false)}>
@@ -117,56 +127,53 @@ const CoursesPage = () => {
         </div>
       )}
 
-      <div className="table-container" style={{ marginTop: '1rem' }}>
-        {courses.length === 0 ? (
-          <EmptyState message="No courses found." />
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Code</th>
-                <th>Description</th>
-                {isAdmin && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {courses.map((c) => (
-                <tr key={c._id}>
-                  <td>{c.name}</td>
-                  <td>{c.code || '—'}</td>
-                  <td>{c.description || '—'}</td>
-                  {isAdmin && (
-                    <td>
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={() => handleManage(c._id)}
-                        title="Manage course materials and details"
-                      >
-                        <FiSettings /> Manage
-                      </button>
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => openEditForm(c)}
-                        style={{ marginLeft: '0.5rem' }}
-                      >
-                        <FiEdit />
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(c._id)}
-                        style={{ marginLeft: '0.5rem' }}
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {/* If teacher and no courses selected yet, show background image */}
+      {isTeacher && courses.length === 0 ? (
+        <div
+          className="selection-placeholder"
+          style={{
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url('${BACKGROUND_IMAGE}')`,
+          }}
+        >
+          <p>You have no assigned courses yet. Please contact the admin.</p>
+        </div>
+      ) : (
+        /* Course grid as cards for both admin and teacher */
+        <div className="materials-grid" style={{ marginTop: '1rem' }}>
+          {courses.map((c) => (
+            <div
+              key={c._id}
+              className="material-item course-card"
+              style={{ cursor: 'pointer' }}
+              onClick={() => handleCourseClick(c._id)}
+            >
+              <div className="material-file" style={{ height: '120px' }}>
+                <FiSettings size={32} />
+              </div>
+              <div className="material-info">
+                <h4>{c.name}</h4>
+                <p>{c.code || 'Tap to manage'}</p>
+                {isAdmin && (
+                  <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.3rem' }}>
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      onClick={(e) => { e.stopPropagation(); openEditForm(c); }}
+                    >
+                      <FiEdit />
+                    </button>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(c._id); }}
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

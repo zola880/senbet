@@ -4,9 +4,16 @@ const materialSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: String,
-    file: { type: String, required: true },   // path to file in uploads/
-    fileType: { type: String, required: true }, // e.g., 'image', 'pdf', 'document'
-    originalName: String,                      // original filename
+    file: { type: String, default: null },
+    fileType: { type: String, default: 'text' },
+    originalName: String,
+    type: {
+      type: String,
+      enum: ['material', 'homework', 'message'],
+      default: 'material',
+    },
+    postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    dueDate: { type: Date, default: null },   // ← new
   },
   { timestamps: true }
 );
