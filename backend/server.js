@@ -10,6 +10,7 @@ const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const { protect } = require('./middleware/auth');
 
+// Load routes we actually have
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const classRoutes = require('./routes/classRoutes');
@@ -21,8 +22,6 @@ const rankingRoutes = require('./routes/rankingRoutes');
 const practiceRoutes = require('./routes/practiceRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
-const homeworkRoutes = require('./routes/homeworkRoutes');
-const announcementRoutes = require('./routes/announcementRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
 dotenv.config();
@@ -36,30 +35,33 @@ app.use(helmet());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
-  message: 'Too many requests from this IP, please try again after 15 minutes',
+  message: 'Too many requests, please try again later.',
 });
 app.use('/api/', limiter);
 
-// CORS - whitelist allowed origins from .env
+// CORS – allow Vercel frontend + localhost
 const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000'];
+  ? process.env.CLIENT_URL.split(',').map(o => o.trim())
+  : [
+      'https://senbet-yisj.vercel.app',   // your deployed frontend
+      'http://localhost:3000',            // local development
+    ];
 
-const corsOptions = {
+app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // allow requests with no origin (server-to-server, curl, etc.)
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-};
-app.use(cors(corsOptions));
+}));
 
+// Body parser
 app.use(express.json());
 
 // Logging
@@ -69,14 +71,14 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('combined'));
 }
 
-// Static files - protected in production
+// Static files – protect uploads in production
 if (process.env.NODE_ENV === 'production') {
   app.use('/uploads', protect, express.static(path.join(__dirname, 'uploads')));
 } else {
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 }
 
-// Routes
+// Mount routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/classes', classRoutes);
@@ -88,10 +90,9 @@ app.use('/api/v1/rankings', rankingRoutes);
 app.use('/api/v1/practices', practiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
-app.use('/api/v1/homework', homeworkRoutes);
-app.use('/api/v1/announcements', announcementRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 
+// Error handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
