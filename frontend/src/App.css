@@ -232,6 +232,9 @@ body {
   display: flex;
   flex-direction: column;
   font-size: 0.85rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .user-info-sidebar strong {
   font-weight: 600;
@@ -419,19 +422,6 @@ tr:hover td {
   max-width: 500px;
   width: 90%;
   box-shadow: var(--shadow-lg);
-}
-
-/* ========== RESPONSIVE ========== */
-@media (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
-  .main-content {
-    margin-left: 0;
-  }
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ========== TABS ========== */
@@ -738,13 +728,7 @@ tr:hover td {
   border: 1px solid rgba(255,255,255,0.3);
 }
 
-/* ============================================================
-   TEACHER DASHBOARD – scoped inside .teacher-dashboard
-   ============================================================ */
-.teacher-dashboard {
-  /* wrap the entire teacher dashboard with this class */
-}
-
+/* ========== TEACHER DASHBOARD ========== */
 .teacher-dashboard .dashboard-hero {
   min-height: calc(100vh - 4rem);
   margin: -2rem;
@@ -753,15 +737,10 @@ tr:hover td {
   align-items: flex-start;
   justify-content: center;
   flex-direction: column;
-
-  /* 🔽 Replace this URL with your direct teacher image link 🔽 */
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.10)),
-    url('https://i.ibb.co/8nLDtHN1/your-image.jpg')
-    center / cover no-repeat;
+  background: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.10)),
+    url('https://i.ibb.co/8nLDtHN1/your-image.jpg') center / cover no-repeat;
 }
 
-/* Text colours – all white / light */
 .teacher-dashboard .school-name {
   font-size: 2.4rem;
   font-weight: 700;
@@ -787,7 +766,6 @@ tr:hover td {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* Stats Grid inside teacher dashboard */
 .teacher-dashboard .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -797,7 +775,6 @@ tr:hover td {
   max-width: 800px;
 }
 
-/* Glass Cards (brighter & blurry) for teacher dashboard */
 .teacher-dashboard .glass-card {
   background: rgba(255, 255, 255, 0.12) !important;
   backdrop-filter: blur(12px);
@@ -839,7 +816,6 @@ tr:hover td {
   margin: 0;
 }
 
-/* Assignments card */
 .teacher-dashboard .assignments-card {
   padding: 1.8rem 2rem;
   width: 100%;
@@ -869,6 +845,7 @@ tr:hover td {
 .teacher-dashboard .assignments-card li:last-child {
   border-bottom: none;
 }
+
 /* ========== CLASS MANAGEMENT ========== */
 .class-header {
   background: linear-gradient(135deg, #fef7f2 0%, #fdf5ec 100%);
@@ -931,6 +908,15 @@ tr:hover td {
   margin: 0;
 }
 
+.class-card-code {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  background: #f0e6d2;
+  padding: 0.15rem 0.6rem;
+  border-radius: 12px;
+  margin-top: 0.3rem;
+}
+
 /* ========== CLASS DETAIL PAGE ========== */
 .class-detail-header {
   display: flex;
@@ -976,9 +962,10 @@ tr:hover td {
   display: flex;
   gap: 0.5rem;
 }
+
 /* ========== MOBILE SIDEBAR TOGGLE ========== */
 .sidebar-toggle {
-  display: none;                     /* hidden on desktop */
+  display: none;
   position: fixed;
   top: 1rem;
   left: 1rem;
@@ -995,29 +982,195 @@ tr:hover td {
   justify-content: center;
 }
 
-/* Show the button only on mobile */
+/* ========== RESPONSIVE – GLOBAL (max-width: 768px) ========== */
 @media (max-width: 768px) {
+  .page-title {
+    font-size: 1.6rem;
+  }
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+  .btn-sm {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  /* Sidebar toggle becomes visible */
   .sidebar-toggle {
     display: flex;
   }
-
-  /* When the sidebar is open, move the button inside the sidebar so it's still reachable */
   .sidebar-toggle-open {
-    left: 230px;        /* inside the visible sidebar */
+    left: 230px;
   }
 
-  /* Ensure the sidebar overlays the content when open */
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.3s ease;
   }
-
   .sidebar-open {
     transform: translateX(0);
   }
 
-  /* No margin on main content – sidebar overlays */
   .main-content {
     margin-left: 0;
+    padding: 1rem;
+  }
+
+  /* Dashboard hero – no negative margin, full width */
+  .dashboard-hero {
+    margin: 0;
+    padding: 1.5rem;
+    min-height: calc(100vh - 2rem);
+  }
+
+  .teacher-dashboard .dashboard-hero {
+    margin: 0;
+    padding: 1.5rem;
+  }
+
+  /* Stats & grids single column */
+  .stats-grid,
+  .teacher-dashboard .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .stat-card,
+  .teacher-dashboard .stat-card {
+    padding: 1rem;
+    gap: 0.8rem;
+  }
+  .stat-icon,
+  .teacher-dashboard .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  .stat-info h3,
+  .teacher-dashboard .stat-info h3 {
+    font-size: 1.5rem;
+  }
+  .stat-info p,
+  .teacher-dashboard .stat-info p {
+    font-size: 0.85rem;
+  }
+
+  /* Tables – compact padding */
+  th, td {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  /* Forms single column */
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  /* Cards & materials grid single column */
+  .card {
+    padding: 1rem;
+  }
+  .materials-grid {
+    grid-template-columns: 1fr;
+  }
+  .marks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tabs – smaller, scrollable if needed */
+  .tabs-container {
+    gap: 0.3rem;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .tab-button {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  /* Modal takes more width */
+  .modal-content {
+    width: 95%;
+    padding: 1.5rem;
+    max-width: 95vw;
+  }
+
+  /* Class header stacks vertically */
+  .class-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .class-header .btn-primary {
+    align-self: stretch;
+    text-align: center;
+  }
+
+  /* Class card grid two columns on small phones */
+  .class-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+  }
+  .class-card {
+    padding: 1.5rem 0.8rem;
+  }
+  .class-card-name {
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  /* Student detail header stacks */
+  .student-header-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  /* Attendance buttons wrap */
+  .attendance-status-group {
+    flex-wrap: wrap;
+  }
+
+  /* Teacher dashboard specific overrides */
+  .teacher-dashboard .school-name {
+    font-size: 1.8rem;
+  }
+  .teacher-dashboard .school-subtitle {
+    font-size: 1.1rem;
+  }
+  .teacher-dashboard .welcome-text {
+    font-size: 0.9rem;
+  }
+  .teacher-dashboard .assignments-card {
+    padding: 1.2rem 1rem;
+  }
+  .teacher-dashboard .assignments-card li {
+    font-size: 0.9rem;
+  }
+}
+
+/* Extra small devices (up to 480px) */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 1.5rem;
+    margin: 1rem;
+    border-radius: 12px;
+  }
+  .auth-card h2 {
+    font-size: 1.6rem;
+  }
+
+  .class-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-hero {
+    padding: 1rem;
+  }
+  .teacher-dashboard .dashboard-hero {
+    padding: 1rem;
   }
 }
