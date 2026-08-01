@@ -10,7 +10,7 @@ const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const { protect } = require('./middleware/auth');
 
-// Load routes we actually have
+// Route files
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const classRoutes = require('./routes/classRoutes');
@@ -41,12 +41,13 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// CORS – allow Vercel frontend + localhost
+// CORS – allow multiple frontend origins
 const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(',').map(o => o.trim())
+  ? process.env.CLIENT_URL.split(',').map((o) => o.trim())
   : [
-      'https://senbet-yisj.vercel.app',   // your deployed frontend
-      'http://localhost:3000',            // local development
+      
+      'https://meskelebirihan.vercel.app',   
+      'http://localhost:3000',               
     ];
 
 app.use(cors({
