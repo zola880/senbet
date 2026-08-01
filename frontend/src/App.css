@@ -433,6 +433,7 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
 }
+
 /* ========== TABS ========== */
 .tabs-container {
   display: flex;
@@ -461,6 +462,7 @@ tr:hover td {
   color: var(--primary);
   border-bottom-color: var(--secondary);
 }
+
 /* ========== MY MARKS GRID ========== */
 .marks-grid {
   display: grid;
@@ -504,6 +506,7 @@ tr:hover td {
   border: 1px solid #c6f6d5;
   margin-bottom: 1rem;
 }
+
 /* ========== COURSE MATERIALS ========== */
 .materials-grid {
   display: grid;
@@ -557,11 +560,12 @@ tr:hover td {
   margin-bottom: 0.5rem;
 }
 
+/* ========== DEFAULT DASHBOARD HERO (admin) ========== */
 .dashboard-hero {
   min-height: calc(100vh - 4rem);
   background: 
     linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.35)),
-    url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkwpjvGXir0uK3CkxmmOqt18Sy4NHipO-FIDY3IxHjsA')  /* ← new image */
+    url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkwpjvGXir0uK3CkxmmOqt18Sy4NHipO-FIDY3IxHjsA')
     center / cover no-repeat;
   position: relative;
   margin: -2rem;
@@ -569,6 +573,7 @@ tr:hover td {
   display: flex;
   align-items: center;
 }
+
 /* ========== STUDENT DETAIL PAGE ========== */
 .student-header-card {
   background: linear-gradient(135deg, var(--primary-dark), var(--primary));
@@ -659,6 +664,7 @@ tr:hover td {
   border-radius: 8px;
   text-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
+
 /* ========== ATTENDANCE ========== */
 .attendance-status-group {
   display: flex;
@@ -724,8 +730,250 @@ tr:hover td {
   background: #fff3cd;
   color: #856404;
 }
+
+/* ========== DEFAULT GLASS CARD (used by admin) ========== */
 .glass-card {
-  background: rgba(255,255,255,0.2) ;
+  background: rgba(255,255,255,0.2);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255,255,255,0.3);
 }
+
+/* ============================================================
+   TEACHER DASHBOARD – scoped inside .teacher-dashboard
+   ============================================================ */
+.teacher-dashboard {
+  /* wrap the entire teacher dashboard with this class */
+}
+
+.teacher-dashboard .dashboard-hero {
+  min-height: calc(100vh - 4rem);
+  margin: -2rem;
+  padding: 2.5rem 3rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+
+  /* 🔽 Replace this URL with your direct teacher image link 🔽 */
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.10)),
+    url('https://i.ibb.co/8nLDtHN1/your-image.jpg')
+    center / cover no-repeat;
+}
+
+/* Text colours – all white / light */
+.teacher-dashboard .school-name {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin-bottom: 0.2rem;
+}
+
+.teacher-dashboard .school-subtitle {
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #f0e6d0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin-bottom: 0.25rem;
+}
+
+.teacher-dashboard .welcome-text {
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: #ffddaa;
+  letter-spacing: 1px;
+  font-style: italic;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Stats Grid inside teacher dashboard */
+.teacher-dashboard .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+/* Glass Cards (brighter & blurry) for teacher dashboard */
+.teacher-dashboard .glass-card {
+  background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.teacher-dashboard .stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.5rem 1.8rem;
+}
+
+.teacher-dashboard .stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: #fff;
+}
+
+.teacher-dashboard .stat-info h3 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.teacher-dashboard .stat-info p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+/* Assignments card */
+.teacher-dashboard .assignments-card {
+  padding: 1.8rem 2rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.teacher-dashboard .assignments-card h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 1rem;
+}
+
+.teacher-dashboard .assignments-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.teacher-dashboard .assignments-card li {
+  color: #f0e6d0;
+  font-size: 1.05rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.teacher-dashboard .assignments-card li:last-child {
+  border-bottom: none;
+}
+/* ========== CLASS MANAGEMENT ========== */
+.class-header {
+  background: linear-gradient(135deg, #fef7f2 0%, #fdf5ec 100%);
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.class-header-subtitle {
+  color: var(--text-light);
+  margin: 0;
+}
+
+.class-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.2rem;
+}
+
+.class-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.class-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  border-color: var(--secondary);
+}
+
+.class-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(142,42,42,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.class-card-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin: 0;
+}
+
+/* ========== CLASS DETAIL PAGE ========== */
+.class-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.class-detail-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(142,42,42,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.class-detail-info {
+  flex: 1;
+}
+
+.class-detail-info h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0 0 0.3rem;
+}
+
+.class-detail-info p {
+  color: var(--text-light);
+  margin: 0;
+}
+
+.class-detail-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+

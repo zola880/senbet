@@ -1,19 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FiEdit, FiTrash2, FiPlus, FiClipboard } from 'react-icons/fi';
+import { FiPlus, FiBookOpen } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
 
 const ManageClasses = () => {
+  const navigate = useNavigate();
   const [classes, setClasses] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editClass, setEditClass] = useState(null);
   const [className, setClassName] = useState('');
   const [description, setDescription] = useState('');
-
-  // Assessment config modal state
-  const [selectedClassForConfig, setSelectedClassForConfig] = useState(null);
-  const [config, setConfig] = useState(null);
-  const [components, setComponents] = useState([{ name: '', type: 'exam', weightage: 0 }]);
 
   const fetchClasses = () => {
     api.get('/api/v1/classes')
@@ -23,7 +20,6 @@ const ManageClasses = () => {
 
   useEffect(() => { fetchClasses(); }, []);
 
-  // --- Class CRUD handlers ---
   const handleAdd = async (e) => {
     e.preventDefault();
     if (editClass) {
@@ -38,71 +34,20 @@ const ManageClasses = () => {
     fetchClasses();
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Delete this class?')) {
-      await api.delete(`/api/v1/classes/${id}`);
-      fetchClasses();
-    }
-  };
-
-  const openEditForm = (cls) => {
-    setEditClass(cls);
-    setClassName(cls.name);
-    setDescription(cls.description || '');
-    setShowForm(true);
-  };
-
-  // --- Assessment config handlers ---
-  const loadConfig = async (classId) => {
-    try {
-      const res = await api.get(`/api/v1/assessment-configs/${classId}`);
-      setConfig(res.data.data);
-      setComponents(res.data.data.components);
-    } catch (err) {
-      setConfig(null);
-      setComponents([{ name: '', type: 'exam', weightage: 0 }]);
-    }
-  };
-
-  const openConfigModal = (classItem) => {
-    setSelectedClassForConfig(classItem);
-    loadConfig(classItem._id);
-  };
-
-  const addComponent = () => {
-    setComponents([...components, { name: '', type: 'exam', weightage: 0 }]);
-  };
-
-  const updateComponent = (index, field, value) => {
-    const updated = [...components];
-    updated[index][field] = value;
-    setComponents(updated);
-  };
-
-  const removeComponent = (index) => {
-    setComponents(components.filter((_, i) => i !== index));
-  };
-
-  const handleSaveConfig = async () => {
-    if (!selectedClassForConfig) return;
-    await api.post('/api/v1/assessment-configs', {
-      class: selectedClassForConfig._id,
-      academicYear: new Date().getFullYear() + '/' + (new Date().getFullYear() + 1),
-      components,
-    });
-    alert('Assessment config saved for ' + selectedClassForConfig.name);
-    setSelectedClassForConfig(null);
-  };
-
   return (
     <div>
-      <h2 className="page-title">Manage Classes (ክፍሎች)</h2>
+      {/* Header */}
+      <div className="class-header">
+        <div>
+          <h2 className="page-title" style={{ marginBottom: '0.3rem' }}>Manage Classes</h2>
+          <p className="class-header-subtitle">Organise your church school classes (ክፍሎች)</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => { setEditClass(null); setShowForm(true); }}>
+          <FiPlus /> Add Class
+        </button>
+      </div>
 
-      <button className="btn btn-primary" onClick={() => { setEditClass(null); setShowForm(true); }}>
-        <FiPlus /> Add Class
-      </button>
-
-      {/* Class add/edit modal */}
+      {/* Add class modal */}
       {showForm && (
         <div className="modal-backdrop" onClick={() => setShowForm(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -126,88 +71,25 @@ const ManageClasses = () => {
         </div>
       )}
 
-      {/* Assessment config modal */}
-      {selectedClassForConfig && (
-        <div className="modal-backdrop" onClick={() => setSelectedClassForConfig(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>Assessment Config for {selectedClassForConfig.name}</h3>
-            {components.map((comp, idx) => (
-              <div key={idx} className="form-grid" style={{ marginBottom: '0.5rem' }}>
-                <input
-                  placeholder="Component Name"
-                  value={comp.name}
-                  onChange={e => updateComponent(idx, 'name', e.target.value)}
-                />
-                <select
-                  value={comp.type}
-                  onChange={e => updateComponent(idx, 'type', e.target.value)}
-                >
-                  <option value="exam">Exam</option>
-                  <option value="activity">Activity</option>
-                  <option value="attendance">Attendance</option>
-                  <option value="custom">Custom</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Weight (%)"
-                  value={comp.weightage}
-                  onChange={e => updateComponent(idx, 'weightage', Number(e.target.value))}
-                />
-                <button className="btn btn-sm btn-danger" onClick={() => removeComponent(idx)}>X</button>
-              </div>
-            ))}
-            <button className="btn btn-secondary" onClick={addComponent}>+ Add Component</button>
-            <button
-              className="btn btn-primary"
-              style={{ marginLeft: '1rem' }}
-              onClick={handleSaveConfig}
-              disabled={components.some(c => !c.name || c.weightage <= 0)}
+      {/* Class cards grid */}
+      {classes.length === 0 ? (
+        <EmptyState message="No classes yet. Click “Add Class” to create the first one." />
+      ) : (
+        <div className="class-card-grid">
+          {classes.map(c => (
+            <div
+              key={c._id}
+              className="class-card"
+              onClick={() => navigate(`/admin/classes/${c._id}`)}
             >
-              Save Configuration
-            </button>
-          </div>
+              <div className="class-card-icon">
+                <FiBookOpen size={24} />
+              </div>
+              <h3 className="class-card-name">{c.name}</h3>
+            </div>
+          ))}
         </div>
       )}
-
-      {/* Classes table */}
-      <div className="table-container" style={{ marginTop: '1rem' }}>
-        {classes.length === 0 ? (
-          <EmptyState message="No classes yet." />
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {classes.map(c => (
-                <tr key={c._id}>
-                  <td>{c.name}</td>
-                  <td>{c.description || '—'}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => openConfigModal(c)}
-                      title="Assessment Configuration"
-                    >
-                      <FiClipboard /> Assessment
-                    </button>
-                    <button className="btn btn-sm btn-secondary" onClick={() => openEditForm(c)}>
-                      <FiEdit />
-                    </button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c._id)}>
-                      <FiTrash2 />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
     </div>
   );
 };

@@ -1,43 +1,92 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { FiPlus, FiBookOpen } from 'react-icons/fi';
+import EmptyState from '../common/EmptyState';
 
 const ManageCourses = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
 
-  const fetch = () => api.get('/api/v1/courses').then(r => setCourses(r.data.data));
-  useEffect(() => { fetch(); }, []);
+  const fetchCourses = () => {
+    api.get('/api/v1/courses')
+      .then(res => setCourses(res.data.data))
+      .catch(console.error);
+  };
+
+  useEffect(() => { fetchCourses(); }, []);
 
   const handleAdd = async (e) => {
     e.preventDefault();
     await api.post('/api/v1/courses', { name, code });
-    setName(''); setCode('');
-    fetch();
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Delete course?')) {
-      await api.delete(`/api/v1/courses/${id}`);
-      fetch();
-    }
+    setName('');
+    setCode('');
+    setShowForm(false);
+    fetchCourses();
   };
 
   return (
     <div>
-      <h2 className="page-title">Manage Courses</h2>
-      <form onSubmit={handleAdd} className="card form-grid">
-        <input placeholder="Course Name (e.g., Zema)" value={name} onChange={e => setName(e.target.value)} required />
-        <input placeholder="Code" value={code} onChange={e => setCode(e.target.value)} />
-        <button className="btn btn-primary">Add Course</button>
-      </form>
-      <div className="table-container">
-        <table>
-          <thead><tr><th>Name</th><th>Code</th><th>Action</th></tr></thead>
-          <tbody>{courses.map(c=><tr key={c._id}><td>{c.name}</td><td>{c.code}</td><td><button className="btn btn-sm btn-danger" onClick={()=>handleDelete(c._id)}>Delete</button></td></tr>)}</tbody>
-        </table>
+      {/* Header – identical style to ManageClasses */}
+      <div className="class-header">
+        <div>
+          <h2 className="page-title" style={{ marginBottom: '0.3rem' }}>Manage Courses</h2>
+          <p className="class-header-subtitle">Organise your church school courses</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+          <FiPlus /> Add Course
+        </button>
       </div>
+
+      {/* Add course modal */}
+      {showForm && (
+        <div className="modal-backdrop" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>New Course</h3>
+            <form onSubmit={handleAdd} className="form-grid">
+              <input
+                placeholder="Course Name (e.g., Zema)"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+              />
+              <input
+                placeholder="Code (optional)"
+                value={code}
+                onChange={e => setCode(e.target.value)}
+              />
+              <button type="submit" className="btn btn-primary">Create</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Course cards grid – uses the same .class-card-grid and .class-card classes */}
+      {courses.length === 0 ? (
+        <EmptyState message="No courses yet. Click “Add Course” to create the first one." />
+      ) : (
+        <div className="class-card-grid">
+          {courses.map(c => (
+            <div
+              key={c._id}
+              className="class-card"
+              onClick={() => navigate(`/admin/courses/${c._id}`)}
+            >
+              <div className="class-card-icon">
+                <FiBookOpen size={24} />
+              </div>
+              <h3 className="class-card-name">{c.name}</h3>
+              {c.code && <span className="class-card-code">{c.code}</span>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
+
 export default ManageCourses;

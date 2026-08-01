@@ -15,12 +15,12 @@ const seedAdmin = async () => {
       process.exit(0);
     }
 
-    const admin = await User.create({
-      fullName: 'System Admin',
-      email: 'admin@churchschool.com',   // change to your desired email
-      password: 'YourSecurePassword123', // change to a strong password
-      role: 'admin',
-    });
+   const admin = await User.create({
+  fullName: 'zelalem',                         // ← your name
+  email: 'zelalemybabe77@gmail.com',           // ← your email
+  password: '131019',                          // ← your chosen password
+  role: 'admin',
+});
 
     console.log('Admin created successfully!');
     console.log('Email:', admin.email);

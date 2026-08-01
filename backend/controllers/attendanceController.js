@@ -67,20 +67,35 @@ const markAttendance = async (req, res, next) => {
   }
 };
 
-// @desc    Get attendance history for a student
-// @route   GET /api/v1/attendance/student/:studentId
+// @desc    Get attendance history for a student (with optional date range)
+// @route   GET /api/v1/attendance/student/:studentId?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 // @access  Private
 const getStudentAttendance = async (req, res, next) => {
   try {
-    const attendances = await Attendance.find({ 'records.student': req.params.studentId })
+    const { startDate, endDate } = req.query;
+    const studentId = req.params.studentId;
+
+    // Build date filter
+    const dateFilter = {};
+    if (startDate || endDate) {
+      dateFilter.date = {};
+      if (startDate) dateFilter.date.$gte = startDate;
+      if (endDate) dateFilter.date.$lte = endDate;
+    }
+
+    const attendances = await Attendance.find({
+      'records.student': studentId,
+      ...dateFilter,
+    })
       .populate('class', 'name')
       .populate('records.student', 'fullName rollNumber')
-      .sort({ date: -1 })
-      .limit(60); // last 60 days
+      .sort({ date: -1 });
 
     // Format for student view
     const result = attendances.map(a => {
-      const record = a.records.find(r => r.student._id.toString() === req.params.studentId);
+      const record = a.records.find(
+        r => r.student._id.toString() === studentId
+      );
       return {
         date: a.date,
         class: a.class.name,

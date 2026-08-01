@@ -8,10 +8,12 @@ import AssessmentConfig from '../components/admin/AssessmentConfig';
 import EnterScores from '../components/admin/EnterScores';
 import FullRanking from '../components/admin/FullRanking';
 import PracticeScheduler from '../components/admin/PracticeScheduler';
-import CoursesPage from '../components/common/CoursesPage';
+import ManageCourses from '../components/admin/ManageCourses';
 import CourseDetail from '../components/admin/CourseDetail';
 import StudentDetail from '../components/admin/StudentDetail'; // new
 import TakeAttendance from '../components/common/TakeAttendance';
+import AdminAttendance from '../components/admin/AdminAttendance';
+import ClassDetail from '../components/admin/ClassDetail';
 
 const AdminPage = () => (
   <div className="app-layout">
@@ -21,13 +23,14 @@ const AdminPage = () => (
   <Route index element={<AdminDashboard />} />
   <Route path="users/:id" element={<StudentDetail />} />
   <Route path="users" element={<ManageUsers />} />
-  <Route path="classes" element={<ManageClasses />} />
   <Route path="courses/:id" element={<CourseDetail />} />
-  <Route path="courses" element={<CoursesPage />} />
+  <Route path="courses" element={<ManageCourses />} />
   <Route path="scores" element={<EnterScores />} />
   <Route path="ranking" element={<FullRanking />} />
-  <Route path="attendance" element={<TakeAttendance />} />
+  <Route path="attendance" element={<AdminAttendance />} />
   <Route path="practices" element={<PracticeScheduler />} />
+  <Route path="classes/:id" element={<ClassDetail />} />
+<Route path="classes" element={<ManageClasses />} />
 </Routes>
     </main>
   </div>
