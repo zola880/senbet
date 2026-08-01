@@ -2,44 +2,39 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { FiBook, FiCalendar } from 'react-icons/fi';
 
-/* Ethiopian cross SVG – intricate, black, used as a watermark */
-const CROSS_SVG = (
+/* Simple, bold filled cross – right side, attractive and clean */
+const FILLED_CROSS_SVG = (
   <svg
     viewBox="0 0 200 200"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     style={{
       position: 'absolute',
-      top: '50%',
-      left: '55%',                  /* shifted to the right */
-      transform: 'translate(-50%, -50%)',
-      width: '450px',
-      height: '450px',
-      opacity: 0.06,
+      top: 0,
+      left: '55%',
+      width: '45%',
+      height: '100%',
+      opacity: 0.45,
       pointerEvents: 'none',
     }}
   >
-    {/* Central cross */}
-    <rect x="90" y="20" width="20" height="160" fill="black" />
-    <rect x="20" y="90" width="160" height="20" fill="black" />
-
-    {/* Decorative loops */}
-    <circle cx="100" cy="30" r="15" stroke="black" strokeWidth="6" fill="none" />
-    <circle cx="100" cy="170" r="15" stroke="black" strokeWidth="6" fill="none" />
-    <circle cx="30" cy="100" r="15" stroke="black" strokeWidth="6" fill="none" />
-    <circle cx="170" cy="100" r="15" stroke="black" strokeWidth="6" fill="none" />
-
-    {/* Small outer circles */}
-    <circle cx="100" cy="50" r="10" stroke="black" strokeWidth="4" fill="none" />
-    <circle cx="100" cy="150" r="10" stroke="black" strokeWidth="4" fill="none" />
-    <circle cx="50" cy="100" r="10" stroke="black" strokeWidth="4" fill="none" />
-    <circle cx="150" cy="100" r="10" stroke="black" strokeWidth="4" fill="none" />
-
-    {/* Cross finials (small bars at ends) */}
-    <rect x="85" y="10" width="30" height="6" fill="black" />
-    <rect x="85" y="184" width="30" height="6" fill="black" />
-    <rect x="10" y="97" width="6" height="6" fill="black" />
-    <rect x="184" y="97" width="6" height="6" fill="black" />
+    {/* Vertical bar of the cross (centered) */}
+    <rect x="90" y="10" width="20" height="180" rx="4" fill="black" />
+    {/* Horizontal bar */}
+    <rect x="30" y="80" width="140" height="20" rx="4" fill="black" />
+    {/* Central circle (decorative medallion) */}
+    <circle cx="100" cy="90" r="18" fill="white" />
+    <circle cx="100" cy="90" r="12" fill="black" />
+    {/* Small decorative finials at the ends of the cross arms */}
+    <circle cx="100" cy="20" r="8" fill="black" />
+    <circle cx="100" cy="180" r="8" fill="black" />
+    <circle cx="40" cy="90" r="8" fill="black" />
+    <circle cx="160" cy="90" r="8" fill="black" />
+    {/* Tiny dots at the very tips (optional) */}
+    <circle cx="100" cy="10" r="3" fill="black" />
+    <circle cx="100" cy="190" r="3" fill="black" />
+    <circle cx="30" cy="90" r="3" fill="black" />
+    <circle cx="170" cy="90" r="3" fill="black" />
   </svg>
 );
 
@@ -60,19 +55,20 @@ const StudentDashboard = () => {
     <div
       className="dashboard-hero"
       style={{
-        background: '#ffffff',
+        background: '#fcf9f2',       /* cream background */
         position: 'relative',
         overflow: 'hidden',
+        minHeight: 'calc(100vh - 4rem)',
       }}
     >
-      {/* Watermark cross – shifted right */}
-      {CROSS_SVG}
+      {/* Bold filled cross on the right side */}
+      {FILLED_CROSS_SVG}
 
+      {/* Content on top */}
       <div className="dashboard-content" style={{ position: 'relative', zIndex: 1 }}>
         <div className="dashboard-welcome" style={{ marginBottom: '3rem' }}>
           <h1 className="school-name">የ ቤሮ ደብረ ምህረት ቅዱስ ላሊበላ</h1>
           <h2 className="school-subtitle">መስቀለ ብርሃን ሰንበት ትምህርት ቤት</h2>
-          {/* Welcome message removed */}
         </div>
 
         <div className="stats-grid">
