@@ -33,6 +33,7 @@ const Sidebar = ({ role }) => {
     { to: '/admin/scores', icon: <FiClipboard />, label: 'Enter Scores' },
     { to: '/admin/ranking', icon: <FiAward />, label: 'Ranking' },
     { to: '/admin/attendance', icon: <FiCheckSquare />, label: 'Attendance' },
+    { to: '/admin/church-cloth', icon: <FiCheckSquare />, label: 'Church Cloth' },
     { to: '/admin/practices', icon: <FiCalendar />, label: 'Practice Days' },
   ];
 

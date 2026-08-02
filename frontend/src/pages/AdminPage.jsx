@@ -14,6 +14,7 @@ import StudentDetail from '../components/admin/StudentDetail'; // new
 import TakeAttendance from '../components/common/TakeAttendance';
 import AdminAttendance from '../components/admin/AdminAttendance';
 import ClassDetail from '../components/admin/ClassDetail';
+import ChurchClothRegistry from '../components/admin/ChurchClothRegistry';
 
 const AdminPage = () => (
   <div className="app-layout">
@@ -28,6 +29,7 @@ const AdminPage = () => (
   <Route path="scores" element={<EnterScores />} />
   <Route path="ranking" element={<FullRanking />} />
   <Route path="attendance" element={<AdminAttendance />} />
+  <Route path="church-cloth" element={<ChurchClothRegistry />} />
   <Route path="practices" element={<PracticeScheduler />} />
   <Route path="classes/:id" element={<ClassDetail />} />
 <Route path="classes" element={<ManageClasses />} />
