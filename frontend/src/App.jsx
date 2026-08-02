@@ -1,12 +1,13 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useContext } from 'react';
+import { Suspense, lazy, useContext } from 'react';
 import AuthContext from './context/AuthContext';
-import Login from './pages/Login';
-import AdminPage from './pages/AdminPage';
-import TeacherPage from './pages/TeacherPage';
-import StudentPage from './pages/StudentPage';
-import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/common/ProtectedRoute';
+
+const Login = lazy(() => import('./pages/Login'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const TeacherPage = lazy(() => import('./pages/TeacherPage'));
+const StudentPage = lazy(() => import('./pages/StudentPage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
   const { user, loading } = useContext(AuthContext);
@@ -21,35 +22,37 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={user ? <Navigate to={`/${user.role}`} /> : <Login />} />
-      <Route
-        path="/admin/*"
-        element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/teacher/*"
-        element={
-          <ProtectedRoute allowedRoles={['teacher']}>
-            <TeacherPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/*"
-        element={
-          <ProtectedRoute allowedRoles={['student']}>
-            <StudentPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/" element={<Navigate to={user ? `/${user.role}` : '/login'} />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={<div className="full-page-loader"><div className="spinner" /><p>Loading...</p></div>}>
+      <Routes>
+        <Route path="/login" element={user ? <Navigate to={`/${user.role}`} /> : <Login />} />
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/*"
+          element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <TeacherPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/*"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to={user ? `/${user.role}` : '/login'} />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 }
 

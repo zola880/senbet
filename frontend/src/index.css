@@ -8,6 +8,7 @@
 
 html {
   scroll-behavior: smooth;
+  text-rendering: optimizeSpeed;
 }
 
 body {
@@ -15,6 +16,9 @@ body {
   background-color: #fcf9f2;
   color: #2c1810;
   line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4 {
