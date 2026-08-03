@@ -728,6 +728,64 @@ tr:hover td {
   border: 1px solid rgba(255,255,255,0.3);
 }
 
+/* ========== ADMIN DASHBOARD ========== */
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-hero {
+  position: relative;
+  width: 100%;
+  height: 450px;
+  background: linear-gradient(135deg, rgba(107, 26, 26, 0.85), rgba(142, 42, 42, 0.9)),
+    center / cover no-repeat;
+  background-attachment: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: -2rem -2rem 2rem -2rem;
+}
+
+.admin-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(26, 13, 10, 0.75), rgba(66, 30, 25, 0.8));
+  backdrop-filter: blur(2px);
+  z-index: 1;
+}
+
+.admin-hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: white;
+  max-width: 800px;
+  padding: 3rem 2rem;
+}
+
+.admin-hero-content h1 {
+  font-size: 3.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  letter-spacing: -0.5px;
+  font-family: 'Playfair Display', serif;
+}
+
+.admin-hero-content p {
+  font-size: 1.3rem;
+  font-weight: 300;
+  color: #f0e6d0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.5px;
+}
+
+.admin-dashboard-content {
+  padding: 0 0 2rem 0;
+}
+
 /* ========== TEACHER DASHBOARD ========== */
 .teacher-dashboard .dashboard-hero {
   min-height: calc(100vh - 4rem);
@@ -1080,6 +1138,18 @@ tr:hover td {
     min-height: auto;
   }
 
+  .admin-hero {
+    height: 300px;
+    margin: -1.2rem -1rem 1.5rem -1rem;
+    padding: 2rem 1rem;
+  }
+  .admin-hero-content h1 {
+    font-size: 2rem;
+  }
+  .admin-hero-content p {
+    font-size: 1rem;
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -1353,5 +1423,18 @@ tr:hover td {
   }
   .teacher-dashboard .stat-info h3 {
     font-size: 1.8rem;
+  }
+
+  .admin-hero {
+    height: 240px;
+    margin: -1rem -0.8rem 1rem -0.8rem;
+    padding: 1.5rem 1rem;
+  }
+  .admin-hero-content h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .admin-hero-content p {
+    font-size: 0.9rem;
   }
 }
