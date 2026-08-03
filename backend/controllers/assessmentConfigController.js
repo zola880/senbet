@@ -7,10 +7,17 @@ const upsertConfig = async (req, res, next) => {
   try {
     const { class: classId, academicYear, components, passMark, rankingPeriod } = req.body;
 
-    // Find if config exists for this class and year
+    // Validate total weightage
+    const total = components.reduce((sum, comp) => sum + comp.weightage, 0);
+    if (total !== 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Total weightage of all components must be exactly 100.',
+      });
+    }
+
     let config = await AssessmentConfig.findOne({ class: classId, academicYear });
     if (config) {
-      // Update
       config.components = components;
       config.passMark = passMark || config.passMark;
       config.rankingPeriod = rankingPeriod || config.rankingPeriod;

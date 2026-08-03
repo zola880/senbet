@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const compression = require('compression');  // optional: for faster responses
 
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
@@ -23,7 +24,6 @@ const practiceRoutes = require('./routes/practiceRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
-const churchClothRoutes = require('./routes/churchClothRoutes');
 
 dotenv.config();
 
@@ -33,6 +33,9 @@ const app = express();
 
 // Security headers
 app.use(helmet());
+
+// Compression
+app.use(compression());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -46,9 +49,9 @@ app.use('/api/', limiter);
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map((o) => o.trim())
   : [
-      
-      'https://meskelebirihan.vercel.app',   
-      'http://localhost:3000',               
+      'https://senbet-yisj.vercel.app',
+      'https://meskelebirihan.vercel.app',   // 👈 your new frontend
+      'http://localhost:3000',               // local development
     ];
 
 app.use(cors({
@@ -93,7 +96,6 @@ app.use('/api/v1/practices', practiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
-app.use('/api/v1/church-cloth', churchClothRoutes);
 
 // Error handler
 app.use(errorHandler);
