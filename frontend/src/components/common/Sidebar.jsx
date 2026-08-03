@@ -78,7 +78,7 @@ const Sidebar = ({ role }) => {
       {/* Sidebar */}
       <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
-          <h3>የተማሪ ሥርዓት</h3>
+          <h3>መስቀለብርሃን ሰንበት ትምህርት ቤት</h3>
           <span>{role.toUpperCase()}</span>
         </div>
         <nav className="sidebar-nav">
