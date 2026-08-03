@@ -5,7 +5,6 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
-const compression = require('compression');  // optional: for faster responses
 
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
@@ -34,9 +33,6 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// Compression
-app.use(compression());
-
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -50,7 +46,7 @@ const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map((o) => o.trim())
   : [
       'https://senbet-yisj.vercel.app',
-      'https://meskelebirihan.vercel.app',   // 👈 your new frontend
+      'https://meskelebirihan.vercel.app',   // 👈 your current frontend
       'http://localhost:3000',               // local development
     ];
 
