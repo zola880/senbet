@@ -28,8 +28,6 @@ const Sidebar = ({ role }) => {
     { to: '/admin/users', icon: <FiUsers />, label: 'Users' },
     { to: '/admin/classes', icon: <FiGrid />, label: 'Classes' },
     { to: '/admin/courses', icon: <FiBook />, label: 'Courses' },
-    { to: '/admin/assignments', icon: <FiClipboard />, label: 'Assignments' },
-    { to: '/admin/assessment', icon: <FiClipboard />, label: 'Assessment Config' },
     { to: '/admin/scores', icon: <FiClipboard />, label: 'Enter Scores' },
     { to: '/admin/ranking', icon: <FiAward />, label: 'Ranking' },
     { to: '/admin/attendance', icon: <FiCheckSquare />, label: 'Attendance' },
