@@ -760,8 +760,13 @@ tr:hover td {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-light);
+  color: #666;
   font-size: 1.3rem;
+  transition: all 0.2s ease;
+}
+
+.topbar-menu:hover {
+  color: #d64545;
 }
 
 .topbar-right {
@@ -774,21 +779,21 @@ tr:hover td {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text);
+  color: #666;
   font-size: 1.2rem;
   position: relative;
-  transition: var(--transition);
+  transition: all 0.2s ease;
 }
 
 .topbar-icon:hover {
-  color: var(--primary);
+  color: #d64545;
 }
 
 .topbar-icon.with-badge .badge {
   position: absolute;
   top: -6px;
   right: -8px;
-  background: #c44536;
+  background: #d64545;
   color: white;
   border-radius: 50%;
   width: 20px;
@@ -798,6 +803,7 @@ tr:hover td {
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
+  box-shadow: 0 2px 4px rgba(214, 69, 69, 0.3);
 }
 
 .dashboard-container {
@@ -880,8 +886,13 @@ tr:hover td {
 }
 
 .stat-card-arrow {
-  color: #d4a017;
+  color: #ccc;
   flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.sidebar-stat-card:hover .stat-card-arrow {
+  color: #d64545;
 }
 
 .quick-actions-card {
@@ -903,23 +914,24 @@ tr:hover td {
 .quick-action-btn {
   width: 100%;
   background: white;
-  border: 1px solid var(--border);
+  border: 1px solid #e8e8e8;
   border-radius: 8px;
-  padding: 0.8rem 1rem;
+  padding: 0.85rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  color: var(--text);
+  color: #1a1a1a;
   cursor: pointer;
   font-weight: 500;
+  font-size: 0.9rem;
   margin-bottom: 0.8rem;
-  transition: var(--transition);
+  transition: all 0.2s ease;
 }
 
 .quick-action-btn:hover {
-  background: #fef7f2;
-  border-color: var(--primary);
-  color: var(--primary);
+  background: #f8f8f8;
+  border-color: #d64545;
+  color: #d64545;
 }
 
 .quick-action-btn:last-child {
@@ -957,8 +969,9 @@ tr:hover td {
 }
 
 .card-date {
-  color: var(--text-light);
-  font-size: 0.9rem;
+  color: #999;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .attendance-stats-row {
@@ -1073,15 +1086,15 @@ tr:hover td {
 }
 
 .view-all {
-  color: var(--primary);
+  color: #d64545;
   text-decoration: none;
   font-weight: 600;
-  font-size: 0.9rem;
-  transition: var(--transition);
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
 }
 
 .view-all:hover {
-  color: var(--primary-dark);
+  color: #9c2a2a;
 }
 
 .absent-table {
@@ -1105,12 +1118,13 @@ tr:hover td {
 
 .absent-table td {
   padding: 1rem 0.8rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f5f5f5;
   font-size: 0.9rem;
+  color: #1a1a1a;
 }
 
 .absent-table tbody tr:hover {
-  background: #fef7f2;
+  background: #fafafa;
 }
 
 .student-badge {
