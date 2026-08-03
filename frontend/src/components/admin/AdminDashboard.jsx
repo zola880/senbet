@@ -1,47 +1,41 @@
-import { useState, useEffect } from 'react';
-import api from '../../services/api';
-import { FiUsers, FiUserCheck, FiGrid, FiBook, FiChevronRight, FiPlus, FiCheckCircle, FiEdit, FiUserPlus, FiActivity, FiBell } from 'react-icons/fi';
+import { useState } from 'react';
+import { FiUsers, FiUserCheck, FiGrid, FiBook, FiPlus, FiCheckCircle, FiEdit, FiUserPlus, FiActivity, FiBell } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    totalTeachers: 0,
-    totalClasses: 0,
-    totalCourses: 0,
-    upcomingPractices: [],
-  });
-  const [attendance, setAttendance] = useState({ present: 0, late: 0, absent: 0, total: 0 });
-  const [absentStudents, setAbsentStudents] = useState([]);
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/api/v1/dashboard/admin'),
-      api.get('/api/v1/users?role=student').catch(() => ({ data: { data: [] } })),
-    ]).then(([dashRes, usersRes]) => {
-      setStats(dashRes.data.data || stats);
-      
-      // Calculate attendance summary (mock data for now)
-      const presentCount = Math.floor((usersRes.data.data?.length || 0) * 0.82);
-      const lateCount = Math.floor((usersRes.data.data?.length || 0) * 0.04);
-      const absentCount = Math.floor((usersRes.data.data?.length || 0) * 0.14);
-      
-      setAttendance({
-        present: presentCount,
-        late: lateCount,
-        absent: absentCount,
-        total: usersRes.data.data?.length || 0,
-      });
-    }).catch(console.error);
-  }, []);
+  const stats = {
+    totalStudents: 125,
+    totalTeachers: 8,
+    totalClasses: 12,
+    totalCourses: 9,
+  };
+
+  const attendanceData = {
+    present: 115,
+    late: 6,
+    absent: 19,
+    total: 140,
+    presentPct: '82.1%',
+    latePct: '4.3%',
+    absentPct: '13.6%',
+  };
+
+  const absentStudents = [
+    { initials: 'AB', name: 'Abel Tesfaye', class: 'Grade 5', days: '5 days' },
+    { initials: 'HN', name: 'Hana Mekonnen', class: 'Grade 4', days: '4 days' },
+    { initials: 'DW', name: 'Dawit Alemu', class: 'Grade 6', days: '4 days' },
+    { initials: 'YN', name: 'Yohannes Bekele', class: 'Grade 5', days: '3 days' },
+    { initials: 'BT', name: 'Betelhem Desta', class: 'Grade 3', days: '3 days' },
+  ];
 
   const recentActivities = [
-    { id: 1, type: 'student', title: 'New student registered', desc: 'Samuel Haile was added', time: '2h ago', icon: FiUsers },
-    { id: 2, type: 'attendance', title: 'Attendance recorded', desc: 'For Grade 5', time: '3h ago', icon: FiCheckCircle },
-    { id: 3, type: 'scores', title: 'Scores entered', desc: 'Sunday School Exam', time: '5h ago', icon: FiEdit },
-    { id: 4, type: 'teacher', title: 'New teacher added', desc: 'Teacher Ruth joined', time: '1d ago', icon: FiUserPlus },
-    { id: 5, type: 'class', title: 'Class updated', desc: 'Grade 4 information updated', time: '1d ago', icon: FiGrid },
+    { id: 1, type: 'student', icon: FiUsers, title: 'New student registered', desc: 'Samuel Haile was added', time: '2h ago' },
+    { id: 2, type: 'attendance', icon: FiCheckCircle, title: 'Attendance recorded', desc: 'For Grade 5', time: '3h ago' },
+    { id: 3, type: 'scores', icon: FiEdit, title: 'Scores entered', desc: 'Sunday School Exam', time: '5h ago' },
+    { id: 4, type: 'teacher', icon: FiUserPlus, title: 'New teacher added', desc: 'Teacher Ruth joined', time: '1d ago' },
+    { id: 5, type: 'class', icon: FiGrid, title: 'Class updated', desc: 'Grade 4 information updated', time: '1d ago' },
   ];
 
   const announcements = [
@@ -50,213 +44,292 @@ const AdminDashboard = () => {
     { id: 3, title: 'Choir practice Saturday', desc: 'At 9:00 AM', date: 'Jul 29' },
   ];
 
-  return (
-    <div className="admin-dashboard-layout">
-      {/* Top Bar */}
-      <div className="dashboard-topbar">
-        <div className="topbar-left">
-          <button className="topbar-menu"><FiActivity size={24} /></button>
-        </div>
-        <div className="topbar-right">
-          <button className="topbar-icon with-badge"><FiBell size={20} /><span className="badge">3</span></button>
-          <button className="topbar-icon"><FiGrid size={20} /></button>
-          <button className="topbar-icon"><FiUserCheck size={20} /></button>
-        </div>
-      </div>
+  const getActivityIconClass = (type) => {
+    const map = {
+      student: 'student',
+      attendance: 'attendance',
+      scores: 'scores',
+      teacher: 'teacher',
+      class: 'class',
+    };
+    return map[type] || 'student';
+  };
 
-      <div className="dashboard-container">
-        {/* Left Sidebar Stats */}
-        <div className="dashboard-sidebar">
-          {/* Student Stat Card */}
-          <div className="sidebar-stat-card">
-            <div className="stat-card-icon stat-icon-blue"><FiUsers size={20} /></div>
-            <div className="stat-card-content">
-              <h4>{stats.totalStudents}</h4>
+  return (
+    <>
+      {/* ===== SIDEBAR ===== */}
+      <aside className="sidebar" id="sidebar">
+        <div className="sidebar-header">
+          <h2>
+            フィールドマスター
+            <span className="jp">カリキュラム</span>
+          </h2>
+        </div>
+
+        <nav className="sidebar-nav" id="sidebarNav">
+          <div className="nav-section">ADMIN</div>
+          <a href="#" className="active"><i className="fas fa-th-large"></i> Dashboard</a>
+          <a href="#"><i className="fas fa-users"></i> Users</a>
+          <a href="#"><i className="fas fa-layer-group"></i> Classes</a>
+          <a href="#"><i className="fas fa-book-open"></i> Courses</a>
+          <a href="#"><i className="fas fa-pen-alt"></i> Enter Scores</a>
+          <a href="#"><i className="fas fa-trophy"></i> Ranking</a>
+          <a href="#"><i className="fas fa-calendar-check"></i> Attendance</a>
+          <a href="#"><i className="fas fa-tshirt"></i> Church Cloth</a>
+          <a href="#"><i className="fas fa-dumbbell"></i> Practice Days</a>
+        </nav>
+
+        <div className="sidebar-user">
+          <div className="avatar">ZY</div>
+          <div className="info">
+            <div className="name">Zellem Ybabe</div>
+            <div className="role">Administrator</div>
+            <div className="status">
+              <span className="dot"></span> Online
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="main">
+
+        <div className="page-header">
+          <h1>
+            ADMIN
+            <small>· Dashboard</small>
+          </h1>
+          <button className="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <i className="fas fa-bars"></i>
+          </button>
+        </div>
+
+        {/* Stats Row */}
+        <div className="stats-row">
+          <div className="stat-mini">
+            <div className="icon blue"><i className="fas fa-user-graduate"></i></div>
+            <div className="info">
+              <h3>{stats.totalStudents}</h3>
               <p>Students</p>
             </div>
-            <FiChevronRight className="stat-card-arrow" />
           </div>
-
-          {/* Teacher Stat Card */}
-          <div className="sidebar-stat-card">
-            <div className="stat-card-icon stat-icon-orange"><FiUserCheck size={20} /></div>
-            <div className="stat-card-content">
-              <h4>{stats.totalTeachers}</h4>
+          <div className="stat-mini">
+            <div className="icon green"><i className="fas fa-chalkboard-teacher"></i></div>
+            <div className="info">
+              <h3>{stats.totalTeachers}</h3>
               <p>Teachers</p>
             </div>
-            <FiChevronRight className="stat-card-arrow" />
           </div>
-
-          {/* Classes Stat Card */}
-          <div className="sidebar-stat-card">
-            <div className="stat-card-icon stat-icon-green"><FiGrid size={20} /></div>
-            <div className="stat-card-content">
-              <h4>{stats.totalClasses}</h4>
+          <div className="stat-mini">
+            <div className="icon orange"><i className="fas fa-layer-group"></i></div>
+            <div className="info">
+              <h3>{stats.totalClasses}</h3>
               <p>Classes</p>
             </div>
-            <FiChevronRight className="stat-card-arrow" />
           </div>
-
-          {/* Courses Stat Card */}
-          <div className="sidebar-stat-card">
-            <div className="stat-card-icon stat-icon-blue"><FiBook size={20} /></div>
-            <div className="stat-card-content">
-              <h4>{stats.totalCourses}</h4>
+          <div className="stat-mini">
+            <div className="icon purple"><i className="fas fa-book-open"></i></div>
+            <div className="info">
+              <h3>{stats.totalCourses}</h3>
               <p>Courses</p>
             </div>
-            <FiChevronRight className="stat-card-arrow" />
-          </div>
-
-          {/* Quick Actions */}
-          <div className="quick-actions-card">
-            <h3>Quick Actions</h3>
-            <button className="quick-action-btn" onClick={() => navigate('/admin/users')}>
-              <FiUserPlus size={18} /> Add Student
-            </button>
-            <button className="quick-action-btn" onClick={() => navigate('/admin/attendance')}>
-              <FiCheckCircle size={18} /> Record Attendance
-            </button>
-            <button className="quick-action-btn" onClick={() => navigate('/admin/scores')}>
-              <FiEdit size={18} /> Enter Scores
-            </button>
-            <button className="quick-action-btn" onClick={() => navigate('/admin/users')}>
-              <FiUserPlus size={18} /> Add Teacher
-            </button>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="dashboard-main">
-          {/* Attendance Summary */}
-          <div className="attendance-summary-card">
-            <div className="card-header">
-              <h3>Today's Attendance Summary</h3>
-              <span className="card-date">August 3, 2025</span>
-            </div>
-            
-            <div className="attendance-stats-row">
-              <div className="attendance-stat">
-                <div className="attendance-stat-icon present"><FiCheckCircle size={28} /></div>
-                <h4>{attendance.present}</h4>
-                <p>Present</p>
-                <span className="attendance-percentage">82.1%</span>
+        {/* Dashboard Grid */}
+        <div className="dash-grid">
+
+          {/* LEFT COLUMN */}
+          <div className="dash-left">
+
+            {/* Attendance Summary */}
+            <div className="card attendance-summary">
+              <div className="card-header">
+                <h3>Today's Attendance Summary</h3>
+                <span className="sub">August 3, 2025</span>
               </div>
 
-              <div className="attendance-stat">
-                <div className="attendance-stat-icon late" style={{ color: '#f59e0b' }}><FiActivity size={28} /></div>
-                <h4>{attendance.late}</h4>
-                <p>Late</p>
-                <span className="attendance-percentage">4.3%</span>
+              <div className="total-row">
+                <span className="label">Total Students</span>
+                <span className="value">{attendanceData.total}</span>
               </div>
 
-              <div className="attendance-stat">
-                <div className="attendance-stat-icon absent"><FiUsers size={28} /></div>
-                <h4>{attendance.absent}</h4>
-                <p>Absent</p>
-                <span className="attendance-percentage">13.6%</span>
-              </div>
-            </div>
-
-            <div className="attendance-progress">
-              <div className="progress-bar">
-                <div className="progress-segment present" style={{ width: '82.1%' }}></div>
-                <div className="progress-segment late" style={{ width: '4.3%' }}></div>
-                <div className="progress-segment absent" style={{ width: '13.6%' }}></div>
-              </div>
-              <p className="progress-total">Total Students: {attendance.total}</p>
-            </div>
-          </div>
-
-          {/* Repeatedly Absent Students Table */}
-          <div className="absent-students-card">
-            <div className="card-header">
-              <h3>Repeatedly Absent Students</h3>
-              <a href="#" className="view-all">View All →</a>
-            </div>
-            
-            <table className="absent-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Class</th>
-                  <th>Absent Days</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><span className="student-badge">AB</span> Abel Tesfaye</td>
-                  <td>Grade 5</td>
-                  <td><span className="absent-days">5 days</span></td>
-                </tr>
-                <tr>
-                  <td><span className="student-badge">HN</span> Hana Mekonnen</td>
-                  <td>Grade 4</td>
-                  <td><span className="absent-days">4 days</span></td>
-                </tr>
-                <tr>
-                  <td><span className="student-badge">DW</span> Dawit Alemu</td>
-                  <td>Grade 6</td>
-                  <td><span className="absent-days">4 days</span></td>
-                </tr>
-                <tr>
-                  <td><span className="student-badge">YN</span> Yohannes Bekele</td>
-                  <td>Grade 5</td>
-                  <td><span className="absent-days">3 days</span></td>
-                </tr>
-                <tr>
-                  <td><span className="student-badge">BT</span> Betelhem Desta</td>
-                  <td>Grade 3</td>
-                  <td><span className="absent-days">3 days</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Right Sidebar - Activities & Announcements */}
-        <div className="dashboard-right-sidebar">
-          {/* Recent Activities */}
-          <div className="activities-card">
-            <h3>Recent Activities</h3>
-            <div className="activities-list">
-              {recentActivities.map((activity) => {
-                const Icon = activity.icon;
-                return (
-                  <div key={activity.id} className="activity-item">
-                    <div className={`activity-icon activity-${activity.type}`}>
-                      <Icon size={16} />
-                    </div>
-                    <div className="activity-content">
-                      <p className="activity-title">{activity.title}</p>
-                      <p className="activity-desc">{activity.desc}</p>
-                    </div>
-                    <span className="activity-time">{activity.time}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Announcements */}
-          <div className="announcements-card">
-            <h3>Announcements</h3>
-            <div className="announcements-list">
-              {announcements.map((announcement) => (
-                <div key={announcement.id} className="announcement-item">
-                  <div className="announcement-icon"><FiBell size={18} /></div>
-                  <div className="announcement-content">
-                    <p className="announcement-title">{announcement.title}</p>
-                    <p className="announcement-desc">{announcement.desc}</p>
-                  </div>
-                  <span className="announcement-date">{announcement.date}</span>
+              <div className="attendance-stats">
+                <div className="attendance-stat-item">
+                  <div className="num present">{attendanceData.present}</div>
+                  <div className="lbl">Present</div>
+                  <span className="pct green">{attendanceData.presentPct}</span>
                 </div>
-              ))}
+                <div className="attendance-stat-item">
+                  <div className="num late">{attendanceData.late}</div>
+                  <div className="lbl">Late</div>
+                  <span className="pct orange">{attendanceData.latePct}</span>
+                </div>
+                <div className="attendance-stat-item">
+                  <div className="num absent">{attendanceData.absent}</div>
+                  <div className="lbl">Absent</div>
+                  <span className="pct red">{attendanceData.absentPct}</span>
+                </div>
+              </div>
             </div>
-            <a href="#" className="view-all-announcements">View All Announcements →</a>
+
+            {/* Quick Actions */}
+            <div className="card">
+              <div className="card-header">
+                <h3>Quick Actions</h3>
+              </div>
+              <div className="quick-actions">
+                <button className="qa-btn" onClick={() => navigate('/admin/users')}>
+                  <i className="fas fa-user-plus"></i> Add Student
+                </button>
+                <button className="qa-btn" onClick={() => navigate('/admin/attendance')}>
+                  <i className="fas fa-clipboard-check"></i> Record Attendance
+                </button>
+                <button className="qa-btn" onClick={() => navigate('/admin/scores')}>
+                  <i className="fas fa-pen-alt"></i> Enter Scores
+                </button>
+                <button className="qa-btn" onClick={() => navigate('/admin/users')}>
+                  <i className="fas fa-user-plus"></i> Add Teacher
+                </button>
+              </div>
+            </div>
+
+            {/* Repeatedly Absent Students */}
+            <div className="card">
+              <div className="card-header">
+                <h3>Repeatedly Absent Students</h3>
+                <a href="#" className="link">View All →</a>
+              </div>
+
+              <div className="absent-table-wrap">
+                <table className="absent-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Class</th>
+                      <th>Absent Days</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {absentStudents.map((student, idx) => (
+                      <tr key={idx}>
+                        <td>
+                          <div className="student-cell">
+                            <span className="badge">{student.initials}</span>
+                            <span className="name">{student.name}</span>
+                          </div>
+                        </td>
+                        <td>{student.class}</td>
+                        <td><span className="days">{student.days}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          {/* RIGHT COLUMN */}
+          <div className="dash-right">
+
+            {/* Recent Activities */}
+            <div className="card">
+              <div className="card-header">
+                <h3>Recent Activities</h3>
+              </div>
+
+              <div className="activities-list">
+                {recentActivities.map((activity) => {
+                  const Icon = activity.icon;
+                  return (
+                    <div key={activity.id} className="activity-item">
+                      <div className={`icon-wrap ${getActivityIconClass(activity.type)}`}>
+                        <Icon size={16} />
+                      </div>
+                      <div className="content">
+                        <div className="title">{activity.title}</div>
+                        <div className="desc">{activity.desc}</div>
+                      </div>
+                      <span className="time">{activity.time}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Announcements */}
+            <div className="card">
+              <div className="card-header">
+                <h3>Announcements</h3>
+              </div>
+
+              <div className="announcements-list">
+                {announcements.map((ann) => (
+                  <div key={ann.id} className="announcement-item">
+                    <div className="icon-wrap"><i className="fas fa-bullhorn"></i></div>
+                    <div className="content">
+                      <div className="title">{ann.title}</div>
+                      <div className="desc">{ann.desc}</div>
+                    </div>
+                    <span className="date">{ann.date}</span>
+                  </div>
+                ))}
+              </div>
+
+              <a href="#" className="view-all-announce">View All Announcements →</a>
+            </div>
+
           </div>
         </div>
-      </div>
-    </div>
+
+      </main>
+
+      {/* ===== MOBILE MENU TOGGLE SCRIPT ===== */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              const toggle = document.getElementById('menuToggle');
+              const nav = document.getElementById('sidebarNav');
+              const sidebar = document.getElementById('sidebar');
+
+              if (toggle && nav) {
+                toggle.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  nav.classList.toggle('open');
+                });
+
+                document.addEventListener('click', function(e) {
+                  if (window.innerWidth <= 768) {
+                    if (!sidebar.contains(e.target) && nav.classList.contains('open')) {
+                      nav.classList.remove('open');
+                    }
+                  }
+                });
+
+                nav.querySelectorAll('a').forEach(function(link) {
+                  link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                      nav.classList.remove('open');
+                    }
+                  });
+                });
+              }
+
+              document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                  document.querySelectorAll('.sidebar-nav a').forEach(function(l) {
+                    l.classList.remove('active');
+                  });
+                  this.classList.add('active');
+                });
+              });
+            })();
+          `
+        }}
+      />
+    </>
   );
 };
 
