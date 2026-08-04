@@ -1,1 +1,0 @@
-import{j as t}from"./vendor-react-BgHVly1G.js";import"./vendor-CmcUGh5R.js";const r=()=>t.jsx("div",{style:{textAlign:"center",marginTop:"4rem"},children:t.jsx("h1",{children:"404 - Page Not Found"})});export{r as default};
