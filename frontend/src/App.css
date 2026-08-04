@@ -170,60 +170,82 @@ body {
 
 /* SIDEBAR */
 .sidebar {
-  width: 260px;
-  background: linear-gradient(180deg, var(--primary-dark), var(--primary));
+  width: 270px;
+  background: linear-gradient(180deg, #6b1a24 0%, #5c141d 40%, #480f16 100%);
   color: white;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
   z-index: 100;
-  transition: transform 0.3s;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 .sidebar-header {
-  padding: 1.5rem;
-  text-align: center;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
+  padding: 2rem 1.4rem 1.4rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.1);
 }
-.sidebar-header h3 {
-  font-size: 1.3rem;
+.sidebar-title {
+  font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 0.2rem;
+  color: #ffffff;
+  line-height: 1.35;
+  letter-spacing: 0.2px;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
-.sidebar-header span {
-  font-size: 0.8rem;
-  opacity: 0.8;
+.sidebar-role-badge {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: 1rem 0;
+  padding: 1.2rem 0;
   overflow-y: auto;
 }
 .sidebar-nav a {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.8rem 1.5rem;
-  color: rgba(255,255,255,0.85);
-  transition: var(--transition);
+  gap: 1rem;
+  padding: 0.85rem 1.6rem;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s ease;
   font-weight: 500;
+  font-size: 0.98rem;
+  border-left: 4px solid transparent;
 }
-.sidebar-nav a:hover,
+.sidebar-nav a:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding-left: 1.8rem;
+}
 .sidebar-nav a.active {
-  background: rgba(255,255,255,0.15);
-  color: white;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-weight: 600;
+  border-left-color: #ffffff;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
 }
 .sidebar-nav a svg {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
+  flex-shrink: 0;
 }
 
 .sidebar-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(255,255,255,0.15);
+  padding: 1.2rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -233,29 +255,51 @@ body {
   flex-direction: column;
   font-size: 0.85rem;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 .user-info-sidebar strong {
+  color: #ffffff;
   font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-info-sidebar span {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .logout-btn {
-  background: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
-  font-size: 1.2rem;
-  opacity: 0.8;
-  transition: var(--transition);
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 .logout-btn:hover {
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
 }
 
 /* MAIN CONTENT */
 .main-content {
   flex: 1;
-  margin-left: 260px;
-  padding: 2rem;
+  margin-left: 270px;
+  padding: 0;
   min-height: 100vh;
+  background: #f8f6f3;
+}
+.main-content > div:not(.lalibela-dashboard-wrapper) {
+  padding: 2rem;
 }
 
 /* ========== DASHBOARD CARDS ========== */
@@ -2254,5 +2298,390 @@ tr:hover td {
   .activity-desc,
   .announcement-desc {
     font-size: 0.75rem;
+  }
+}
+
+/* ========== LALIBELA ELEGANT ADMIN DASHBOARD STYLES ========== */
+.lalibela-dashboard-wrapper {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  padding: 3.5rem 4rem 4rem;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.lalibela-bg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(180deg, rgba(30, 10, 8, 0.45) 0%, rgba(12, 4, 3, 0.65) 100%),
+    url('/lalibela.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  z-index: 1;
+}
+
+.lalibela-dashboard-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1140px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* HEADER */
+.lalibela-header {
+  text-align: center;
+  margin-bottom: 2.8rem;
+  margin-top: 0.5rem;
+}
+
+.lalibela-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 3.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+  margin: 0 0 0.6rem 0;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+
+.lalibela-subtitle {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+/* STAT CARDS GRID (2x2) */
+.lalibela-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.8rem;
+  margin-bottom: 2.2rem;
+}
+
+.lalibela-stat-card {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24px;
+  padding: 1.8rem 2.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.8rem;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.lalibela-stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.32);
+  border-color: rgba(107, 26, 36, 0.35);
+  background: #ffffff;
+}
+
+.stat-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: #fcf0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(107, 26, 36, 0.08);
+}
+
+.stat-card-svg {
+  font-size: 1.9rem;
+  color: #6b1a24;
+}
+
+.stat-card-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card-number {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #230b0f;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+
+.stat-card-label {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #665053;
+}
+
+/* CARDS COMMON */
+.lalibela-card {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+}
+
+/* UPCOMING PRACTICES CARD */
+.upcoming-practices-card {
+  padding: 2rem 2.4rem;
+  margin-bottom: 2.2rem;
+}
+
+.lalibela-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(107, 26, 36, 0.08);
+  padding-bottom: 1rem;
+}
+
+.lalibela-card-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #5c141d;
+  margin: 0;
+}
+
+.lalibela-btn-link {
+  background: #fdf0f0;
+  color: #6b1a24;
+  border: 1px solid #f7d5d5;
+  border-radius: 12px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.lalibela-btn-link:hover {
+  background: #6b1a24;
+  color: #ffffff;
+  border-color: #6b1a24;
+}
+
+.empty-practices-state {
+  padding: 2.2rem 1rem;
+  color: #665053;
+  font-size: 1.05rem;
+  font-weight: 400;
+  text-align: left;
+}
+
+.empty-practices-state p {
+  margin: 0;
+}
+
+.practice-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  background: #fdf8f8;
+  border: 1px solid #f2e3e3;
+  border-radius: 14px;
+  margin-bottom: 0.8rem;
+}
+
+.practice-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.practice-icon {
+  font-size: 1.4rem;
+  color: #6b1a24;
+}
+
+.practice-title {
+  font-weight: 600;
+  color: #230b0f;
+  margin: 0 0 0.2rem 0;
+}
+
+.practice-date {
+  font-size: 0.85rem;
+  color: #776265;
+  margin: 0;
+}
+
+.practice-badge {
+  background: #eef9f2;
+  color: #1e7e40;
+  border: 1px solid #c3ebd0;
+  border-radius: 20px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* BOTTOM GRID */
+.lalibela-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.8rem;
+}
+
+.quick-actions-glass,
+.attendance-overview-glass {
+  padding: 1.8rem 2.2rem;
+}
+
+.lalibela-card-title-sm {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #5c141d;
+  margin: 0 0 1.2rem 0;
+}
+
+.quick-actions-flex {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.9rem;
+}
+
+.quick-action-pill {
+  background: #fdf5f5;
+  border: 1px solid #f2dada;
+  border-radius: 14px;
+  padding: 0.85rem 1.1rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #6b1a24;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.quick-action-pill:hover {
+  background: #6b1a24;
+  color: #ffffff;
+  border-color: #6b1a24;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(107, 26, 36, 0.25);
+}
+
+.attendance-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+
+.attendance-tag {
+  background: #eef9f2;
+  color: #1e7e40;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.3rem 0.70rem;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.attendance-counters {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-bottom: 1.2rem;
+  padding: 0.8rem 0;
+  background: #fcf8f8;
+  border-radius: 14px;
+  border: 1px solid #f4e6e6;
+}
+
+.counter-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.counter-num {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.counter-lbl {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #665053;
+  margin-top: 0.3rem;
+}
+
+.counter-item.present .counter-num { color: #1e7e40; }
+.counter-item.late .counter-num { color: #d97706; }
+.counter-item.absent .counter-num { color: #dc2626; }
+
+.attendance-bar-container {
+  display: flex;
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #e5e5e5;
+}
+
+.bar-seg.present { background: #1e7e40; }
+.bar-seg.late { background: #f59e0b; }
+.bar-seg.absent { background: #dc2626; }
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 992px) {
+  .lalibela-dashboard-wrapper {
+    padding: 2rem 1.5rem 3rem;
+  }
+  .lalibela-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .lalibela-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    width: 240px;
+  }
+  .main-content {
+    margin-left: 0;
+  }
+  .lalibela-title {
+    font-size: 2.4rem;
+  }
+  .lalibela-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .quick-actions-flex {
+    grid-template-columns: 1fr;
   }
 }

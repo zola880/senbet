@@ -76,8 +76,10 @@ const Sidebar = ({ role }) => {
       {/* Sidebar */}
       <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
-          <h3>መስቀለብርሃን ሰንበት ትምህርት ቤት</h3>
-          <span>{role.toUpperCase()}</span>
+          <h3 className="sidebar-title">
+            መስቀለብርሃን ሰንበት<br />ትምህርት ቤት
+          </h3>
+          <span className="sidebar-role-badge">{role.toUpperCase()}</span>
         </div>
         <nav className="sidebar-nav">
           {links.map((link) => (
