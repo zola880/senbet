@@ -17,6 +17,8 @@ const ClassDetail = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [config, setConfig] = useState(null);
   const [components, setComponents] = useState([{ name: '', type: 'exam', weightage: 0 }]);
+  const [configError, setConfigError] = useState('');
+  const [configSuccess, setConfigSuccess] = useState('');
 
   const fetchClass = async () => {
     try {
@@ -33,7 +35,7 @@ const ClassDetail = () => {
     try {
       const res = await api.get(`/api/v1/assessment-configs/${id}`);
       setConfig(res.data.data);
-      setComponents(res.data.data.components);
+      setComponents(res.data.data.components.map(c => ({ ...c, weightage: Number(c.weightage) })));
     } catch (err) {
       setConfig(null);
       setComponents([{ name: '', type: 'exam', weightage: 0 }]);
@@ -68,7 +70,8 @@ const ClassDetail = () => {
 
   const updateComponent = (index, field, value) => {
     const updated = [...components];
-    updated[index][field] = value;
+    // Ensure weightage is always stored as a number
+    updated[index][field] = field === 'weightage' ? Number(value) : value;
     setComponents(updated);
   };
 
@@ -77,14 +80,34 @@ const ClassDetail = () => {
   };
 
   const handleSaveConfig = async () => {
-    await api.post('/api/v1/assessment-configs', {
-      class: id,
-      academicYear: new Date().getFullYear() + '/' + (new Date().getFullYear() + 1),
-      components,
-    });
-    alert('Assessment config saved!');
-    setShowConfigModal(false);
-    fetchConfig();
+    setConfigError('');
+    setConfigSuccess('');
+
+    // Ensure weightage values are numbers and sum to 100
+    const total = components.reduce((sum, comp) => sum + Number(comp.weightage || 0), 0);
+    if (total !== 100) {
+      setConfigError(`Total weightage must be exactly 100%. Currently: ${total}%.`);
+      return;
+    }
+
+    if (components.some(c => !c.name.trim())) {
+      setConfigError('All components must have a name.');
+      return;
+    }
+
+    try {
+      await api.post('/api/v1/assessment-configs', {
+        class: id,
+        academicYear: new Date().getFullYear() + '/' + (new Date().getFullYear() + 1),
+        components: components.map(c => ({ ...c, weightage: Number(c.weightage) })),
+      });
+      setConfigSuccess('Assessment configuration saved successfully!');
+      setShowConfigModal(false);
+      fetchConfig();
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to save configuration.';
+      setConfigError(message);
+    }
   };
 
   if (!classData) return <div className="spinner" />;
@@ -146,6 +169,10 @@ const ClassDetail = () => {
             <FiClipboard /> Configure
           </button>
         </div>
+
+        {configError && <div className="error-message">{configError}</div>}
+        {configSuccess && <div className="success-message">{configSuccess}</div>}
+
         {config ? (
           <div className="mini-table-container" style={{ marginTop: '1rem' }}>
             <table className="mini-table">
@@ -177,6 +204,7 @@ const ClassDetail = () => {
         <div className="modal-backdrop" onClick={() => setShowConfigModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h3>Assessment Config for {classData.name}</h3>
+            {configError && <div className="error-message" style={{ marginBottom: '1rem' }}>{configError}</div>}
             {components.map((comp, idx) => (
               <div key={idx} className="form-grid" style={{ marginBottom: '0.5rem' }}>
                 <input
@@ -197,7 +225,7 @@ const ClassDetail = () => {
                   type="number"
                   placeholder="Weight (%)"
                   value={comp.weightage}
-                  onChange={e => updateComponent(idx, 'weightage', Number(e.target.value))}
+                  onChange={e => updateComponent(idx, 'weightage', e.target.value)}
                 />
                 <button className="btn btn-sm btn-danger" onClick={() => removeComponent(idx)}>X</button>
               </div>
