@@ -2686,9 +2686,8 @@ tr:hover td {
   }
 }
 
-/* ========== STUDENT & TEACHER DASHBOARDS COMMON & UNIQUE STYLES ========== */
-.student-dashboard-wrapper,
-.teacher-dashboard-wrapper {
+/* ========== STUDENT DASHBOARD (UNCHANGED DARK THEME) ========== */
+.student-dashboard-wrapper {
   position: relative;
   min-height: 100vh;
   width: 100%;
@@ -2698,8 +2697,7 @@ tr:hover td {
   background: #0d0608;
 }
 
-.student-bg-layer,
-.teacher-bg-layer {
+.student-bg-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -2715,8 +2713,7 @@ tr:hover td {
   z-index: 1;
 }
 
-.student-dashboard-content,
-.teacher-dashboard-content {
+.student-dashboard-content {
   position: relative;
   z-index: 2;
   max-width: 1200px;
@@ -2724,9 +2721,7 @@ tr:hover td {
   width: 100%;
 }
 
-/* HEADERS */
-.student-header,
-.teacher-header {
+.student-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2740,13 +2735,13 @@ tr:hover td {
   -webkit-backdrop-filter: blur(10px);
 }
 
-.header-greeting {
+.student-dashboard-wrapper .header-greeting {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
 
-.greeting-pill {
+.student-dashboard-wrapper .greeting-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -2763,8 +2758,7 @@ tr:hover td {
   letter-spacing: 0.3px;
 }
 
-.student-title,
-.teacher-title {
+.student-title {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 2rem;
   font-weight: 700;
@@ -2775,8 +2769,7 @@ tr:hover td {
   line-height: 1.2;
 }
 
-.student-subtitle,
-.teacher-subtitle {
+.student-subtitle {
   font-size: 0.88rem;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.65);
@@ -2784,14 +2777,14 @@ tr:hover td {
   letter-spacing: 0.2px;
 }
 
-.header-right-meta {
+.student-dashboard-wrapper .header-right-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.3rem;
 }
 
-.header-date-chip {
+.student-dashboard-wrapper .header-date-chip {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2804,17 +2797,14 @@ tr:hover td {
   font-weight: 500;
 }
 
-/* STAT CARDS GRID (4-COL RESPONSIVE) */
-.student-stats-grid,
-.teacher-stats-grid {
+.student-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
-.student-stat-card,
-.teacher-stat-card {
+.student-stat-card {
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -2831,8 +2821,7 @@ tr:hover td {
   overflow: hidden;
 }
 
-.student-stat-card::before,
-.teacher-stat-card::before {
+.student-stat-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -2844,20 +2833,18 @@ tr:hover td {
   transition: opacity 0.3s ease;
 }
 
-.student-stat-card:hover,
-.teacher-stat-card:hover {
+.student-stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   border-color: rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.1);
 }
 
-.student-stat-card:hover::before,
-.teacher-stat-card:hover::before {
+.student-stat-card:hover::before {
   opacity: 1;
 }
 
-.stat-card-icon-box {
+.student-dashboard-wrapper .stat-card-icon-box {
   width: 46px;
   height: 46px;
   border-radius: 13px;
@@ -2869,13 +2856,13 @@ tr:hover td {
   border: 1px solid rgba(255,255,255,0.15);
 }
 
-.stat-card-info {
+.student-dashboard-wrapper .stat-card-info {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
 }
 
-.stat-card-title {
+.student-dashboard-wrapper .stat-card-title {
   font-size: 0.72rem;
   font-weight: 600;
   color: rgba(255,255,255,0.55);
@@ -2883,7 +2870,7 @@ tr:hover td {
   letter-spacing: 0.8px;
 }
 
-.stat-card-val {
+.student-dashboard-wrapper .stat-card-val {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.15rem;
   font-weight: 700;
@@ -2892,9 +2879,7 @@ tr:hover td {
   line-height: 1.2;
 }
 
-/* CARDS COMMON */
-.student-card,
-.teacher-card {
+.student-card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -2904,13 +2889,12 @@ tr:hover td {
   transition: all 0.3s ease;
 }
 
-/* QUICK ACTIONS BAR */
-.quick-actions-card {
+.student-dashboard-wrapper .quick-actions-card {
   padding: 1.2rem 1.6rem;
   margin-bottom: 1.4rem;
 }
 
-.card-heading-sm {
+.student-dashboard-wrapper .card-heading-sm {
   font-family: 'Inter', sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
@@ -2920,14 +2904,13 @@ tr:hover td {
   letter-spacing: 1.5px;
 }
 
-.quick-buttons-row {
+.student-dashboard-wrapper .quick-buttons-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
 }
 
-.student-action-btn,
-.teacher-action-btn {
+.student-action-btn {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
@@ -2943,8 +2926,7 @@ tr:hover td {
   font-family: 'Inter', sans-serif;
 }
 
-.student-action-btn:hover,
-.teacher-action-btn:hover {
+.student-action-btn:hover {
   background: rgba(107, 26, 36, 0.7);
   color: #ffffff;
   border-color: rgba(200, 60, 80, 0.4);
@@ -2952,22 +2934,18 @@ tr:hover td {
   box-shadow: 0 6px 18px rgba(107, 26, 36, 0.4);
 }
 
-/* BOTTOM SECTIONS GRID */
-.student-bottom-grid,
-.teacher-bottom-grid {
+.student-bottom-grid {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: 1.2rem;
 }
 
-.practices-card,
-.announcements-card,
-.assignments-card,
-.supervision-card {
+.student-dashboard-wrapper .practices-card,
+.student-dashboard-wrapper .announcements-card {
   padding: 1.4rem 1.6rem;
 }
 
-.card-header-flex {
+.student-dashboard-wrapper .card-header-flex {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2976,7 +2954,7 @@ tr:hover td {
   padding-bottom: 0.7rem;
 }
 
-.card-heading {
+.student-dashboard-wrapper .card-heading {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.15rem;
   font-weight: 700;
@@ -2984,7 +2962,7 @@ tr:hover td {
   margin: 0;
 }
 
-.btn-text-link {
+.student-dashboard-wrapper .btn-text-link {
   background: none;
   border: none;
   color: rgba(255, 160, 170, 0.8);
@@ -2998,13 +2976,12 @@ tr:hover td {
   font-family: 'Inter', sans-serif;
 }
 
-.btn-text-link:hover {
+.student-dashboard-wrapper .btn-text-link:hover {
   color: #ff8a98;
   transform: translateX(3px);
 }
 
-.practice-row-item,
-.assignment-row-item {
+.practice-row-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3016,12 +2993,7 @@ tr:hover td {
   transition: background 0.2s ease;
 }
 
-.assignment-row-item:hover {
-  background: rgba(255,255,255,0.07);
-}
-
-.practice-row-main,
-.assignment-row-main {
+.practice-row-main {
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -3032,28 +3004,14 @@ tr:hover td {
   color: #ff8a98;
 }
 
-.assignment-icon-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-  background: rgba(107,26,36,0.4);
-  color: #ff8a98;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.practice-row-title,
-.assignment-row-title {
+.practice-row-title {
   font-weight: 600;
   color: rgba(255,255,255,0.9);
   margin: 0 0 0.1rem 0;
   font-size: 0.9rem;
 }
 
-.practice-row-meta,
-.assignment-row-meta {
+.practice-row-meta {
   font-size: 0.78rem;
   color: rgba(255,255,255,0.45);
   margin: 0;
@@ -3069,33 +3027,13 @@ tr:hover td {
   font-weight: 600;
 }
 
-.btn-pill-sm {
-  background: linear-gradient(135deg, #6b1a24, #a8202f);
-  color: #ffffff;
-  border: none;
-  border-radius: 9px;
-  padding: 0.42rem 0.9rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  font-family: 'Inter', sans-serif;
-}
-
-.btn-pill-sm:hover {
-  background: linear-gradient(135deg, #87202d, #c02840);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(107,26,36,0.5);
-}
-
-.empty-state-box {
+.student-dashboard-wrapper .empty-state-box {
   text-align: center;
   padding: 2rem 1rem;
   color: rgba(255,255,255,0.4);
 }
 
-.empty-icon {
+.student-dashboard-wrapper .empty-icon {
   color: rgba(255,255,255,0.2);
   margin-bottom: 0.5rem;
 }
@@ -3142,100 +3080,497 @@ tr:hover td {
   line-height: 1.4;
 }
 
-.supervision-info-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.9rem;
-  padding: 1rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 14px;
-  margin-bottom: 1rem;
+/* RESPONSIVE DESIGN FOR STUDENT DASHBOARD */
+@media (max-width: 1100px) {
+  .student-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.info-icon {
+@media (max-width: 992px) {
+  .student-dashboard-wrapper {
+    padding: 1.5rem 1.2rem 2.5rem;
+  }
+  .student-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+  .student-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+  .student-dashboard-wrapper .header-right-meta {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .student-title {
+    font-size: 1.6rem;
+  }
+  .student-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .student-dashboard-wrapper .quick-buttons-row {
+    flex-direction: column;
+  }
+  .student-action-btn {
+    width: 100%;
+  }
+}
+
+/* ========== TEACHER DASHBOARD (LIGHT THEME — MATCHES REFERENCE SCREENSHOT) ========== */
+.teacher-dashboard-wrapper {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  padding: 2.2rem 2.6rem 3rem;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background: #f8f6f3;
+}
+
+/* no photo background in the light design */
+.teacher-bg-layer {
+  display: none;
+}
+
+.teacher-dashboard-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* HEADER */
+.teacher-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.8rem;
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.teacher-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* the amharic greeting pill isn't part of the target design */
+.teacher-header .greeting-pill {
+  display: none;
+}
+
+.teacher-title {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-shadow: none;
+  margin: 0;
+  letter-spacing: -0.3px;
+  line-height: 1.25;
+}
+
+.teacher-subtitle {
+  font-size: 0.98rem;
+  font-weight: 400;
+  color: var(--text-light);
+  margin: 0.35rem 0 0 0;
+  letter-spacing: 0.1px;
+}
+
+.teacher-header .header-right-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+
+.teacher-header .header-date-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.65rem 1.1rem;
+  color: var(--primary-dark);
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+/* STAT CARDS GRID (4-COL RESPONSIVE) */
+.teacher-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.8rem;
+}
+
+.teacher-stat-card {
+  background: #ffffff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 16px;
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  box-shadow: var(--shadow);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.teacher-stat-card::before {
+  display: none;
+}
+
+.teacher-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border);
+  background: #ffffff;
+}
+
+.teacher-stat-card .stat-card-icon-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  border: none;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* colored icon tiles matching the reference screenshot, overriding the inline styles set in JS */
+.teacher-stats-grid .teacher-stat-card:nth-child(1) .stat-card-icon-box {
+  background: #fbe6e8 !important;
+  color: #d64545 !important;
+}
+.teacher-stats-grid .teacher-stat-card:nth-child(2) .stat-card-icon-box {
+  background: #e6effd !important;
+  color: #3b82f6 !important;
+}
+.teacher-stats-grid .teacher-stat-card:nth-child(3) .stat-card-icon-box {
+  background: #e5f8ee !important;
+  color: #10b981 !important;
+}
+.teacher-stats-grid .teacher-stat-card:nth-child(4) .stat-card-icon-box {
+  background: #fff2df !important;
+  color: #f59e0b !important;
+}
+
+.teacher-stat-card .stat-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.teacher-stat-card .stat-card-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.teacher-stat-card .stat-card-val {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* CARDS COMMON */
+.teacher-card {
+  background: #ffffff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: all 0.25s ease;
+}
+
+/* QUICK ACTIONS BAR */
+.teacher-card.quick-actions-card {
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 1.8rem;
+}
+
+.teacher-card.quick-actions-card .card-heading-sm {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0 0 1.1rem 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.teacher-card.quick-actions-card .quick-buttons-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.teacher-action-btn {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.95rem 1.1rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--primary-dark);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.teacher-action-btn:hover {
+  background: #fdf0f0;
+  color: var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* BOTTOM SECTIONS GRID */
+.teacher-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.5rem;
+}
+
+.teacher-card.assignments-card,
+.teacher-card.supervision-card {
+  padding: 1.6rem 1.8rem;
+}
+
+.teacher-card .card-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.9rem;
+}
+
+.teacher-card .card-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0;
+}
+
+.teacher-card .btn-text-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.teacher-card .btn-text-link:hover {
+  color: var(--primary-dark);
+  transform: translateX(3px);
+}
+
+.assignment-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  background: #fdf8f8;
+  border: 1px solid #f2e3e3;
+  border-radius: 12px;
+  margin-bottom: 0.7rem;
+  transition: background 0.2s ease;
+}
+
+.assignment-row-item:hover {
+  background: #fbeeee;
+}
+
+.assignment-row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.assignment-icon-badge {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: rgba(107,26,36,0.4);
-  color: #ff8a98;
+  background: rgba(142,42,42,0.1);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.info-title {
+.assignment-row-title {
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
-  margin: 0 0 0.25rem 0;
-  font-size: 0.92rem;
+  color: #1a1a1a;
+  margin: 0 0 0.15rem 0;
+  font-size: 0.95rem;
 }
 
-.info-desc {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.5);
+.assignment-row-meta {
+  font-size: 0.82rem;
+  color: var(--text-light);
   margin: 0;
-  line-height: 1.45;
 }
 
-.schedule-mini-badge {
+.teacher-card .btn-pill-sm {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  padding: 0.48rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+
+.teacher-card .btn-pill-sm:hover {
+  background: linear-gradient(135deg, var(--primary-dark), #4a1010);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(142,42,42,0.35);
+}
+
+.teacher-card .empty-state-box {
+  text-align: center;
+  padding: 2.2rem 1rem;
+  color: var(--text-light);
+}
+
+.teacher-card .empty-icon {
+  color: #ddd;
+  margin-bottom: 0.5rem;
+}
+
+.teacher-card .supervision-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1.1rem;
+  background: #fdf8f8;
+  border: 1px solid #f2e3e3;
+  border-radius: 14px;
+  margin-bottom: 1.1rem;
+}
+
+.teacher-card .info-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(142,42,42,0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.teacher-card .info-title {
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.teacher-card .info-desc {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.teacher-card .schedule-mini-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(30,126,64,0.2);
-  color: #6ee7a0;
-  border: 1px solid rgba(30,126,64,0.35);
+  background: #eef9f2;
+  color: #1e7e40;
+  border: 1px solid #c3ebd0;
   border-radius: 20px;
-  padding: 0.35rem 0.9rem;
-  font-size: 0.78rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
-/* RESPONSIVE DESIGN FOR DASHBOARDS */
+/* RESPONSIVE DESIGN FOR TEACHER DASHBOARD */
 @media (max-width: 1100px) {
-  .student-stats-grid,
   .teacher-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   .teacher-bottom-grid {
     grid-template-columns: 1fr;
   }
+  .teacher-card.quick-actions-card .quick-buttons-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 992px) {
-  .student-dashboard-wrapper,
   .teacher-dashboard-wrapper {
-    padding: 1.5rem 1.2rem 2.5rem;
+    padding: 1.6rem 1.2rem 2.5rem;
   }
-  .student-bottom-grid,
   .teacher-bottom-grid {
     grid-template-columns: 1fr;
   }
-  .student-header,
   .teacher-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.8rem;
+    gap: 0.9rem;
   }
-  .header-right-meta {
+  .teacher-header .header-right-meta {
     align-items: flex-start;
   }
 }
 
 @media (max-width: 640px) {
-  .student-title,
   .teacher-title {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
   }
-  .student-stats-grid,
   .teacher-stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
-  .quick-buttons-row {
-    flex-direction: column;
+  .teacher-card.quick-actions-card .quick-buttons-row {
+    grid-template-columns: 1fr;
   }
-  .student-action-btn,
   .teacher-action-btn {
     width: 100%;
   }
