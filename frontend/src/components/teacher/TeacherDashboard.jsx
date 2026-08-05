@@ -38,6 +38,9 @@ const TeacherDashboard = () => {
   const teacher = authUser || {};
   const { assignmentsCount, assignments, upcomingPracticeCount } = data;
 
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
   const statCards = [
     {
       id: 'courses',
@@ -45,7 +48,8 @@ const TeacherDashboard = () => {
       value: `${assignmentsCount || assignments.length || 0} Assigned`,
       icon: FiBook,
       link: '/teacher/courses',
-      color: '#6b1a24',
+      color: '#ff8a98',
+      bg: 'rgba(107,26,36,0.5)',
     },
     {
       id: 'students',
@@ -53,7 +57,8 @@ const TeacherDashboard = () => {
       value: 'View Students',
       icon: FiUsers,
       link: '/teacher/students',
-      color: '#3b82f6',
+      color: '#7dd3fc',
+      bg: 'rgba(14,90,150,0.4)',
     },
     {
       id: 'attendance',
@@ -61,7 +66,8 @@ const TeacherDashboard = () => {
       value: 'Record Today',
       icon: FiCheckCircle,
       link: '/teacher/attendance',
-      color: '#1e7e40',
+      color: '#6ee7a0',
+      bg: 'rgba(20,100,60,0.4)',
     },
     {
       id: 'practices',
@@ -69,7 +75,8 @@ const TeacherDashboard = () => {
       value: `${upcomingPracticeCount} Sessions`,
       icon: FiCalendar,
       link: '/teacher/practices',
-      color: '#d97706',
+      color: '#fbbf24',
+      bg: 'rgba(120,70,0,0.4)',
     },
   ];
 
@@ -90,6 +97,12 @@ const TeacherDashboard = () => {
               መስቀለ ብርሃን ሰንበት ትምህርት ቤት | Teacher Portal
             </p>
           </div>
+          <div className="header-right-meta">
+            <div className="header-date-chip">
+              <FiCalendar size={13} />
+              {dateStr}
+            </div>
+          </div>
         </div>
 
         {/* 4 Stat Cards */}
@@ -104,8 +117,8 @@ const TeacherDashboard = () => {
                 role="button"
                 tabIndex={0}
               >
-                <div className="stat-card-icon-box" style={{ color: card.color }}>
-                  <Icon size={24} />
+                <div className="stat-card-icon-box" style={{ background: card.bg, color: card.color }}>
+                  <Icon size={20} />
                 </div>
                 <div className="stat-card-info">
                   <span className="stat-card-title">{card.title}</span>
@@ -124,25 +137,25 @@ const TeacherDashboard = () => {
               className="teacher-action-btn"
               onClick={() => navigate('/teacher/enter-marks')}
             >
-              <FiEdit /> Enter Student Marks
+              <FiEdit size={14} /> Enter Student Marks
             </button>
             <button
               className="teacher-action-btn"
               onClick={() => navigate('/teacher/attendance')}
             >
-              <FiCheckCircle /> Record Attendance
+              <FiCheckCircle size={14} /> Record Attendance
             </button>
             <button
               className="teacher-action-btn"
               onClick={() => navigate('/teacher/students')}
             >
-              <FiUsers /> View Student List
+              <FiUsers size={14} /> View Student List
             </button>
             <button
               className="teacher-action-btn"
               onClick={() => navigate('/teacher/courses')}
             >
-              <FiBook /> Manage My Courses
+              <FiBook size={14} /> Manage My Courses
             </button>
           </div>
         </div>
@@ -168,7 +181,7 @@ const TeacherDashboard = () => {
                     <div key={a._id} className="assignment-row-item">
                       <div className="assignment-row-main">
                         <div className="assignment-icon-badge">
-                          <FiBook size={18} />
+                          <FiBook size={16} />
                         </div>
                         <div>
                           <h4 className="assignment-row-title">
@@ -182,7 +195,7 @@ const TeacherDashboard = () => {
                       <div className="assignment-actions">
                         <button
                           className="btn-pill-sm"
-                          onClick={() => navigate('/teacher/enter-marks')}
+                          onClick={(e) => { e.stopPropagation(); navigate('/teacher/enter-marks'); }}
                         >
                           Enter Marks
                         </button>
@@ -192,7 +205,7 @@ const TeacherDashboard = () => {
                 </div>
               ) : (
                 <div className="empty-state-box">
-                  <FiGrid size={32} className="empty-icon" />
+                  <FiGrid size={28} className="empty-icon" />
                   <p>No teaching assignments currently assigned. Please contact the administrator.</p>
                 </div>
               )}
@@ -213,7 +226,7 @@ const TeacherDashboard = () => {
 
             <div className="card-body-content">
               <div className="supervision-info-box">
-                <div className="info-icon"><FiClock size={20} /></div>
+                <div className="info-icon"><FiClock size={18} /></div>
                 <div>
                   <h4 className="info-title">Weekly Choir & Practice Sessions</h4>
                   <p className="info-desc">
@@ -223,6 +236,7 @@ const TeacherDashboard = () => {
               </div>
 
               <div className="schedule-mini-badge">
+                <FiCheckCircle size={12} />
                 <span>Active Practice Supervisor</span>
               </div>
             </div>
