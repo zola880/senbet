@@ -1,7 +1,40 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FiArrowLeft, FiEdit, FiTrash2, FiUpload, FiSave, FiX, FiPlus } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit, FiTrash2, FiUpload, FiSave, FiX, FiPlus, FiFile, FiEye, FiDownload } from 'react-icons/fi';
+
+/* Helper: build the authenticated download URL */
+const getFileUrl = (filePath) => {
+  const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const filename = filePath.split('/').pop();
+  return `${base}/api/v1/files/${filename}`;
+};
+
+/* Fetch file with auth, then open in new tab or download */
+const handleFileClick = async (filePath, fileType) => {
+  try {
+    const url = getFileUrl(filePath);
+    const response = await api.get(url, { responseType: 'blob' });
+    const blob = response.data;
+    const blobUrl = URL.createObjectURL(blob);
+
+    if (fileType === 'image') {
+      window.open(blobUrl, '_blank');
+    } else {
+      const filename = filePath.split('/').pop();
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+  } catch (err) {
+    console.error('Failed to fetch file:', err);
+    alert('Unable to access the file.');
+  }
+};
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -31,7 +64,6 @@ const CourseDetail = () => {
     fetchCourse();
     fetchMaterials();
     fetchAssignments();
-    // Fetch teachers and classes for dropdowns
     api.get('/api/v1/users?role=teacher').then(r => setTeachers(r.data.data));
     api.get('/api/v1/classes').then(r => setClasses(r.data.data));
   }, [id]);
@@ -190,16 +222,33 @@ const CourseDetail = () => {
             {materials.map(mat => (
               <div key={mat._id} className="material-item">
                 {mat.fileType === 'image' ? (
-                  <img src={`http://localhost:5000/${mat.file}`} alt={mat.title} className="material-image" />
+                  <button
+                    className="material-image-btn"
+                    onClick={() => handleFileClick(mat.file, 'image')}
+                    style={{
+                      background: `url('${getFileUrl(mat.file)}') center / cover no-repeat`,
+                      width: '100%',
+                      height: '160px',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    title="Click to view full image"
+                  >
+                    {/* image shown as background of button */}
+                  </button>
                 ) : (
                   <div className="material-file"><span>{mat.fileType.toUpperCase()}</span></div>
                 )}
                 <div className="material-info">
                   <h4>{mat.title}</h4>
                   <p>{mat.description}</p>
-                  <a href={`http://localhost:5000/${mat.file}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">
-                    {mat.fileType === 'image' ? 'View Full' : 'Download'}
-                  </a>
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => handleFileClick(mat.file, mat.fileType)}
+                  >
+                    {mat.fileType === 'image' ? <FiEye /> : <FiDownload />}
+                    {mat.fileType === 'image' ? ' View Full' : ' Download'}
+                  </button>
                   <button className="btn btn-sm btn-danger" onClick={() => handleDeleteMaterial(mat._id)} style={{ marginLeft: '0.5rem' }}>
                     <FiTrash2 />
                   </button>

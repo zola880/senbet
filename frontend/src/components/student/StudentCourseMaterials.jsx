@@ -1,8 +1,44 @@
 import { useState, useEffect, useContext } from 'react';
-import { FiArrowLeft, FiBookOpen, FiEdit, FiMessageSquare, FiFile, FiEye, FiDownload } from 'react-icons/fi';
+import { FiArrowLeft, FiBookOpen, FiEdit, FiMessageSquare, FiEye, FiDownload } from 'react-icons/fi';
 import AuthContext from '../../context/AuthContext';
 import api from '../../services/api';
 import EmptyState from '../common/EmptyState';
+
+/* Helper: build the authenticated download URL */
+const getFileUrl = (filePath) => {
+  const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const filename = filePath.split('/').pop();
+  return `${base}/api/v1/files/${filename}`;
+};
+
+/* Fetch file with auth, then open in new tab or download */
+const handleFileClick = async (filePath, fileType) => {
+  try {
+    const url = getFileUrl(filePath);
+    const response = await api.get(url, { responseType: 'blob' });
+    const blob = response.data;
+    const blobUrl = URL.createObjectURL(blob);
+
+    if (fileType === 'image') {
+      // Open image in new tab
+      window.open(blobUrl, '_blank');
+    } else {
+      // Force download for other file types
+      const filename = filePath.split('/').pop();
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    // Clean up the blob URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+  } catch (err) {
+    console.error('Failed to fetch file:', err);
+    alert('Unable to access the file.');
+  }
+};
 
 const StudentCourseMaterials = () => {
   const { user } = useContext(AuthContext);
@@ -145,15 +181,13 @@ const StudentCourseMaterials = () => {
                   <td>{item.description || '—'}</td>
                   <td>
                     {item.file ? (
-                      <a
-                        href={`http://localhost:5000/${item.file}`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
                         className="btn btn-sm btn-secondary"
+                        onClick={() => handleFileClick(item.file, item.fileType)}
                       >
                         {item.fileType === 'image' ? <FiEye /> : <FiDownload />}
                         {item.fileType === 'image' ? ' View' : ' Download'}
-                      </a>
+                      </button>
                     ) : '—'}
                   </td>
                   <td>{item.postedBy?.fullName || 'Teacher'}</td>

@@ -5,6 +5,39 @@ import AuthContext from '../../context/AuthContext';
 import { FiArrowLeft, FiUpload, FiTrash2, FiFile, FiMessageSquare, FiBookOpen, FiEdit } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
 
+/* Helper: build the authenticated download URL */
+const getFileUrl = (filePath) => {
+  const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const filename = filePath.split('/').pop();
+  return `${base}/api/v1/files/${filename}`;
+};
+
+/* Fetch file with auth, then open in new tab or download */
+const handleFileClick = async (filePath, fileType) => {
+  try {
+    const url = getFileUrl(filePath);
+    const response = await api.get(url, { responseType: 'blob' });
+    const blob = response.data;
+    const blobUrl = URL.createObjectURL(blob);
+
+    if (fileType === 'image') {
+      window.open(blobUrl, '_blank');
+    } else {
+      const filename = filePath.split('/').pop();
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+  } catch (err) {
+    console.error('Failed to fetch file:', err);
+    alert('Unable to access the file.');
+  }
+};
+
 const TeacherCourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -12,7 +45,7 @@ const TeacherCourseDetail = () => {
 
   const [course, setCourse] = useState(null);
   const [materials, setMaterials] = useState([]);
-  const [activeTab, setActiveTab] = useState('material'); // 'material' | 'homework' | 'message'
+  const [activeTab, setActiveTab] = useState('material');
   const [form, setForm] = useState({ title: '', description: '', type: 'material' });
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -125,7 +158,7 @@ const TeacherCourseDetail = () => {
             placeholder="Title"
             value={form.title}
             onChange={e => setForm({ ...form, title: e.target.value })}
-            required={activeTab !== 'message'}  // message can be without title
+            required={activeTab !== 'message'}
           />
           <input
             type="text"
@@ -167,9 +200,12 @@ const TeacherCourseDetail = () => {
                   <td>{item.description || '—'}</td>
                   <td>
                     {item.file ? (
-                      <a href={`http://localhost:5000/${item.file}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">
+                      <button
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => handleFileClick(item.file, item.fileType)}
+                      >
                         <FiFile /> {item.fileType}
-                      </a>
+                      </button>
                     ) : '—'}
                   </td>
                   <td>

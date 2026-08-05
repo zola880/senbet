@@ -23,6 +23,7 @@ const practiceRoutes = require('./routes/practiceRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const fileRoutes = require('./routes/fileRoutes');
 
 dotenv.config();
 
@@ -92,6 +93,7 @@ app.use('/api/v1/practices', practiceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/files', fileRoutes);
 
 // Error handler
 app.use(errorHandler);
