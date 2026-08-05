@@ -45,9 +45,9 @@ app.use('/api/', limiter);
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map((o) => o.trim())
   : [
-      'https://senbet-yisj.vercel.app',
-      'https://meskelebirihan.vercel.app',   // 👈 your current frontend
-      'http://localhost:3000',               // local development
+      
+      'https://meskelebirihan.vercel.app',   
+      'http://localhost:3000',            
     ];
 
 app.use(cors({
