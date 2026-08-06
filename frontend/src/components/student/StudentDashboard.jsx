@@ -38,7 +38,7 @@ const StudentDashboard = () => {
 
       <div className="hero-dash-content">
         <h1 className="hero-dash-title">
-          የቤሮ ደብረ ምህረት ቅዱስት ስላሴ ወ ቅዱስ ላሊበላ
+          የቤሮ ደብረ ምህረት ቅድስት ስላሴ ወ ቅዱስ ላሊበላ
         </h1>
         <p className="hero-dash-subtitle-am">
           መስቀለ ብርሃን ስንበት ትምህርት ቤት

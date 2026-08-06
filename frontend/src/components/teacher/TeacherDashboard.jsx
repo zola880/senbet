@@ -72,7 +72,7 @@ const TeacherDashboard = () => {
 
         <h1 className="hero-dash-title">
 
-          የ ቤ ተ ክ ርስ ቲ ያ ን ም ህ ረት ቅ ዱስ ላ ሊ በ ላ
+          የ ቤሮ ደብረ ምህረት ቅድስት ስላሴ ወ ቅዱስ ላሊበላ
 
         </h1>
 
