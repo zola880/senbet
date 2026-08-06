@@ -173,10 +173,9 @@ const EnterScores = () => {
               <div className="enter-scores-quote">
                 <span className="enter-scores-quote-mark">&ldquo;</span>
                 <p>
-                  Train up a child in the way he should go, and when he is old, he will not
-                  depart from it.
+                  ልጅን በሚሄድበት መንገድ ምራው፤ በሸመገለም ጊዜ ከእርሱ ፈቀቅ አይልም
                 </p>
-                <span className="enter-scores-quote-author">– Proverbs 22:6</span>
+                <span className="enter-scores-quote-author">– ምሳሌ 22:6</span>
               </div>
             </div>
           </div>
@@ -221,7 +220,7 @@ const EnterScores = () => {
           </div>
 
           <p className="enter-scores-footer-text">
-            <span className="enter-scores-footer-cross">✝</span> Glory to God for all things
+            <span className="enter-scores-footer-cross">✝</span> ስብሐት ለእግዚአብሔር በኵሉ!
           </p>
         </>
       ) : (
