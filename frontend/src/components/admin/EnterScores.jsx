@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { FaUsers, FaBookOpen, FaClipboardCheck, FaUserGraduate, FaCheckSquare } from 'react-icons/fa';
 import api from '../../services/api';
 import EmptyState from '../common/EmptyState';
 
-// 🌄 Replace this URL with your own image
-const BACKGROUND_IMAGE = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkwpjvGXir0uK3CkxmmOqt18Sy4NHipO-FIDY3IxHjsA&s=10';
+// 🌄 Hero image for the "no selection yet" state — drop your file at src/assets/c.jpg
+import heroImage from '../../assets/c.jpg';
 
 const EnterScores = () => {
   const [classes, setClasses] = useState([]);
@@ -17,9 +18,24 @@ const EnterScores = () => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Stats for the summary row
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [scoresToday, setScoresToday] = useState(0);
+
   useEffect(() => {
     api.get('/api/v1/classes').then((r) => setClasses(r.data.data));
     api.get('/api/v1/courses').then((r) => setCourses(r.data.data));
+
+    // Total students across the school, for the stats row.
+    api
+      .get('/api/v1/users?role=student')
+      .then((r) => setTotalStudents(r.data.data.length))
+      .catch(() => setTotalStudents(0));
+
+    // NOTE: there's no dedicated "scores entered today" endpoint in the
+    // code you shared, so this is left at 0 for now. If you have (or add)
+    // an endpoint like /api/v1/scores?enteredToday=true, wire it up here.
+    setScoresToday(0);
   }, []);
 
   useEffect(() => {
@@ -97,34 +113,117 @@ const EnterScores = () => {
     }
   };
 
+  const hasSelection = selectedClass && selectedCourse;
+
   return (
     <div>
-      <h2 className="page-title">Enter Scores (Admin)</h2>
-
-      <div className="form-grid" style={{ marginBottom: '1rem' }}>
-        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
-          <option value="">Select Class</option>
-          {classes.map((c) => (
-            <option key={c._id} value={c._id}>{c.name}</option>
-          ))}
-        </select>
-        <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}>
-          <option value="">Select Course</option>
-          {courses.map((c) => (
-            <option key={c._id} value={c._id}>{c.name}</option>
-          ))}
-        </select>
+      <div className="enter-scores-header">
+        <h2 className="page-title">Enter Scores (Admin)</h2>
+        <p className="enter-scores-subtitle">Select class and course to manage student scores</p>
       </div>
 
-      { (!selectedClass || !selectedCourse) ? (
-        <div
-          className="selection-placeholder"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url('${BACKGROUND_IMAGE}')`,
-          }}
-        >
-          <p>Please select a class and course to enter scores</p>
+      <div className="enter-scores-select-grid">
+        <div className="enter-scores-select-card">
+          <div className="enter-scores-select-icon icon-class">
+            <FaUsers />
+          </div>
+          <div className="enter-scores-select-body">
+            <label>Select Class</label>
+            <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+              <option value="">Choose a class</option>
+              {classes.map((c) => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        <div className="enter-scores-select-card">
+          <div className="enter-scores-select-icon icon-course">
+            <FaBookOpen />
+          </div>
+          <div className="enter-scores-select-body">
+            <label>Select Course</label>
+            <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}>
+              <option value="">Choose a course</option>
+              {courses.map((c) => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {!hasSelection ? (
+        <>
+          <div className="enter-scores-hero">
+            <div
+              className="enter-scores-hero-image"
+              style={{ backgroundImage: `url(${heroImage})` }}
+            />
+            <div className="enter-scores-hero-content">
+              <div className="enter-scores-hero-icon">
+                <FaClipboardCheck />
+              </div>
+              <h3>Ready to Enter Scores</h3>
+              <p>
+                Please select a class and course from the dropdowns above to view students and
+                enter their scores.
+              </p>
+              <div className="enter-scores-quote">
+                <span className="enter-scores-quote-mark">&ldquo;</span>
+                <p>
+                  Train up a child in the way he should go, and when he is old, he will not
+                  depart from it.
+                </p>
+                <span className="enter-scores-quote-author">– Proverbs 22:6</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="enter-scores-stats-row">
+            <div className="enter-scores-stat-card">
+              <div className="enter-scores-stat-icon stat-classes">
+                <FaUsers />
+              </div>
+              <div>
+                <h4>{classes.length}</h4>
+                <p>Total Classes</p>
+              </div>
+            </div>
+            <div className="enter-scores-stat-card">
+              <div className="enter-scores-stat-icon stat-courses">
+                <FaBookOpen />
+              </div>
+              <div>
+                <h4>{courses.length}</h4>
+                <p>Total Courses</p>
+              </div>
+            </div>
+            <div className="enter-scores-stat-card">
+              <div className="enter-scores-stat-icon stat-students">
+                <FaUserGraduate />
+              </div>
+              <div>
+                <h4>{totalStudents}</h4>
+                <p>Total Students</p>
+              </div>
+            </div>
+            <div className="enter-scores-stat-card">
+              <div className="enter-scores-stat-icon stat-scores">
+                <FaCheckSquare />
+              </div>
+              <div>
+                <h4>{scoresToday}</h4>
+                <p>Scores Entered Today</p>
+              </div>
+            </div>
+          </div>
+
+          <p className="enter-scores-footer-text">
+            <span className="enter-scores-footer-cross">✝</span> Glory to God for all things
+          </p>
+        </>
       ) : (
         <>
           {loading && <div className="spinner" />}
@@ -138,7 +237,7 @@ const EnterScores = () => {
                   <tr>
                     <th>Student</th>
                     {config.components.map((comp) => (
-                      <th key={comp.name}>{comp.name}<br/><small>(max {comp.maxScore})</small></th>
+                      <th key={comp.name}>{comp.name}<br /><small>(max {comp.maxScore})</small></th>
                     ))}
                   </tr>
                 </thead>
