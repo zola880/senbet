@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FiArrowLeft, FiUser, FiBook, FiAward, FiMail, FiHash } from 'react-icons/fi';
+import { FiArrowLeft, FiBook, FiAward, FiMail, FiEdit, FiTrash2 } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
 
 const StudentDetail = () => {
@@ -20,7 +20,7 @@ const StudentDetail = () => {
         const [studentRes, scoresRes, rankRes] = await Promise.all([
           api.get(`/api/v1/users/${id}`),
           api.get(`/api/v1/scores?student=${id}`),
-          api.get(`/api/v1/rankings/student/${id}`).catch(() => null), // ranking may not exist
+          api.get(`/api/v1/rankings/student/${id}`).catch(() => null),
         ]);
 
         setStudent(studentRes.data.data);
@@ -40,7 +40,6 @@ const StudentDetail = () => {
     fetchStudentData();
   }, [id]);
 
-  // Group scores by course
   const scoresByCourse = scores.reduce((acc, score) => {
     const courseId = score.course?._id || 'unknown';
     if (!acc[courseId]) {
@@ -67,10 +66,10 @@ const StudentDetail = () => {
         <FiArrowLeft /> Back to Users
       </button>
 
-      {/* Student Header Card */}
-      <div className="student-header-card">
+      {/* Student Header Card (red rectangle) */}
+      <div className="student-header-card" style={{ position: 'relative' }}>
         <div className="student-avatar">
-          <FiUser size={48} />
+          {/* Removed FiUser icon – just a plain background */}
         </div>
         <div className="student-header-info">
           <h2>{student.fullName}</h2>
@@ -83,9 +82,39 @@ const StudentDetail = () => {
             {student.email}
           </p>
         </div>
+        {/* Edit & Delete buttons – bottom‑right of the header card */}
+        <div style={{
+          position: 'absolute',
+          bottom: '1rem',
+          right: '1rem',
+          display: 'flex',
+          gap: '0.5rem',
+        }}>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => {
+              // For simplicity, you can navigate to a modal or call the same edit logic.
+              // Here we just show an alert, but you could open the edit modal from ManageUsers.
+              alert('Edit functionality can be added here.');
+            }}
+          >
+            <FiEdit />
+          </button>
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={async () => {
+              if (window.confirm('Delete this student? This action cannot be undone.')) {
+                await api.delete(`/api/v1/users/${student._id}`);
+                navigate('/admin/users');
+              }
+            }}
+          >
+            <FiTrash2 />
+          </button>
+        </div>
       </div>
 
-      {/* Rank Card (if available) */}
+      {/* Rank Card */}
       {rankData && (
         <div className="card" style={{ marginTop: '1.5rem' }}>
           <h3><FiAward /> Current Rank</h3>
