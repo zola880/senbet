@@ -14,17 +14,16 @@ const StudentDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Edit modal state
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    class: '',
-    rollNumber: '',
-  });
+  // Guard: only fetch if id is a valid non‑empty string
+  const isValidId = id && id !== 'undefined';
 
   useEffect(() => {
+    if (!isValidId) {
+      setError('Invalid student ID.');
+      setLoading(false);
+      return;
+    }
+
     const fetchStudentData = async () => {
       try {
         const [studentRes, scoresRes, rankRes] = await Promise.all([
@@ -47,7 +46,7 @@ const StudentDetail = () => {
     };
 
     fetchStudentData();
-  }, [id]);
+  }, [id, isValidId]);
 
   // Group scores by course
   const scoresByCourse = scores.reduce((acc, score) => {
@@ -62,7 +61,16 @@ const StudentDetail = () => {
     return acc;
   }, {});
 
-  // ---- Edit handler ----
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    class: '',
+    rollNumber: '',
+  });
+
   const openEditModal = () => {
     if (!student) return;
     setEditForm({
@@ -82,7 +90,6 @@ const StudentDetail = () => {
     try {
       await api.put(`/api/v1/users/${id}`, payload);
       setShowEditModal(false);
-      // Refresh student data
       const res = await api.get(`/api/v1/users/${id}`);
       setStudent(res.data.data);
     } catch (err) {
@@ -98,7 +105,7 @@ const StudentDetail = () => {
   };
 
   if (loading) return <div className="spinner" />;
-  if (error) return <div className="error-message">{error}</div>;
+  if (error || !isValidId) return <div className="error-message">{error || 'Invalid student ID.'}</div>;
   if (!student) return <div className="error-message">Student not found.</div>;
 
   return (
@@ -111,7 +118,7 @@ const StudentDetail = () => {
         <FiArrowLeft /> Back to Users
       </button>
 
-      {/* Student Header Card – red rectangle with edit/delete buttons at right bottom */}
+      {/* Student Header Card with edit/delete buttons at right bottom */}
       <div className="student-header-card" style={{ position: 'relative' }}>
         <div className="student-avatar">
           <FiUser size={48} />
@@ -127,7 +134,6 @@ const StudentDetail = () => {
             {student.email}
           </p>
         </div>
-        {/* Edit & Delete icons at the right bottom corner of the red card */}
         <div style={{ position: 'absolute', bottom: '1rem', right: '1.5rem', display: 'flex', gap: '0.8rem' }}>
           <button className="btn btn-sm btn-secondary" onClick={openEditModal} style={{ background: 'white', color: 'var(--primary)', border: 'none', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
             <FiEdit /> Edit
@@ -223,7 +229,6 @@ const StudentDetail = () => {
                 onChange={e => setEditForm({ ...editForm, class: e.target.value })}
               >
                 <option value="">Select Class</option>
-                {/* We need classes list; fetch them locally */}
                 <ClassesDropdown value={editForm.class} onChange={(val) => setEditForm({ ...editForm, class: val })} />
               </select>
               <input
@@ -244,7 +249,7 @@ const StudentDetail = () => {
   );
 };
 
-// Tiny helper component to fetch classes for the edit dropdown
+// Helper component to fetch classes for the edit dropdown
 const ClassesDropdown = ({ value, onChange }) => {
   const [classes, setClasses] = useState([]);
   useEffect(() => {
