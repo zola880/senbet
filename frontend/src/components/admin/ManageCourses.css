@@ -1,0 +1,13 @@
+/* ========== MANAGE COURSES ========== */
+/* Shares the same global card utilities as ManageClasses:
+   .class-header, .class-card-grid, .class-card, .class-card-icon,
+   .class-card-name, .class-card-code, .modal-backdrop, .modal-content,
+   .form-grid, .btn, .page-title  (all in global.css).
+   Component-specific overrides below. */
+
+/* Course cards show a subject icon badge at top-right */
+.class-card .class-card-code {
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}

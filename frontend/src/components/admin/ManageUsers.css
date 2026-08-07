@@ -1,0 +1,66 @@
+/* ========== MANAGE USERS (Admin) ========== */
+/* Global utilities used: .page-title, .tabs-container, .tab-button,
+   .tab-active, .table-container, table, th, td, .btn, .btn-sm,
+   .modal-backdrop, .modal-content, .form-grid, .error-message,
+   .success-message (all in global.css / responsive.css).
+   Component-specific rules below. */
+
+/* Toolbar row that sits between the tab bar and the table */
+.manage-users-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Search / filter input */
+.manage-users-search {
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fdfcf8;
+  color: var(--text);
+  min-width: 220px;
+  transition: var(--transition);
+}
+
+.manage-users-search:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
+  outline: none;
+}
+
+/* Role chip displayed in the table */
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.role-chip.admin   { background: #fbe6e8; color: var(--primary); }
+.role-chip.teacher { background: #e8f5e9; color: var(--accent); }
+.role-chip.student { background: #e3ecfd; color: #3b5bdb; }
+
+/* Table action button group */
+.user-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .manage-users-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .manage-users-search {
+    width: 100%;
+  }
+}

@@ -1,0 +1,70 @@
+/* ========== STUDENT ATTENDANCE REPORT (Admin) ========== */
+/* Global utilities: .form-grid, .btn, .spinner, .stats-grid, .stat-card,
+   .stat-icon, .stat-info, .table-container, table, th, td,
+   .attendance-badge (from global.css).
+   Component-specific styles below. */
+
+/* Report page title area */
+.attendance-report-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Filter bar (class + student selects + date range) */
+.attendance-report-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.attendance-report-filters select,
+.attendance-report-filters input[type="date"] {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fdfcf8;
+  font-size: 0.95rem;
+  color: var(--text);
+  transition: var(--transition);
+}
+
+.attendance-report-filters select:focus,
+.attendance-report-filters input[type="date"]:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
+  outline: none;
+}
+
+/* Percentage text inside the attendance table */
+.attendance-pct {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.attendance-pct.good   { color: var(--accent); }
+.attendance-pct.warn   { color: #f59e0b; }
+.attendance-pct.danger { color: var(--danger); }
+
+/* Summary bar printed below the table */
+.attendance-report-note {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .attendance-report-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .attendance-report-filters {
+    grid-template-columns: 1fr;
+  }
+}

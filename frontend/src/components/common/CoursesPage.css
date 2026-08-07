@@ -1,0 +1,22 @@
+/* ========== COURSES PAGE (Common) ========== */
+/* Global utilities: .page-title, .btn, .btn-sm, .modal-backdrop, .modal-content, 
+   .form-grid, .selection-placeholder, .materials-grid, .material-item, 
+   .material-file, .material-info (from global.css).
+   Component-specific styles below. */
+
+/* Added hover effects for the course-card variation of material-item */
+.course-card {
+  cursor: pointer;
+}
+
+.course-card .material-file {
+  background: linear-gradient(135deg, #fef7f2 0%, #fdf5ec 100%);
+  color: var(--primary-dark);
+  font-size: 1.2rem;
+  letter-spacing: 0.5px;
+}
+
+.course-card:hover .material-file {
+  background: var(--primary);
+  color: #fff;
+}

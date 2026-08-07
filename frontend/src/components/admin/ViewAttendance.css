@@ -1,0 +1,53 @@
+/* ========== VIEW ATTENDANCE (Admin) ========== */
+/* Global utilities: .form-grid, .spinner, .table-container, table,
+   th, td, .attendance-status-group, .attendance-btn,
+   .attendance-present, .attendance-absent, .attendance-late,
+   .attendance-badge, .btn (from global.css).
+   Component-specific styles below. */
+
+/* Filters row – date picker + class select */
+.view-attendance-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.view-attendance-filters select,
+.view-attendance-filters input[type="date"] {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fdfcf8;
+  font-size: 0.95rem;
+  color: var(--text);
+  transition: var(--transition);
+}
+
+.view-attendance-filters select:focus,
+.view-attendance-filters input[type="date"]:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
+  outline: none;
+}
+
+/* Row of save/cancel buttons under the table */
+.view-attendance-footer-btns {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .view-attendance-filters {
+    grid-template-columns: 1fr;
+  }
+  .view-attendance-footer-btns {
+    flex-direction: column;
+  }
+  .view-attendance-footer-btns .btn {
+    width: 100%;
+  }
+}

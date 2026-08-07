@@ -1,0 +1,113 @@
+/* ========== ASSESSMENT CONFIG ========== */
+/* Relies on global.css for .form-grid, .card, .btn, .page-title,
+   .selection-placeholder, .modal-backdrop, .modal-content.
+   Component-specific styles below. */
+
+.assessment-config-wrapper {
+  max-width: 900px;
+}
+
+/* Component row within the card */
+.assessment-component-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 0.8rem;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  padding: 0.6rem;
+  background: #fef9f4;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.assessment-component-row:hover {
+  background: #fdf5ec;
+  border-color: var(--secondary);
+}
+
+.assessment-component-row input,
+.assessment-component-row select {
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fdfcf8;
+  font-size: 0.93rem;
+  color: var(--text);
+  transition: var(--transition);
+}
+
+.assessment-component-row input:focus,
+.assessment-component-row select:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
+  outline: none;
+}
+
+.assessment-total-weight {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.assessment-total-weight.valid {
+  background: #f0fff4;
+  color: var(--success);
+  border: 1px solid #c6f6d5;
+}
+
+.assessment-total-weight.invalid {
+  background: #fff5f5;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+}
+
+.assessment-actions {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+  flex-wrap: wrap;
+}
+
+/* Selection placeholder comes from global (StudentDashboard pattern) */
+.selection-placeholder {
+  min-height: 300px;
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.selection-placeholder p {
+  font-size: 1.2rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .assessment-component-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+  .assessment-component-row button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .assessment-component-row {
+    grid-template-columns: 1fr;
+  }
+}

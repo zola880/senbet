@@ -1,0 +1,9 @@
+/* ========== ADMIN ATTENDANCE ========== */
+/* Layout shell for the three-tab attendance manager.
+   The tabs (.tabs-container, .tab-button, .tab-active) and the
+   table/attendance-badge/attendance-btn classes come from global.css.
+   Add component-specific overrides below as needed. */
+
+.admin-attendance-tab-panel {
+  margin-top: 1.5rem;
+}

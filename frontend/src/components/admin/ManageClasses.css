@@ -1,0 +1,26 @@
+/* ========== MANAGE CLASSES ========== */
+/* This component uses the global .class-header, .class-header-subtitle,
+   .class-card-grid, .class-card, .class-card-icon, .class-card-name,
+   .class-card-code, .modal-backdrop, .modal-content, .form-grid,
+   .btn, .page-title utilities from global.css.
+   Only component-specific overrides belong here. */
+
+/* Optional hover ring animation on class cards */
+.class-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.class-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+  pointer-events: none;
+}
+
+.class-card:hover::after {
+  border-color: var(--secondary);
+}
