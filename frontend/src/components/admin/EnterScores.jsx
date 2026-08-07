@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { FaUsers, FaBookOpen, FaClipboardCheck, FaUserGraduate, FaCheckSquare } from 'react-icons/fa';
 import api from '../../services/api';
 import EmptyState from '../common/EmptyState';
-
-// 🌄 Hero image for the "no selection yet" state — drop your file at src/assets/c.jpg
+import './EnterScores.css';
 import heroImage from '../../assets/c.jpg';
 
 const EnterScores = () => {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { FiSearch, FiCalendar } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
+import './StudentAttendanceReport.css';
 
 const StudentAttendanceReport = () => {
   const [classes, setClasses] = useState([]);

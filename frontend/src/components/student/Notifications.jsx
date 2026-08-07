@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { FiBell, FiCheck, FiTrash2 } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
+import './Notifications.css';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);

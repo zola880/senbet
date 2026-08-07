@@ -1,0 +1,52 @@
+/* ========== COURSE MATERIALS (Student) ========== */
+.materials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.material-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.material-item:hover {
+  box-shadow: var(--shadow);
+}
+
+.material-image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.material-file {
+  width: 100%;
+  height: 100px;
+  background: #f5f0e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.material-info {
+  padding: 0.8rem;
+}
+
+.material-info h4 {
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.material-info p {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+}

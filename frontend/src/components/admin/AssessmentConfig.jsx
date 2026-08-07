@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import './AssessmentConfig.css';
 
 // 🌄 Replace this URL with any image you like (direct link to .jpg/.png)
 const BACKGROUND_IMAGE = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT5G9JtRJzRGdd5zNzfIBwWqCWcXuiTIeAOUfQKi1MDlVdar1DrbJqNJ6Dg&s=10';

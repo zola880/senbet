@@ -4,6 +4,7 @@ import AuthContext from '../../context/AuthContext';
 import { FiBook, FiClipboard } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import bgImage from '../../assets/image.png';
+import './StudentDashboard.css';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();

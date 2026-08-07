@@ -2,6 +2,7 @@ import { useState } from 'react';
 import TakeAttendance from '../common/TakeAttendance';
 import ViewAttendance from './ViewAttendance';
 import StudentAttendanceReport from './StudentAttendanceReport';
+import './AdminAttendance.css'; 
 
 const AdminAttendance = () => {
   const [activeTab, setActiveTab] = useState('take');

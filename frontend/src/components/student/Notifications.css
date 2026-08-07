@@ -1,0 +1,10 @@
+/* ========== STUDENT NOTIFICATIONS ========== */
+/* The page uses global .table-container, .btn, etc.
+   Add any notification-specific overrides here. */
+
+/* Example: make the unread row stand out more (already done via inline style,
+   but you can move it here if you prefer) */
+.notifications-table tbody tr.unread {
+  background: #fef7f2;
+  font-weight: 500;
+}

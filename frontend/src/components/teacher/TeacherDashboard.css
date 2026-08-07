@@ -1,0 +1,26 @@
+/* ========== TEACHER DASHBOARD ========== */
+.teacher-dashboard .dashboard-hero {
+  min-height: calc(100vh - 4rem);
+  margin: -2rem;
+  padding: 2.5rem 3rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  background: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.10)),
+    url('https://i.ibb.co/8nLDtHN1/your-image.jpg') center / cover no-repeat;
+}
+.teacher-dashboard .school-name { font-size: 2.4rem; font-weight: 700; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.3); margin-bottom: 0.2rem; }
+.teacher-dashboard .school-subtitle { font-size: 1.4rem; font-weight: 400; color: #f0e6d0; text-shadow: 0 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.25rem; }
+.teacher-dashboard .welcome-text { font-size: 1.1rem; font-weight: 300; color: #ffddaa; letter-spacing: 1px; font-style: italic; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+.teacher-dashboard .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; width: 100%; max-width: 800px; }
+.teacher-dashboard .glass-card { background: rgba(255,255,255,0.12) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+.teacher-dashboard .stat-card { display: flex; align-items: center; gap: 1.2rem; padding: 1.5rem 1.8rem; }
+.teacher-dashboard .stat-icon { width: 50px; height: 50px; border-radius: 14px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #fff; }
+.teacher-dashboard .stat-info h3 { font-size: 2.2rem; font-weight: 700; color: #fff; margin: 0; }
+.teacher-dashboard .stat-info p { font-size: 1rem; color: rgba(255,255,255,0.85); margin: 0; }
+.teacher-dashboard .assignments-card { padding: 1.8rem 2rem; width: 100%; max-width: 800px; }
+.teacher-dashboard .assignments-card h3 { font-size: 1.4rem; font-weight: 600; color: #ffffff; margin-bottom: 1rem; }
+.teacher-dashboard .assignments-card ul { list-style: none; padding: 0; margin: 0; }
+.teacher-dashboard .assignments-card li { color: #f0e6d0; font-size: 1.05rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.teacher-dashboard .assignments-card li:last-child { border-bottom: none; }

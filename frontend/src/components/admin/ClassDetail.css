@@ -1,0 +1,37 @@
+/* ========== CLASS DETAIL ========== */
+.class-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.class-detail-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(142,42,42,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.class-detail-info { flex: 1; }
+
+.class-detail-info h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0 0 0.3rem;
+}
+
+.class-detail-info p { color: var(--text-light); margin: 0; }
+
+.class-detail-actions { display: flex; gap: 0.5rem; }

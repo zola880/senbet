@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { FiArrowLeft, FiEdit, FiTrash2, FiClipboard, FiBookOpen } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
+import './ClassDetail.css';
 
 const ClassDetail = () => {
   const { id } = useParams();

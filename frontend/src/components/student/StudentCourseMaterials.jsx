@@ -3,6 +3,7 @@ import { FiArrowLeft, FiBookOpen, FiEdit, FiMessageSquare, FiEye, FiDownload } f
 import AuthContext from '../../context/AuthContext';
 import api from '../../services/api';
 import EmptyState from '../common/EmptyState';
+import './StudentCourseMaterials.css';
 
 /* Helper: build the authenticated download URL */
 const getFileUrl = (filePath) => {

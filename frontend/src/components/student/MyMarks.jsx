@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import EmptyState from '../common/EmptyState';
+import './MyMarks.css';
 
 const MyMarks = () => {
   const { user } = useContext(AuthContext);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { FiArrowLeft, FiEdit, FiTrash2, FiUpload, FiSave, FiX, FiPlus, FiFile, FiEye, FiDownload } from 'react-icons/fi';
+import  './CourseDetail.css';
 
 /* Helper: build the authenticated download URL */
 const getFileUrl = (filePath) => {

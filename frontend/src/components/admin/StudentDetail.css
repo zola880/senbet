@@ -1,0 +1,51 @@
+/* ========== STUDENT DETAIL ========== */
+
+.student-header-card {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: white;
+  border-radius: var(--radius);
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 0.5rem;
+}
+
+.student-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-header-info h2 {
+  font-size: 2rem;
+  margin-bottom: 0.3rem;
+  font-family: 'Playfair Display', serif;
+}
+
+.student-class { font-size: 1.1rem; opacity: 0.9; margin-bottom: 0.2rem; }
+.student-email { font-size: 0.95rem; opacity: 0.8; }
+
+.rank-display { display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; }
+.rank-total { font-size: 1.2rem; font-weight: 600; }
+
+.marks-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.marks-course-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fdfcf8;
+}
+
+.marks-course-card h4 { margin-bottom: 0.5rem; color: var(--primary-dark); }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { FiEdit, FiSave, FiX } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
+import './ViewAttendance.css';
 
 const ViewAttendance = () => {
   const [classes, setClasses] = useState([]);

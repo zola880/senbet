@@ -3,6 +3,7 @@ import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import { FiAward, FiBookOpen, FiTrendingUp } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
+import './MyRank.css';
 
 const MyRank = () => {
   const { user } = useContext(AuthContext);

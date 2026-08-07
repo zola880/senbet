@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { FiEdit, FiTrash2, FiUserPlus } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
+import './ManageUsers.css';
 
 const TABS = [
   { key: 'admin', label: 'Admins' },

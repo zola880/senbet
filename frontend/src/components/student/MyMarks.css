@@ -1,0 +1,5 @@
+/* ========== MY MARKS GRID ========== */
+.marks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+.mini-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+.mini-table th, .mini-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); text-align: left; }
+.mini-table th { background: #fef7f2; font-weight: 600; color: var(--primary-dark); }

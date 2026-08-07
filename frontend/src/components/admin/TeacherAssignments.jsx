@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import EmptyState from '../common/EmptyState';
 import { FiTrash2, FiEdit, FiPlus, FiX } from 'react-icons/fi';
+import './TeacherAssignments.css';
 
 const TeacherAssignments = () => {
   const [teachers, setTeachers] = useState([]);

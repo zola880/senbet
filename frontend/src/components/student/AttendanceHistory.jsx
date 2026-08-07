@@ -3,7 +3,7 @@ import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import { FiCalendar, FiCheck, FiX, FiClock } from 'react-icons/fi';
 import EmptyState from '../common/EmptyState';
-
+import 'AttendanceHistory.css';
 const AttendanceHistory = () => {
   const { user } = useContext(AuthContext);
   const [attendance, setAttendance] = useState([]);

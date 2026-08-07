@@ -1,0 +1,120 @@
+/* ========== MY RANK (Student) ========== */
+
+/* Page container – subtle cream background */
+.rank-container {
+  padding: 2rem 0;
+  background: transparent;
+}
+
+/* Hero rank card */
+.rank-hero-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #ffffff, #fef7f2);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(212, 160, 23, 0.3);
+}
+
+/* Rank circle */
+.rank-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 6px solid var(--secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  background: white;
+  box-shadow: 0 0 30px rgba(212, 160, 23, 0.3);
+}
+
+.rank-number {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.rank-gold { color: gold; }
+.rank-silver { color: silver; }
+.rank-bronze { color: #cd7f32; }
+.rank-default { color: var(--secondary); }
+
+/* Title and total */
+.rank-hero-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin-bottom: 0.3rem;
+}
+
+.rank-hero-total {
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+/* Course breakdown card */
+.rank-breakdown-card {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.rank-breakdown-title {
+  margin-bottom: 1.5rem;
+  color: var(--primary-dark);
+}
+
+.rank-course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.rank-course-item {
+  /* each course row */
+}
+
+.rank-course-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+
+.rank-course-name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.rank-course-percentage {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.rank-progress-bar-bg {
+  width: 100%;
+  height: 12px;
+  background: #f0e6d2;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rank-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--secondary), var(--primary));
+  border-radius: 6px;
+  transition: width 0.8s ease;
+}
+
+/* Motivational footer */
+.rank-footer {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-light);
+  font-style: italic;
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+}

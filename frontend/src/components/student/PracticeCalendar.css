@@ -1,0 +1,5 @@
+/* ========== PRACTICE CALENDAR ========== */
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 1rem; }
+.calendar-day-header { text-align: center; font-weight: 600; color: var(--primary-dark); padding: 0.5rem; }
+.calendar-day { background: var(--card-bg); border: 1px solid var(--border); min-height: 80px; border-radius: 6px; padding: 4px; font-size: 0.8rem; }
+.calendar-day .session { background: #f0e6d2; padding: 2px 4px; margin-top: 2px; border-radius: 4px; font-weight: 500; }

@@ -3,6 +3,7 @@ import api from '../../services/api';
 import { FiUsers, FiUserCheck, FiGrid, FiBook } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import bgImage from '../../assets/image.png';
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();

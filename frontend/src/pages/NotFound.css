@@ -1,0 +1,23 @@
+/* ========== 404 NOT FOUND PAGE ========== */
+.not-found-container {
+  text-align: center;
+  margin-top: 4rem;
+  color: var(--text-light);
+}
+
+.not-found-container h1 {
+  font-size: 3rem;
+  color: var(--primary-dark);
+  margin-bottom: 1rem;
+}
+
+.not-found-container p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.not-found-container a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+}
