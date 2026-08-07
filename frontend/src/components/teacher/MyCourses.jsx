@@ -1,123 +1,144 @@
-import { useState, useEffect, useContext } from 'react';
-import { FiBook, FiUsers, FiAlertCircle, FiLoader, FiChevronRight } from 'react-icons/fi';
+import { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  FiAlertTriangle,
+  FiArrowRight,
+  FiBook,
+  FiBookOpen,
+  FiInbox,
+  FiUsers,
+} from 'react-icons/fi';
 
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import './MyCourses.css';
 
+/**
+ * Route opened when a teacher taps "Manage" on a course card.
+ * TODO: point this to your real course-management screen.
+ */
+const buildManageRoute = (assignment) =>
+  `/teacher/courses/${assignment?.course?._id || assignment?._id}`;
+
 const MyCourses = () => {
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const teacherId = user?._id;
+
   const [assignments, setAssignments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!user?._id) return;
+    if (!teacherId) {
+      setIsLoading(false);
+      return undefined;
+    }
 
     let isMounted = true;
 
-    const fetchAssignments = async () => {
+    const loadAssignments = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await api.get(`/api/v1/assignments/teacher/${user._id}`);
+
+        const response = await api.get(`/api/v1/assignments/teacher/${teacherId}`);
+        const payload = response?.data?.data;
 
         if (isMounted) {
-          setAssignments(response.data?.data || []);
+          setAssignments(Array.isArray(payload) ? payload : []);
         }
-      } catch (err) {
+      } catch (requestError) {
+        console.error('Failed to load teacher courses:', requestError);
         if (isMounted) {
-          console.error('Failed to fetch assignments:', err);
-          setError('Unable to load your courses at this time. Please try again later.');
+          setError('We could not load your courses. Please try again.');
         }
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
 
-    fetchAssignments();
+    loadAssignments();
 
     return () => {
       isMounted = false;
     };
-  }, [user?._id]);
+  }, [teacherId]);
+
+  const handleManage = (assignment) => navigate(buildManageRoute(assignment));
 
   return (
-    <section className="my-courses-page">
-      <header className="my-courses-header">
-        <h1 className="my-courses-title">My Courses</h1>
-        <p className="my-courses-subtitle">
-          Manage and view the classes and courses you are currently teaching.
-        </p>
+    <section className="mc-page">
+      <header className="mc-header">
+        <div>
+          <h1 className="mc-title">My Courses</h1>
+          <p className="mc-subtitle">
+            Courses and classes assigned to you for this term.
+          </p>
+        </div>
+
+        {!isLoading && !error && assignments.length > 0 && (
+          <span className="mc-count-badge">
+            <FiBookOpen size={16} aria-hidden="true" />
+            {assignments.length} {assignments.length === 1 ? 'Course' : 'Courses'}
+          </span>
+        )}
       </header>
 
-      <div className="my-courses-content">
-        {isLoading ? (
-          <div className="my-courses-state my-courses-loading" role="status">
-            <FiLoader className="spin-icon" size={28} />
-            <span>Loading your courses...</span>
-          </div>
-        ) : error ? (
-          <div className="my-courses-state my-courses-error" role="alert">
-            <FiAlertCircle size={28} />
-            <span>{error}</span>
-          </div>
-        ) : assignments.length === 0 ? (
-          <div className="my-courses-state my-courses-empty">
-            <FiBook size={48} strokeWidth={1.5} />
-            <h3>No Courses Assigned</h3>
-            <p>You don't have any teaching assignments at the moment.</p>
-          </div>
-        ) : (
-          <div className="my-courses-table-wrapper">
-            <table className="my-courses-table">
-              <thead>
-                <tr>
-                  <th scope="col">Course Name</th>
-                  <th scope="col">Assigned Class</th>
-                  <th scope="col" className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assignments.map((assignment) => (
-                  <tr key={assignment._id}>
-                    <td data-label="Course">
-                      <div className="course-cell">
-                        <div className="course-icon" aria-hidden="true">
-                          <FiBook size={18} />
-                        </div>
-                        <div className="course-info">
-                          <span className="course-name">
-                            {assignment.course?.name || 'Unnamed Course'}
-                          </span>
-                          <span className="course-meta">
-                            ID: {assignment.course?._id?.slice(-6).toUpperCase() || 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td data-label="Class">
-                      <div className="class-cell">
-                        <div className="class-icon" aria-hidden="true">
-                          <FiUsers size={18} />
-                        </div>
-                        <span className="class-name">
-                          {assignment.class?.name || 'General Class'}
-                        </span>
-                      </div>
-                    </td>
-                    <td data-label="Actions" className="text-right">
-                      <button className="btn-view-details" type="button">
-                        View Details <FiChevronRight size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="mc-state" role="status" aria-live="polite">
+          <span className="mc-spinner" aria-hidden="true" />
+          <p>Loading your courses…</p>
+        </div>
+      ) : error ? (
+        <div className="mc-state mc-state--error" role="alert">
+          <FiAlertTriangle size={30} aria-hidden="true" />
+          <h3>Something went wrong</h3>
+          <p>{error}</p>
+        </div>
+      ) : assignments.length === 0 ? (
+        <div className="mc-state">
+          <FiInbox size={32} aria-hidden="true" />
+          <h3>No courses assigned yet</h3>
+          <p>You have no teaching assignments at the moment.</p>
+        </div>
+      ) : (
+        <div className="mc-grid">
+          {assignments.map((assignment) => {
+            const courseName = assignment.course?.name || 'Unnamed Course';
+            const className = assignment.class?.name || 'General Class';
+
+            return (
+              <article className="mc-card" key={assignment._id}>
+                <div className="mc-card-head">
+                  <span className="mc-card-icon" aria-hidden="true">
+                    <FiBook size={20} />
+                  </span>
+                  <span className="mc-card-chip" title={className}>
+                    <FiUsers size={13} aria-hidden="true" />
+                    {className}
+                  </span>
+                </div>
+
+                <h2 className="mc-card-title" title={courseName}>
+                  {courseName}
+                </h2>
+
+                <div className="mc-card-footer">
+                  <span className="mc-card-hint">Tap to manage</span>
+                  <button
+                    type="button"
+                    className="mc-card-btn"
+                    onClick={() => handleManage(assignment)}
+                  >
+                    Manage <FiArrowRight size={15} aria-hidden="true" />
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 };
