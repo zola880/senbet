@@ -11,6 +11,7 @@ import {
 
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
+import bgImage from '../../assets/L.png';
 import './MyCourses.css';
 
 /**
@@ -69,6 +70,14 @@ const MyCourses = () => {
 
   return (
     <section className="mc-page">
+      {/* Background photo (imported from src/assets/L.png) */}
+      <div
+        className="mc-bg"
+        style={{ backgroundImage: `url(${bgImage})` }}
+        aria-hidden="true"
+      />
+      <div className="mc-overlay" aria-hidden="true" />
+
       <header className="mc-header">
         <div>
           <h1 className="mc-title">My Courses</h1>
