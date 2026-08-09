@@ -1,9 +1,200 @@
-/* ========== ADMIN ATTENDANCE ========== */
-/* Layout shell for the three-tab attendance manager.
-   The tabs (.tabs-container, .tab-button, .tab-active) and the
-   table/attendance-badge/attendance-btn classes come from global.css.
-   Add component-specific overrides below as needed. */
+/* ==========================================================================
+   ADMIN ATTENDANCE — School theme (maroon / gold / parchment) with L.png
+   All selectors are scoped with `.aa-` so global styles cannot override them.
+   ========================================================================== */
 
-.admin-attendance-tab-panel {
-  margin-top: 1.5rem;
+.aa-page {
+  --aa-bg: #f3f0ea;
+  --aa-surface: #fffdf8;
+  --aa-border: #e6ddcf;
+  --aa-border-strong: #d8cbb6;
+  --aa-maroon: #6d1a28;
+  --aa-maroon-deep: #52101c;
+  --aa-maroon-soft: #8c2f3d;
+  --aa-gold: #d2a12c;
+  --aa-gold-soft: #f6e7c6;
+  --aa-ink: #33262a;
+  --aa-ink-soft: #7a6c6d;
+  --aa-shadow: 0 1px 2px rgba(64, 20, 30, 0.08),
+    0 14px 28px -20px rgba(64, 20, 30, 0.35);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
+  background-color: var(--aa-bg);
+  color: var(--aa-ink);
+  font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui,
+    -apple-system, sans-serif;
+  overflow-x: clip;
+}
+
+/* --------------------------------------------------------------------------
+   Background image + readability wash
+   -------------------------------------------------------------------------- */
+
+.aa-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.aa-wash {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
+    linear-gradient(
+      170deg,
+      rgba(247, 244, 238, 0.94) 0%,
+      rgba(243, 240, 234, 0.88) 45%,
+      rgba(238, 231, 220, 0.93) 100%
+    );
+}
+
+/* --------------------------------------------------------------------------
+   Content + header
+   -------------------------------------------------------------------------- */
+
+.aa-content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  gap: 2rem;
+  align-content: start;
+}
+
+.aa-title {
+  margin: 0;
+  font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia,
+    'Times New Roman', serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  color: var(--aa-maroon);
+  letter-spacing: 0.01em;
+}
+
+.aa-title::after {
+  content: '';
+  display: block;
+  width: 88px;
+  height: 3px;
+  margin-top: 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--aa-gold), rgba(210, 161, 44, 0.35));
+}
+
+.aa-subtitle {
+  margin: 0.65rem 0 0;
+  color: var(--aa-ink-soft);
+  font-size: 0.95rem;
+}
+
+/* --------------------------------------------------------------------------
+   Tabs (accessible tablist)
+   -------------------------------------------------------------------------- */
+
+.aa-tabs {
+  display: flex;
+  gap: 0.4rem;
+  border-bottom: 2px solid var(--aa-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.aa-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.aa-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1.3rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 10px 10px 0 0;
+  margin-bottom: -2px;
+  color: var(--aa-ink-soft);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.aa-tab:hover {
+  color: var(--aa-maroon);
+  background: rgba(109, 26, 40, 0.05);
+}
+
+.aa-tab--active {
+  color: var(--aa-maroon);
+  border-bottom-color: var(--aa-gold);
+}
+
+.aa-tab:focus-visible {
+  outline: 3px solid rgba(210, 161, 44, 0.55);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Active panel
+   -------------------------------------------------------------------------- */
+
+.aa-panel {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+  animation: aa-fade 0.3s ease;
+}
+
+@keyframes aa-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .aa-page {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .aa-content {
+    gap: 1.5rem;
+  }
+
+  .aa-tab {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .aa-tab,
+  .aa-panel {
+    transition: none;
+    animation: none;
+  }
 }
