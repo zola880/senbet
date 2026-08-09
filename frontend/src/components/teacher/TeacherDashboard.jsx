@@ -12,7 +12,7 @@ import {
 
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
-import bgImage from '../../assets/c.jpg';
+import bgImage from '../../assets/L.png';
 import './TeacherDashboard.css';
 
 /* --------------------------------------------------------------------------
@@ -24,7 +24,7 @@ const useTeacherDashboardData = () => {
     assignments: [],
     upcomingPracticeCount: 0,
   });
-  const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
+  const [status, setStatus] = useState('loading');
   const abortRef = useRef(null);
 
   const reload = useCallback(async () => {
@@ -160,7 +160,7 @@ const TeacherDashboard = () => {
                     {isLoading && !hasData ? (
                       <span className="td-skeleton td-skeleton--icon" />
                     ) : (
-                      <Icon size={24} strokeWidth={1.8} />
+                      <Icon size={22} strokeWidth={1.8} />
                     )}
                   </span>
 
