@@ -1,62 +1,84 @@
-import { useEffect, useMemo, useState, useContext } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiBook, FiCalendar, FiArrowRight, FiCheckCircle } from 'react-icons/fi';
+import {
+  FiAlertTriangle,
+  FiArrowRight,
+  FiBook,
+  FiCalendar,
+  FiCheckCircle,
+  FiInbox,
+  FiRefreshCw,
+} from 'react-icons/fi';
 
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import bgImage from '../../assets/c.jpg';
 import './TeacherDashboard.css';
 
-const INITIAL_DATA = Object.freeze({
-  assignmentsCount: 0,
-  assignments: [],
-  upcomingPracticeCount: 0,
-});
+/* --------------------------------------------------------------------------
+   Data hook: Fetch Teacher Dashboard Data with AbortController
+   -------------------------------------------------------------------------- */
+const useTeacherDashboardData = () => {
+  const [data, setData] = useState({
+    assignmentsCount: 0,
+    assignments: [],
+    upcomingPracticeCount: 0,
+  });
+  const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
+  const abortRef = useRef(null);
 
+  const reload = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setStatus('loading');
+
+    try {
+      const response = await api.get('/api/v1/dashboard/teacher', {
+        signal: controller.signal,
+      });
+
+      if (response?.data?.data) {
+        setData({
+          assignmentsCount: Number(response.data.data.assignmentsCount) || 0,
+          assignments: Array.isArray(response.data.data.assignments) ? response.data.data.assignments : [],
+          upcomingPracticeCount: Number(response.data.data.upcomingPracticeCount) || 0,
+        });
+      }
+      setStatus('success');
+    } catch (err) {
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
+      console.error('Unable to load teacher dashboard data.', err);
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    reload();
+    return () => abortRef.current?.abort();
+  }, [reload]);
+
+  return { data, status, reload };
+};
+
+/* --------------------------------------------------------------------------
+   Helpers
+   -------------------------------------------------------------------------- */
 const numberFormatter = new Intl.NumberFormat();
 const formatNumber = (value) => numberFormatter.format(Number(value) || 0);
 
+/* --------------------------------------------------------------------------
+   Main Component
+   -------------------------------------------------------------------------- */
 const TeacherDashboard = () => {
   const navigate = useNavigate();
   const { user: authUser } = useContext(AuthContext);
-
-  const [data, setData] = useState(INITIAL_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchTeacherData = async () => {
-      try {
-        setIsLoading(true);
-        setHasError(false);
-        const response = await api.get('/api/v1/dashboard/teacher');
-
-        if (!isMounted) return;
-
-        if (response?.data?.data) {
-          setData({
-            assignmentsCount: Number(response.data.data.assignmentsCount) || 0,
-            assignments: Array.isArray(response.data.data.assignments) ? response.data.data.assignments : [],
-            upcomingPracticeCount: Number(response.data.data.upcomingPracticeCount) || 0,
-          });
-        }
-      } catch (error) {
-        if (!isMounted) return;
-        console.error('Unable to load teacher dashboard data.', error);
-        setHasError(true);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchTeacherData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  
+  const { data, status, reload } = useTeacherDashboardData();
+  const isLoading = status === 'loading';
+  const hasError = status === 'error';
+  const hasData = data.assignments.length > 0 || data.assignmentsCount > 0 || data.upcomingPracticeCount > 0;
 
   const teacher = authUser || {};
   const coursesCount = data.assignmentsCount || data.assignments.length || 0;
@@ -69,7 +91,6 @@ const TeacherDashboard = () => {
         count: coursesCount,
         icon: FiBook,
         link: '/teacher/courses',
-        accentColor: '#60a5fa',
       },
       {
         id: 'practices',
@@ -77,7 +98,6 @@ const TeacherDashboard = () => {
         count: data.upcomingPracticeCount,
         icon: FiCalendar,
         link: '/teacher/practices',
-        accentColor: '#c084fc',
       },
     ],
     [coursesCount, data.upcomingPracticeCount]
@@ -88,38 +108,42 @@ const TeacherDashboard = () => {
     : 'Sacred Chant - Wisdom for your ministry';
 
   return (
-    <section className="teacher-dashboard-page">
+    <section className="td-page">
       <div
-        className="teacher-dashboard-background"
+        className="td-bg"
         style={{ backgroundImage: `url(${bgImage})` }}
         aria-hidden="true"
       />
-      <div className="teacher-dashboard-overlay" aria-hidden="true" />
+      <div className="td-overlay" aria-hidden="true" />
 
-      <main className="teacher-dashboard-content">
-        <header className="teacher-dashboard-header">
-          <span className="teacher-dashboard-eyebrow">Teacher Portal</span>
-          <h1 className="teacher-dashboard-title">
+      <main className="td-content">
+        <header className="td-header">
+          <span className="td-eyebrow">Teacher Portal</span>
+          <h1 className="td-title">
             የ ቤሮ ደብረ ምህረት ቅድስት ስላሴ ወ ቅዱስ ላሊበላ
           </h1>
-          <p className="teacher-dashboard-subtitle-am">
+          <p className="td-subtitle-am">
             መስቀለ ብርሃን ስንበት ትምህርት ቤት
           </p>
-          <p className="teacher-dashboard-subtitle-en">
+          <p className="td-subtitle-en">
             {welcomeMessage}
           </p>
         </header>
 
         {hasError && (
-          <div className="teacher-dashboard-alert" role="alert">
-            Unable to load live data. Showing latest available values.
+          <div className="td-alert" role="alert">
+            <FiAlertTriangle size={18} />
+            <span>Unable to load live data. Showing latest available values.</span>
+            <button className="td-alert-btn" onClick={reload} aria-label="Retry loading data">
+              <FiRefreshCw size={14} />
+            </button>
           </div>
         )}
 
-        <ul className="teacher-dashboard-stats" aria-label="Teaching statistics">
+        <ul className="td-stats" aria-label="Teaching statistics">
           {statCards.map((card) => {
             const Icon = card.icon;
-            const accessibleLabel = isLoading
+            const accessibleLabel = isLoading && !hasData
               ? `Loading ${card.label.toLowerCase()}`
               : `${card.label}: ${formatNumber(card.count)}. Open ${card.label.toLowerCase()}.`;
 
@@ -127,27 +151,37 @@ const TeacherDashboard = () => {
               <li key={card.id}>
                 <button
                   type="button"
-                  className="teacher-stat-card"
+                  className="td-stat-card"
                   onClick={() => navigate(card.link)}
                   aria-label={accessibleLabel}
-                  style={{ '--accent-color': card.accentColor }}
+                  disabled={isLoading && !hasData}
                 >
-                  <span className="teacher-stat-icon" aria-hidden="true">
-                    <Icon size={22} strokeWidth={1.8} />
+                  <span className="td-stat-icon" aria-hidden="true">
+                    {isLoading && !hasData ? (
+                      <span className="td-skeleton td-skeleton--icon" />
+                    ) : (
+                      <Icon size={24} strokeWidth={1.8} />
+                    )}
                   </span>
 
-                  <span className="teacher-stat-details">
-                    <span className="teacher-stat-value">
-                      {isLoading ? (
-                        <span className="teacher-stat-skeleton" aria-hidden="true" />
+                  <span className="td-stat-details">
+                    <span className="td-stat-value">
+                      {isLoading && !hasData ? (
+                        <span className="td-skeleton td-skeleton--value" />
                       ) : (
                         formatNumber(card.count)
                       )}
                     </span>
-                    <span className="teacher-stat-label">{card.label}</span>
+                    <span className="td-stat-label">
+                      {isLoading && !hasData ? (
+                        <span className="td-skeleton td-skeleton--label" />
+                      ) : (
+                        card.label
+                      )}
+                    </span>
                   </span>
 
-                  <span className="teacher-stat-action" aria-hidden="true">
+                  <span className="td-stat-action" aria-hidden="true">
                     <FiArrowRight size={18} strokeWidth={1.8} />
                   </span>
                 </button>
@@ -156,49 +190,53 @@ const TeacherDashboard = () => {
           })}
         </ul>
 
-        <article className="teacher-dashboard-assignments">
-          <header className="teacher-assignments-header">
-            <h2 className="teacher-assignments-title">My Teaching Assignments</h2>
+        <article className="td-assignments">
+          <header className="td-assignments-header">
+            <h2 className="td-assignments-title">My Teaching Assignments</h2>
             {!isLoading && data.assignments.length > 0 && (
-              <span className="teacher-assignments-count">
+              <span className="td-assignments-count">
                 {data.assignments.length} Active
               </span>
             )}
           </header>
 
-          <div className="teacher-assignments-body">
-            {isLoading ? (
-              <ul className="teacher-assignments-list">
+          <div className="td-assignments-body">
+            {isLoading && !hasData ? (
+              <ul className="td-assignments-list">
                 {[1, 2, 3].map((i) => (
-                  <li key={i} className="teacher-assignment-item">
-                    <span className="teacher-assignment-skeleton" aria-hidden="true" />
+                  <li key={i} className="td-assignment-item">
+                    <span className="td-skeleton td-skeleton--row" />
                   </li>
                 ))}
               </ul>
             ) : data.assignments.length > 0 ? (
-              <ul className="teacher-assignments-list">
+              <ul className="td-assignments-list">
                 {data.assignments.map((assignment) => (
-                  <li key={assignment._id} className="teacher-assignment-item">
-                    <span className="teacher-assignment-icon" aria-hidden="true">
-                      <FiCheckCircle size={16} strokeWidth={2} />
+                  <li key={assignment._id} className="td-assignment-item">
+                    <span className="td-assignment-icon" aria-hidden="true">
+                      <FiCheckCircle size={18} strokeWidth={2} />
                     </span>
-                    <span className="teacher-assignment-details">
-                      <span className="teacher-assignment-course">
+                    <span className="td-assignment-details">
+                      <span className="td-assignment-course">
                         {assignment.course?.name || 'Assigned Course'}
                       </span>
-                      <span className="teacher-assignment-class">
+                      <span className="td-assignment-class">
                         {assignment.class?.name || 'General Class'}
                       </span>
+                    </span>
+                    <span className="td-assignment-arrow" aria-hidden="true">
+                      <FiArrowRight size={16} />
                     </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="teacher-assignments-empty">
+              <div className="td-assignments-empty">
+                <FiInbox size={32} aria-hidden="true" />
                 <p>No teaching assignments currently assigned.</p>
                 <button
                   type="button"
-                  className="teacher-assignments-action"
+                  className="td-assignments-action"
                   onClick={() => navigate('/teacher/courses')}
                 >
                   Browse available courses
