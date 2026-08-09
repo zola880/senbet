@@ -1,2 +1,400 @@
-/* ========== STUDENT LIST ========== */
-/* Uses global layout classes. Add specific overrides here. */
+/* ==========================================================================
+   STUDENT LIST — School theme (maroon / gold / parchment) with L.png backdrop
+   All selectors are scoped with `.sl-` so global styles cannot override them.
+   ========================================================================== */
+
+.sl-page {
+  --sl-bg: #f3f0ea;
+  --sl-surface: #fffdf8;
+  --sl-border: #e6ddcf;
+  --sl-border-light: #f0eadd;
+  --sl-border-strong: #d8cbb6;
+  --sl-maroon: #6d1a28;
+  --sl-maroon-deep: #52101c;
+  --sl-maroon-soft: #8c2f3d;
+  --sl-gold: #d2a12c;
+  --sl-gold-soft: #f6e7c6;
+  --sl-ink: #33262a;
+  --sl-ink-soft: #7a6c6d;
+  --sl-shadow: 0 1px 2px rgba(64, 20, 30, 0.08),
+    0 14px 28px -20px rgba(64, 20, 30, 0.35);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
+  background-color: var(--sl-bg);
+  color: var(--sl-ink);
+  font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
+}
+
+/* Background & Overlay */
+.sl-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.sl-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
+    linear-gradient(170deg, rgba(247, 244, 238, 0.94) 0%, rgba(243, 240, 234, 0.88) 45%, rgba(238, 231, 220, 0.93) 100%);
+}
+
+/* Header */
+.sl-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+}
+
+.sl-title {
+  margin: 0;
+  font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  color: var(--sl-maroon);
+  letter-spacing: 0.01em;
+}
+
+.sl-title::after {
+  content: '';
+  display: block;
+  width: 88px;
+  height: 3px;
+  margin-top: 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sl-gold), rgba(210, 161, 44, 0.35));
+}
+
+.sl-subtitle {
+  margin: 0.65rem 0 0;
+  color: var(--sl-ink-soft);
+  font-size: 0.95rem;
+}
+
+.sl-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.95rem;
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: 999px;
+  color: var(--sl-maroon);
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: var(--sl-shadow);
+  white-space: nowrap;
+}
+
+/* Content Area */
+.sl-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Toolbar (Dropdown) */
+.sl-toolbar {
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--sl-shadow);
+}
+
+.sl-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sl-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sl-ink-soft);
+}
+
+.sl-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sl-select {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--sl-ink);
+  background-color: var(--sl-bg);
+  border: 1px solid var(--sl-border-strong);
+  border-radius: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sl-select:focus {
+  outline: none;
+  border-color: var(--sl-maroon);
+  box-shadow: 0 0 0 3px rgba(109, 26, 40, 0.15);
+}
+
+.sl-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sl-select-icon {
+  position: absolute;
+  right: 1rem;
+  color: var(--sl-ink-soft);
+  pointer-events: none;
+}
+
+.sl-active-class-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--sl-maroon);
+  font-size: 1rem;
+}
+
+/* Table */
+.sl-table-wrapper {
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--sl-shadow);
+}
+
+.sl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.sl-table thead {
+  background-color: #faf6ef;
+  border-bottom: 2px solid var(--sl-border);
+}
+
+.sl-table th {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sl-ink-soft);
+}
+
+.sl-table tbody tr {
+  border-bottom: 1px solid var(--sl-border-light);
+  transition: background-color 0.15s ease;
+}
+
+.sl-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.sl-table tbody tr:hover {
+  background-color: #fcfaf5;
+}
+
+.sl-table td {
+  padding: 1.15rem 1.5rem;
+  color: var(--sl-ink);
+  vertical-align: middle;
+}
+
+.sl-student-name {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-weight: 600;
+}
+
+.sl-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--sl-maroon-soft), var(--sl-maroon-deep));
+  color: var(--sl-gold-soft);
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.sl-roll-num {
+  font-family: monospace;
+  background: var(--sl-bg);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--sl-ink-soft);
+  border: 1px solid var(--sl-border);
+}
+
+.sl-class-name {
+  color: var(--sl-maroon);
+  font-weight: 500;
+}
+
+/* States (Loading, Empty, Error) */
+.sl-state {
+  background: var(--sl-surface);
+  border: 1px dashed var(--sl-border-strong);
+  border-radius: 16px;
+  padding: 3.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  color: var(--sl-ink-soft);
+  box-shadow: var(--sl-shadow);
+}
+
+.sl-state h3 {
+  margin: 0.5rem 0 0;
+  color: var(--sl-maroon);
+  font-size: 1.15rem;
+}
+
+.sl-state p { margin: 0; }
+
+.sl-state--error {
+  border-color: #e3b7b7;
+  background: #fdf6f4;
+  color: #8a4a4a;
+  border-style: solid;
+}
+
+.sl-state--error h3 { color: #8a2430; }
+.sl-state--error svg { color: #b3403f; }
+
+.sl-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid rgba(109, 26, 40, 0.15);
+  border-top-color: var(--sl-maroon);
+  animation: sl-rotate 0.9s linear infinite;
+}
+
+@keyframes sl-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (Mobile Cards)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .sl-page {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .sl-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .sl-toolbar {
+    padding: 1rem;
+  }
+
+  /* Transform table into cards on mobile */
+  .sl-table-wrapper {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .sl-table, .sl-table thead, .sl-table tbody, .sl-table th, .sl-table td, .sl-table tr {
+    display: block;
+  }
+
+  .sl-table thead {
+    display: none;
+  }
+
+  .sl-table tr {
+    background: var(--sl-surface);
+    border: 1px solid var(--sl-border);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    box-shadow: var(--sl-shadow);
+  }
+
+  .sl-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--sl-border-light);
+    text-align: right;
+  }
+
+  .sl-table td:last-child {
+    border-bottom: none;
+  }
+
+  .sl-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sl-ink-soft);
+    text-align: left;
+    flex-shrink: 0;
+    margin-right: 1rem;
+  }
+
+  .sl-student-name {
+    justify-content: flex-end;
+    text-align: right;
+  }
+  
+  .sl-avatar {
+    order: 2;
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .sl-table tbody tr, .sl-spinner {
+    transition: none;
+    animation: none;
+  }
+}
