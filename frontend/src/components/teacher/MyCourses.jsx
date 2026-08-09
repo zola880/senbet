@@ -8,11 +8,11 @@ import {
   FiInbox,
   FiUsers,
 } from 'react-icons/fi';
-
+import './MyCourses.css';
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import bgImage from '../../assets/L.png';
-import './MyCourses.css';
+
 
 /**
  * Route opened when a teacher taps "Manage" on a course card.
