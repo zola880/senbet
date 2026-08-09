@@ -1,92 +1,386 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  FiAlertTriangle,
+  FiBookOpen,
+  FiCheckCircle,
+  FiEdit2,
+  FiInbox,
+  FiPlus,
+  FiRefreshCw,
+  FiSearch,
+  FiTrash2,
+  FiX,
+} from 'react-icons/fi';
+
 import api from '../../services/api';
-import { FiPlus, FiBookOpen } from 'react-icons/fi';
-import EmptyState from '../common/EmptyState';
+import bgImage from '../../assets/L.png';
 import './ManageCourses.css';
 
-const ManageCourses = () => {
-  const navigate = useNavigate();
+/* --------------------------------------------------------------------------
+   Data hook: Fetch Courses with AbortController
+   -------------------------------------------------------------------------- */
+const useCourses = () => {
   const [courses, setCourses] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
+  const [status, setStatus] = useState('loading');
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
 
-  const fetchCourses = () => {
-    api.get('/api/v1/courses')
-      .then(res => setCourses(res.data.data))
-      .catch(console.error);
-  };
+  const reload = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-  useEffect(() => { fetchCourses(); }, []);
+    setStatus('loading');
+    setError(null);
 
-  const handleAdd = async (e) => {
+    try {
+      const res = await api.get('/api/v1/courses', { signal: controller.signal });
+      setCourses(Array.isArray(res.data?.data) ? res.data.data : []);
+      setStatus('success');
+    } catch (err) {
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
+      console.error('Failed to load courses:', err);
+      setError('Unable to load courses. Please try again.');
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    reload();
+    return () => abortRef.current?.abort();
+  }, [reload]);
+
+  return { courses, status, error, reload };
+};
+
+/* --------------------------------------------------------------------------
+   Modal Component
+   -------------------------------------------------------------------------- */
+const CourseModal = ({ isOpen, onClose, onSubmit, initialData, isSaving }) => {
+  const [formData, setFormData] = useState({ name: '', code: '', description: '' });
+  const inputRef = useRef(null);
+  const isEditing = Boolean(initialData);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: initialData?.name || '',
+        code: initialData?.code || '',
+        description: initialData?.description || '',
+      });
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [isOpen, initialData]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    await api.post('/api/v1/courses', { name, code });
-    setName('');
-    setCode('');
-    setShowForm(false);
-    fetchCourses();
+    onSubmit(formData);
   };
 
   return (
-    <div>
-      {/* Header – identical style to ManageClasses */}
-      <div className="class-header">
-        <div>
-          <h2 className="page-title" style={{ marginBottom: '0.3rem' }}>Manage Courses</h2>
-          <p className="class-header-subtitle">Organise your church school courses</p>
+    <div className="mgc-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="mgc-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="mgc-modal-header">
+          <h2>{isEditing ? 'Edit Course' : 'Add New Course'}</h2>
+          <button className="mgc-modal-close" onClick={onClose} aria-label="Close modal">
+            <FiX size={20} />
+          </button>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-          <FiPlus /> Add Course
-        </button>
-      </div>
-
-      {/* Add course modal */}
-      {showForm && (
-        <div className="modal-backdrop" onClick={() => setShowForm(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>New Course</h3>
-            <form onSubmit={handleAdd} className="form-grid">
-              <input
-                placeholder="Course Name (e.g., Zema)"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                required
-              />
-              <input
-                placeholder="Code (optional)"
-                value={code}
-                onChange={e => setCode(e.target.value)}
-              />
-              <button type="submit" className="btn btn-primary">Create</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
-            </form>
+        
+        <form onSubmit={handleSubmit} className="mgc-form">
+          <div className="mgc-form-group">
+            <label htmlFor="mgc-name" className="mgc-label">
+              Course Name <span className="mgc-required">*</span>
+            </label>
+            <input
+              id="mgc-name"
+              ref={inputRef}
+              type="text"
+              className="mgc-input"
+              placeholder="e.g., Zema, Mathematics"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
           </div>
+
+          <div className="mgc-form-group">
+            <label htmlFor="mgc-code" className="mgc-label">Course Code</label>
+            <input
+              id="mgc-code"
+              type="text"
+              className="mgc-input"
+              placeholder="e.g., MATH101"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+            />
+          </div>
+
+          <div className="mgc-form-group">
+            <label htmlFor="mgc-description" className="mgc-label">Description</label>
+            <textarea
+              id="mgc-description"
+              className="mgc-textarea"
+              placeholder="Brief description (optional)"
+              rows="3"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </div>
+
+          <div className="mgc-form-actions">
+            <button type="button" className="mgc-btn mgc-btn--ghost" onClick={onClose} disabled={isSaving}>
+              Cancel
+            </button>
+            <button type="submit" className="mgc-btn mgc-btn--primary" disabled={isSaving}>
+              {isSaving ? 'Saving...' : (isEditing ? 'Update Course' : 'Create Course')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+/* --------------------------------------------------------------------------
+   Main Component
+   -------------------------------------------------------------------------- */
+const ManageCourses = () => {
+  const navigate = useNavigate();
+  const { courses, status, error, reload } = useCourses();
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState({ type: '', message: '' });
+
+  const isLoading = status === 'loading';
+  const hasCourses = courses.length > 0;
+
+  const filteredCourses = courses.filter((c) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      c.name?.toLowerCase().includes(q) ||
+      c.code?.toLowerCase().includes(q) ||
+      c.description?.toLowerCase().includes(q)
+    );
+  });
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast({ type: '', message: '' }), 4000);
+  };
+
+  const openNewModal = () => {
+    setEditingCourse(null);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (course, e) => {
+    if (e) e.stopPropagation();
+    setEditingCourse(course);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditingCourse(null);
+  };
+
+  const handleSave = async (formData) => {
+    setIsSaving(true);
+    try {
+      if (editingCourse) {
+        await api.put(`/api/v1/courses/${editingCourse._id}`, formData);
+        showToast('success', 'Course updated successfully.');
+      } else {
+        await api.post('/api/v1/courses', formData);
+        showToast('success', 'Course created successfully.');
+      }
+      closeModal();
+      reload();
+    } catch (err) {
+      showToast('error', err.response?.data?.message || 'Error saving course.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id, name, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+    try {
+      await api.delete(`/api/v1/courses/${id}`);
+      showToast('success', `"${name}" deleted successfully.`);
+      reload();
+    } catch (err) {
+      showToast('error', 'Failed to delete course.');
+    }
+  };
+
+  const handleCardClick = (courseId) => {
+    navigate(`/admin/courses/${courseId}`);
+  };
+
+  return (
+    <section className="mgc-page">
+      <div className="mgc-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+      <div className="mgc-wash" aria-hidden="true" />
+
+      {toast.message && (
+        <div className={`mgc-toast mgc-toast--${toast.type}`} role="alert">
+          {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
+          <span>{toast.message}</span>
+          <button className="mgc-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close">
+            <FiX size={16} />
+          </button>
         </div>
       )}
 
-      {/* Course cards grid – uses the same .class-card-grid and .class-card classes */}
-      {courses.length === 0 ? (
-        <EmptyState message="No courses yet. Click “Add Course” to create the first one." />
-      ) : (
-        <div className="class-card-grid">
-          {courses.map(c => (
-            <div
-              key={c._id}
-              className="class-card"
-              onClick={() => navigate(`/admin/courses/${c._id}`)}
-            >
-              <div className="class-card-icon">
-                <FiBookOpen size={24} />
-              </div>
-              <h3 className="class-card-name">{c.name}</h3>
-              {c.code && <span className="class-card-code">{c.code}</span>}
+      <main className="mgc-content">
+        <header className="mgc-header">
+          <div>
+            <h1 className="mgc-title">Manage Courses</h1>
+            <p className="mgc-subtitle">
+              Organise your church school courses
+            </p>
+          </div>
+          <button className="mgc-btn mgc-btn--primary" onClick={openNewModal}>
+            <FiPlus size={18} /> Add Course
+          </button>
+        </header>
+
+        {hasCourses && (
+          <div className="mgc-toolbar">
+            <div className="mgc-search">
+              <FiSearch className="mgc-search-icon" size={16} aria-hidden="true" />
+              <input
+                type="search"
+                className="mgc-search-input"
+                placeholder="Search courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search courses"
+              />
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+
+        {isLoading && !hasCourses ? (
+          <div className="mgc-grid" aria-busy="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="mgc-skeleton-card" aria-hidden="true">
+                <div className="mgc-sk-icon" />
+                <div className="mgc-sk-title" />
+                <div className="mgc-sk-line" />
+                <div className="mgc-sk-line short" />
+              </div>
+            ))}
+          </div>
+        ) : status === 'error' && !hasCourses ? (
+          <div className="mgc-state mgc-state--error" role="alert">
+            <FiAlertTriangle size={32} />
+            <h3>Failed to load courses</h3>
+            <p>{error}</p>
+            <button className="mgc-btn mgc-btn--primary" onClick={reload}>
+              <FiRefreshCw size={16} /> Try Again
+            </button>
+          </div>
+        ) : !hasCourses ? (
+          <div className="mgc-state">
+            <FiInbox size={40} />
+            <h3>No courses yet</h3>
+            <p>Get started by creating your first course.</p>
+            <button className="mgc-btn mgc-btn--primary" onClick={openNewModal}>
+              <FiPlus size={16} /> Add First Course
+            </button>
+          </div>
+        ) : filteredCourses.length === 0 ? (
+          <div className="mgc-state">
+            <FiSearch size={40} />
+            <h3>No matches found</h3>
+            <p>No courses match "{searchQuery}".</p>
+            <button className="mgc-btn mgc-btn--ghost" onClick={() => setSearchQuery('')}>
+              Clear Search
+            </button>
+          </div>
+        ) : (
+          <>
+            {status === 'error' && (
+              <div className="mgc-banner" role="alert">
+                <FiAlertTriangle size={16} />
+                Refresh failed — showing the last loaded data.
+              </div>
+            )}
+
+            <div className="mgc-grid">
+              {filteredCourses.map((course) => (
+                <article
+                  key={course._id}
+                  className="mgc-card"
+                  onClick={() => handleCardClick(course._id)}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardClick(course._id); }}
+                  role="button"
+                  aria-label={`Open ${course.name}`}
+                >
+                  <div className="mgc-card-icon" aria-hidden="true">
+                    <FiBookOpen size={24} />
+                  </div>
+                  
+                  <div className="mgc-card-content">
+                    <h2 className="mgc-card-title">{course.name}</h2>
+                    {course.code && <span className="mgc-card-code">{course.code}</span>}
+                    {course.description && (
+                      <p className="mgc-card-desc">{course.description}</p>
+                    )}
+                  </div>
+
+                  <div className="mgc-card-actions" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="mgc-icon-btn"
+                      onClick={(e) => openEditModal(course, e)}
+                      aria-label={`Edit ${course.name}`}
+                      title="Edit"
+                    >
+                      <FiEdit2 size={16} />
+                    </button>
+                    <button
+                      className="mgc-icon-btn mgc-icon-btn--danger"
+                      onClick={(e) => handleDelete(course._id, course.name, e)}
+                      aria-label={`Delete ${course.name}`}
+                      title="Delete"
+                    >
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </main>
+
+      <CourseModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        onSubmit={handleSave}
+        initialData={editingCourse}
+        isSaving={isSaving}
+      />
+    </section>
   );
 };
 
