@@ -1,18 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
-import { FiArrowLeft, FiEdit, FiTrash2, FiUpload, FiSave, FiX, FiPlus, FiFile, FiEye, FiDownload } from 'react-icons/fi';
-import  './CourseDetail.css';
+import {
+  FiArrowLeft, FiEdit2, FiTrash2, FiUpload, FiSave, FiX, FiPlus,
+  FiFile, FiEye, FiDownload, FiAlertTriangle, FiRefreshCw, FiImage,
+  FiUsers, FiBookOpen, FiCheckCircle, FiChevronDown
+} from 'react-icons/fi';
 
-/* Helper: build the authenticated download URL */
+import api from '../../services/api';
+import bgImage from '../../assets/L.png';
+import './CourseDetail.css';
+
+/* --------------------------------------------------------------------------
+   Helpers
+   -------------------------------------------------------------------------- */
 const getFileUrl = (filePath) => {
   const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
   const filename = filePath.split('/').pop();
   return `${base}/api/v1/files/${filename}`;
 };
 
-/* Fetch file with auth, then open in new tab or download */
-const handleFileClick = async (filePath, fileType) => {
+const handleFileAction = async (filePath, fileType, showToast) => {
   try {
     const url = getFileUrl(filePath);
     const response = await api.get(url, { responseType: 'blob' });
@@ -33,287 +40,469 @@ const handleFileClick = async (filePath, fileType) => {
     setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
   } catch (err) {
     console.error('Failed to fetch file:', err);
-    alert('Unable to access the file.');
+    showToast('error', 'Unable to access the file.');
   }
 };
 
-const CourseDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
-  // Course state
+/* --------------------------------------------------------------------------
+   Data Hook
+   -------------------------------------------------------------------------- */
+const useCourseDetail = (id) => {
   const [course, setCourse] = useState(null);
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', code: '', description: '' });
-
-  // Materials state
   const [materials, setMaterials] = useState([]);
-  const [uploadTitle, setUploadTitle] = useState('');
-  const [uploadDesc, setUploadDesc] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-
-  // Assignments state
   const [assignments, setAssignments] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [showAssignForm, setShowAssignForm] = useState(false);
-  const [editAssignmentId, setEditAssignmentId] = useState(null);
-  const [assignForm, setAssignForm] = useState({ teacher: '', class: '' });
+  const [status, setStatus] = useState('loading');
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
 
-  useEffect(() => {
-    fetchCourse();
-    fetchMaterials();
-    fetchAssignments();
-    api.get('/api/v1/users?role=teacher').then(r => setTeachers(r.data.data));
-    api.get('/api/v1/classes').then(r => setClasses(r.data.data));
+  const reload = useCallback(async () => {
+    if (!id) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const signal = controller.signal;
+
+    setStatus('loading');
+    setError(null);
+
+    try {
+      const [courseRes, matRes, assignRes, teachRes, classRes] = await Promise.all([
+        api.get(`/api/v1/courses/${id}`, { signal }),
+        api.get(`/api/v1/courses/${id}/materials`, { signal }),
+        api.get(`/api/v1/assignments?course=${id}`, { signal }),
+        api.get('/api/v1/users?role=teacher', { signal }),
+        api.get('/api/v1/classes', { signal }),
+      ]);
+
+      setCourse(courseRes.data?.data || null);
+      setMaterials(Array.isArray(matRes.data?.data) ? matRes.data.data : []);
+      setAssignments(Array.isArray(assignRes.data?.data) ? assignRes.data.data : []);
+      setTeachers(Array.isArray(teachRes.data?.data) ? teachRes.data.data : []);
+      setClasses(Array.isArray(classRes.data?.data) ? classRes.data.data : []);
+      setStatus('success');
+    } catch (err) {
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
+      console.error('Failed to load course details:', err);
+      setError('Unable to load course details.');
+      setStatus('error');
+    }
   }, [id]);
 
-  const fetchCourse = async () => {
-    const res = await api.get(`/api/v1/courses/${id}`);
-    setCourse(res.data.data);
-    setForm({
-      name: res.data.data.name,
-      code: res.data.data.code || '',
-      description: res.data.data.description || '',
-    });
+  useEffect(() => {
+    reload();
+    return () => abortRef.current?.abort();
+  }, [reload]);
+
+  return { course, materials, assignments, teachers, classes, status, error, reload, setMaterials, setAssignments, setCourse };
+};
+
+/* --------------------------------------------------------------------------
+   Assignment Modal
+   -------------------------------------------------------------------------- */
+const AssignmentModal = ({ isOpen, onClose, onSubmit, initialData, teachers, classes, isSaving }) => {
+  const [formData, setFormData] = useState({ teacher: '', class: '' });
+  const selectRef = useRef(null);
+  const isEditing = Boolean(initialData);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        teacher: initialData?.teacher?._id || '',
+        class: initialData?.class?._id || '',
+      });
+      setTimeout(() => selectRef.current?.focus(), 50);
+    }
+  }, [isOpen, initialData]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
-  const fetchMaterials = async () => {
-    const res = await api.get(`/api/v1/courses/${id}/materials`);
-    setMaterials(res.data.data);
+  return (
+    <div className="cd-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="cd-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="cd-modal-header">
+          <h2>{isEditing ? 'Edit Assignment' : 'Assign Teacher'}</h2>
+          <button className="cd-modal-close" onClick={onClose} aria-label="Close modal"><FiX size={20} /></button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="cd-form">
+          <div className="cd-form-group">
+            <label htmlFor="cd-teacher" className="cd-label">Teacher <span className="cd-required">*</span></label>
+            <div className="cd-select-wrapper">
+              <select id="cd-teacher" ref={selectRef} className="cd-select" value={formData.teacher} onChange={(e) => setFormData({ ...formData, teacher: e.target.value })} required>
+                <option value="">Select Teacher</option>
+                {teachers.map(t => <option key={t._id} value={t._id}>{t.fullName}</option>)}
+              </select>
+              <FiChevronDown className="cd-select-icon" />
+            </div>
+          </div>
+
+          <div className="cd-form-group">
+            <label htmlFor="cd-class" className="cd-label">Class <span className="cd-required">*</span></label>
+            <div className="cd-select-wrapper">
+              <select id="cd-class" className="cd-select" value={formData.class} onChange={(e) => setFormData({ ...formData, class: e.target.value })} required>
+                <option value="">Select Class</option>
+                {classes.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+              </select>
+              <FiChevronDown className="cd-select-icon" />
+            </div>
+          </div>
+
+          <div className="cd-form-actions">
+            <button type="button" className="cd-btn cd-btn--ghost" onClick={onClose} disabled={isSaving}>Cancel</button>
+            <button type="submit" className="cd-btn cd-btn--primary" disabled={isSaving}>
+              {isSaving ? 'Saving...' : (isEditing ? 'Update' : 'Assign')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+/* --------------------------------------------------------------------------
+   Main Component
+   -------------------------------------------------------------------------- */
+const CourseDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const { course, materials, assignments, teachers, classes, status, error, reload, setMaterials, setAssignments, setCourse } = useCourseDetail(id);
+  
+  const [editingCourse, setEditingCourse] = useState(false);
+  const [form, setForm] = useState({ name: '', code: '', description: '' });
+  const [isSavingCourse, setIsSavingCourse] = useState(false);
+
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadDesc, setUploadDesc] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState(null);
+  const [isSavingAssignment, setIsSavingAssignment] = useState(false);
+
+  const [toast, setToast] = useState({ type: '', message: '' });
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast({ type: '', message: '' }), 4000);
   };
 
-  const fetchAssignments = async () => {
-    const res = await api.get(`/api/v1/assignments?course=${id}`);
-    setAssignments(res.data.data);
-  };
+  useEffect(() => {
+    if (course) {
+      setForm({
+        name: course.name || '',
+        code: course.code || '',
+        description: course.description || '',
+      });
+    }
+  }, [course]);
 
-  // -- Course editing --
   const handleUpdateCourse = async (e) => {
     e.preventDefault();
-    await api.put(`/api/v1/courses/${id}`, form);
-    setEditing(false);
-    fetchCourse();
+    setIsSavingCourse(true);
+    try {
+      const res = await api.put(`/api/v1/courses/${id}`, form);
+      setCourse(res.data?.data || form);
+      setEditingCourse(false);
+      showToast('success', 'Course details updated.');
+    } catch (err) {
+      showToast('error', 'Failed to update course.');
+    } finally {
+      setIsSavingCourse(false);
+    }
   };
 
-  // -- Materials --
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!selectedFile) return;
-    setUploading(true);
+    if (!selectedFile) {
+      showToast('error', 'Please select a file to upload.');
+      return;
+    }
+    setIsUploading(true);
     const fd = new FormData();
     fd.append('file', selectedFile);
     fd.append('title', uploadTitle);
     fd.append('description', uploadDesc);
-    await api.post(`/api/v1/courses/${id}/materials`, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    setUploadTitle(''); setUploadDesc(''); setSelectedFile(null); setUploading(false);
-    fetchMaterials();
+    
+    try {
+      await api.post(`/api/v1/courses/${id}/materials`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      showToast('success', 'Material uploaded successfully.');
+      setUploadTitle(''); setUploadDesc(''); setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      
+      const matRes = await api.get(`/api/v1/courses/${id}/materials`);
+      setMaterials(Array.isArray(matRes.data?.data) ? matRes.data.data : []);
+    } catch (err) {
+      showToast('error', err.response?.data?.message || 'Upload failed.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDeleteMaterial = async (matId) => {
     if (!window.confirm('Delete this material?')) return;
-    await api.delete(`/api/v1/courses/${id}/materials/${matId}`);
-    fetchMaterials();
+    try {
+      await api.delete(`/api/v1/courses/${id}/materials/${matId}`);
+      setMaterials((prev) => prev.filter((m) => m._id !== matId));
+      showToast('success', 'Material deleted.');
+    } catch (err) {
+      showToast('error', 'Failed to delete material.');
+    }
   };
 
-  // -- Assignments --
-  const openAssignForm = (assignment = null) => {
-    if (assignment) {
-      setEditAssignmentId(assignment._id);
-      setAssignForm({
-        teacher: assignment.teacher._id,
-        class: assignment.class._id,
-      });
-    } else {
-      setEditAssignmentId(null);
-      setAssignForm({ teacher: '', class: '' });
-    }
-    setShowAssignForm(true);
+  const openAssignModal = (assignment = null) => {
+    setEditingAssignment(assignment);
+    setModalOpen(true);
   };
 
-  const handleAssignSubmit = async (e) => {
-    e.preventDefault();
-    const payload = {
-      course: id,
-      teacher: assignForm.teacher,
-      class: assignForm.class,
-    };
-    if (editAssignmentId) {
-      await api.put(`/api/v1/assignments/${editAssignmentId}`, payload);
-    } else {
-      await api.post('/api/v1/assignments', payload);
+  const handleAssignSubmit = async (formData) => {
+    setIsSavingAssignment(true);
+    const payload = { course: id, teacher: formData.teacher, class: formData.class };
+    try {
+      if (editingAssignment) {
+        await api.put(`/api/v1/assignments/${editingAssignment._id}`, payload);
+        showToast('success', 'Assignment updated.');
+      } else {
+        await api.post('/api/v1/assignments', payload);
+        showToast('success', 'Teacher assigned successfully.');
+      }
+      setModalOpen(false);
+      const assignRes = await api.get(`/api/v1/assignments?course=${id}`);
+      setAssignments(Array.isArray(assignRes.data?.data) ? assignRes.data.data : []);
+    } catch (err) {
+      showToast('error', err.response?.data?.message || 'Failed to save assignment.');
+    } finally {
+      setIsSavingAssignment(false);
     }
-    setShowAssignForm(false);
-    fetchAssignments();
   };
 
   const handleDeleteAssignment = async (assignmentId) => {
     if (!window.confirm('Remove this assignment?')) return;
-    await api.delete(`/api/v1/assignments/${assignmentId}`);
-    fetchAssignments();
+    try {
+      await api.delete(`/api/v1/assignments/${assignmentId}`);
+      setAssignments((prev) => prev.filter((a) => a._id !== assignmentId));
+      showToast('success', 'Assignment removed.');
+    } catch (err) {
+      showToast('error', 'Failed to remove assignment.');
+    }
   };
 
-  if (!course) return <div className="spinner" />;
+  const clearFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  if (status === 'loading' && !course) {
+    return (
+      <section className="cd-page">
+        <div className="cd-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+        <div className="cd-wash" aria-hidden="true" />
+        <div className="cd-state">
+          <span className="cd-spinner" aria-hidden="true" />
+          <p>Loading course details…</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (status === 'error' && !course) {
+    return (
+      <section className="cd-page">
+        <div className="cd-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+        <div className="cd-wash" aria-hidden="true" />
+        <div className="cd-state cd-state--error" role="alert">
+          <FiAlertTriangle size={32} />
+          <h3>Failed to load course</h3>
+          <p>{error}</p>
+          <button className="cd-btn cd-btn--primary" onClick={reload}><FiRefreshCw size={16} /> Try Again</button>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <div>
-      <button className="btn btn-secondary" onClick={() => navigate('/admin/courses')} style={{ marginBottom: '1rem' }}>
-        <FiArrowLeft /> Back to Courses
-      </button>
+    <section className="cd-page">
+      <div className="cd-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+      <div className="cd-wash" aria-hidden="true" />
 
-      {/* Banner */}
-      <div
-        className="course-banner"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.5)), url('https://media.istockphoto.com/id/2228817333/photo/ethiopian-nun-reading-holy-book-in-a-rock-hewn-church-in-lalibela.jpg?s=612x612&w=0&k=20&c=S1a_4Oyyapq4eK0pWvsvktkxa0xYWSNGm4Um2XzL5ng=')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          borderRadius: 'var(--radius)',
-          padding: '3rem 2rem',
-          marginBottom: '1.5rem',
-          color: 'white',
-          textAlign: 'center',
-        }}
-      >
-        <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{course.name}</h2>
-        <p style={{ fontSize: '1.2rem', opacity: 0.9 }}>{course.code || 'Course Management'}</p>
-      </div>
-
-      {/* Course Details Card */}
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3>Course Details</h3>
-          <button className="btn btn-sm btn-secondary" onClick={() => setEditing(!editing)}>
-            {editing ? <FiX /> : <FiEdit />} {editing ? 'Cancel' : 'Edit'}
-          </button>
+      {toast.message && (
+        <div className={`cd-toast cd-toast--${toast.type}`} role="alert">
+          {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
+          <span>{toast.message}</span>
+          <button className="cd-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close"><FiX size={16} /></button>
         </div>
-        {editing ? (
-          <form onSubmit={handleUpdateCourse} className="form-grid" style={{ marginTop: '1rem' }}>
-            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Course Name" required />
-            <input value={form.code} onChange={e => setForm({...form, code: e.target.value})} placeholder="Code" />
-            <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Description" rows={3} style={{ gridColumn: '1 / -1' }} />
-            <button type="submit" className="btn btn-primary"><FiSave /> Save Changes</button>
-          </form>
-        ) : (
-          <div style={{ marginTop: '1rem' }}>
-            <p><strong>Code:</strong> {course.code || '—'}</p>
-            <p><strong>Description:</strong> {course.description || '—'}</p>
-          </div>
-        )}
-      </div>
+      )}
 
-      {/* Materials Section */}
-      <div className="card" style={{ marginTop: '1.5rem' }}>
-        <h3>Course Materials</h3>
-        <form onSubmit={handleUpload} className="form-grid" style={{ marginBottom: '1.5rem' }}>
-          <input type="text" placeholder="Title (optional)" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} />
-          <input type="text" placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} />
-          <input type="file" onChange={e => setSelectedFile(e.target.files[0])} accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt" required />
-          <button type="submit" className="btn btn-primary" disabled={uploading}>
-            <FiUpload /> {uploading ? 'Uploading...' : 'Upload'}
-          </button>
-        </form>
-        {materials.length === 0 ? (
-          <p className="text-muted">No materials uploaded yet.</p>
-        ) : (
-          <div className="materials-grid">
-            {materials.map(mat => (
-              <div key={mat._id} className="material-item">
-                {mat.fileType === 'image' ? (
-                  <button
-                    className="material-image-btn"
-                    onClick={() => handleFileClick(mat.file, 'image')}
-                    style={{
-                      background: `url('${getFileUrl(mat.file)}') center / cover no-repeat`,
-                      width: '100%',
-                      height: '160px',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                    title="Click to view full image"
-                  >
-                    {/* image shown as background of button */}
-                  </button>
-                ) : (
-                  <div className="material-file"><span>{mat.fileType.toUpperCase()}</span></div>
-                )}
-                <div className="material-info">
-                  <h4>{mat.title}</h4>
-                  <p>{mat.description}</p>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    onClick={() => handleFileClick(mat.file, mat.fileType)}
-                  >
-                    {mat.fileType === 'image' ? <FiEye /> : <FiDownload />}
-                    {mat.fileType === 'image' ? ' View Full' : ' Download'}
-                  </button>
-                  <button className="btn btn-sm btn-danger" onClick={() => handleDeleteMaterial(mat._id)} style={{ marginLeft: '0.5rem' }}>
-                    <FiTrash2 />
-                  </button>
-                </div>
+      <main className="cd-content">
+        <button className="cd-back-btn" onClick={() => navigate('/admin/courses')}>
+          <FiArrowLeft size={18} /> Back to Courses
+        </button>
+
+        <header className="cd-header">
+          <div className="cd-header-icon" aria-hidden="true"><FiBookOpen size={28} /></div>
+          <div>
+            <h1 className="cd-title">{course.name}</h1>
+            {course.code && <span className="cd-code-badge">{course.code}</span>}
+          </div>
+        </header>
+
+        {/* Course Details Card */}
+        <div className="cd-card">
+          <div className="cd-card-header">
+            <h2 className="cd-card-title">Course Details</h2>
+            <button className="cd-btn cd-btn--ghost cd-btn--sm" onClick={() => setEditingCourse(!editingCourse)}>
+              {editingCourse ? <><FiX size={16} /> Cancel</> : <><FiEdit2 size={16} /> Edit</>}
+            </button>
+          </div>
+
+          {editingCourse ? (
+            <form onSubmit={handleUpdateCourse} className="cd-form">
+              <div className="cd-form-group">
+                <label className="cd-label">Course Name</label>
+                <input className="cd-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Teacher Assignments Section */}
-      <div className="card" style={{ marginTop: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3>Teacher Assignments</h3>
-          <button className="btn btn-sm btn-primary" onClick={() => openAssignForm()}><FiPlus /> Add Assignment</button>
+              <div className="cd-form-group">
+                <label className="cd-label">Code</label>
+                <input className="cd-input" value={form.code} onChange={e => setForm({...form, code: e.target.value})} />
+              </div>
+              <div className="cd-form-group">
+                <label className="cd-label">Description</label>
+                <textarea className="cd-textarea" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} />
+              </div>
+              <button type="submit" className="cd-btn cd-btn--primary" disabled={isSavingCourse}>
+                {isSavingCourse ? 'Saving...' : <><FiSave size={16} /> Save Changes</>}
+              </button>
+            </form>
+          ) : (
+            <div className="cd-details-grid">
+              <div><strong>Code:</strong> {course.code || '—'}</div>
+              <div><strong>Description:</strong> {course.description || '—'}</div>
+            </div>
+          )}
         </div>
 
-        {showAssignForm && (
-          <div className="modal-backdrop" onClick={() => setShowAssignForm(false)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h3>{editAssignmentId ? 'Edit Assignment' : 'New Assignment'}</h3>
-              <form onSubmit={handleAssignSubmit} className="form-grid">
-                <select value={assignForm.teacher} onChange={e => setAssignForm({...assignForm, teacher: e.target.value})} required>
-                  <option value="">Select Teacher</option>
-                  {teachers.map(t => <option key={t._id} value={t._id}>{t.fullName}</option>)}
-                </select>
-                <select value={assignForm.class} onChange={e => setAssignForm({...assignForm, class: e.target.value})} required>
-                  <option value="">Select Class</option>
-                  {classes.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                </select>
-                <button type="submit" className="btn btn-primary">{editAssignmentId ? 'Update' : 'Assign'}</button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowAssignForm(false)}>Cancel</button>
-              </form>
+        {/* Materials Card */}
+        <div className="cd-card">
+          <h2 className="cd-card-title">Course Materials</h2>
+          
+          <form onSubmit={handleUpload} className="cd-upload-form">
+            <input type="text" className="cd-input" placeholder="Title (optional)" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} />
+            <input type="text" className="cd-input" placeholder="Description (optional)" value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} />
+            
+            <div className="cd-file-drop">
+              <input type="file" ref={fileInputRef} onChange={e => setSelectedFile(e.target.files[0])} accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt" id="cd-file" hidden />
+              <label htmlFor="cd-file" className="cd-file-label">
+                {selectedFile ? (
+                  <>
+                    <FiFile size={16} />
+                    <span className="cd-file-name">{selectedFile.name}</span>
+                    <button type="button" className="cd-file-clear" onClick={(e) => { e.preventDefault(); clearFile(); }} aria-label="Remove file"><FiX size={16} /></button>
+                  </>
+                ) : (
+                  <><FiUpload size={16} /> Click to select a file</>
+                )}
+              </label>
             </div>
-          </div>
-        )}
 
-        {assignments.length === 0 ? (
-          <p className="text-muted">No teacher assigned to this course yet.</p>
-        ) : (
-          <table className="mini-table" style={{ marginTop: '1rem' }}>
-            <thead>
-              <tr>
-                <th>Teacher</th>
-                <th>Class</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assignments.map(a => (
-                <tr key={a._id}>
-                  <td>{a.teacher?.fullName}</td>
-                  <td>{a.class?.name}</td>
-                  <td>
-                    <button className="btn btn-sm btn-secondary" onClick={() => openAssignForm(a)}><FiEdit /></button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDeleteAssignment(a._id)} style={{ marginLeft: '0.5rem' }}><FiTrash2 /></button>
-                  </td>
-                </tr>
+            <button type="submit" className="cd-btn cd-btn--primary" disabled={isUploading}>
+              {isUploading ? <><span className="cd-spinner cd-spinner--sm" /> Uploading...</> : <><FiUpload size={16} /> Upload</>}
+            </button>
+          </form>
+
+          {materials.length === 0 ? (
+            <p className="cd-muted">No materials uploaded yet.</p>
+          ) : (
+            <div className="cd-materials-grid">
+              {materials.map(mat => (
+                <div key={mat._id} className="cd-material-card">
+                  <div className="cd-material-preview">
+                    {mat.fileType === 'image' ? <FiImage size={32} /> : <FiFile size={32} />}
+                  </div>
+                  <div className="cd-material-info">
+                    <h4>{mat.title || 'Untitled'}</h4>
+                    <p>{mat.description || 'No description'}</p>
+                    <div className="cd-material-actions">
+                      <button className="cd-btn cd-btn--sm cd-btn--ghost" onClick={() => handleFileAction(mat.file, mat.fileType, showToast)}>
+                        {mat.fileType === 'image' ? <><FiEye size={14} /> View</> : <><FiDownload size={14} /> Download</>}
+                      </button>
+                      <button className="cd-btn cd-btn--sm cd-btn--danger" onClick={() => handleDeleteMaterial(mat._id)}>
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
+            </div>
+          )}
+        </div>
+
+        {/* Assignments Card */}
+        <div className="cd-card">
+          <div className="cd-card-header">
+            <h2 className="cd-card-title">Teacher Assignments</h2>
+            <button className="cd-btn cd-btn--primary cd-btn--sm" onClick={() => openAssignModal()}>
+              <FiPlus size={16} /> Add Assignment
+            </button>
+          </div>
+
+          {assignments.length === 0 ? (
+            <p className="cd-muted">No teacher assigned to this course yet.</p>
+          ) : (
+            <div className="cd-table-wrapper">
+              <table className="cd-table">
+                <thead>
+                  <tr>
+                    <th>Teacher</th>
+                    <th>Class</th>
+                    <th className="cd-th-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignments.map(a => (
+                    <tr key={a._id}>
+                      <td data-label="Teacher">{a.teacher?.fullName || 'Unknown'}</td>
+                      <td data-label="Class">{a.class?.name || 'Unknown'}</td>
+                      <td data-label="Actions" className="cd-td-actions">
+                        <button className="cd-icon-btn" onClick={() => openAssignModal(a)} title="Edit"><FiEdit2 size={16} /></button>
+                        <button className="cd-icon-btn cd-icon-btn--danger" onClick={() => handleDeleteAssignment(a._id)} title="Delete"><FiTrash2 size={16} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <AssignmentModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleAssignSubmit}
+        initialData={editingAssignment}
+        teachers={teachers}
+        classes={classes}
+        isSaving={isSavingAssignment}
+      />
+    </section>
   );
 };
 
