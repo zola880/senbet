@@ -2,9 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import EmptyState from '../common/EmptyState';
-
-// 🌄 Background image shown before any assignment is selected
-const BACKGROUND_IMAGE = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQUgBDixxPesefod7AUSte7eApcia7_n5VZUp6I16ar1XpdpE-6fIMwP6M&s';
+import L from '../../assets/L.png';          // background image
+import './EnterMarks.css';
 
 const EnterMarks = () => {
   const { user } = useContext(AuthContext);
@@ -15,6 +14,7 @@ const EnterMarks = () => {
   const [config, setConfig] = useState(null);
   const [scores, setScores] = useState({});
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState({});
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -26,6 +26,7 @@ const EnterMarks = () => {
         setAssignments(res.data.data);
       } catch (err) {
         console.error(err);
+        setError('Failed to load assignments.');
       }
     };
     fetchAssignments();
@@ -46,12 +47,12 @@ const EnterMarks = () => {
     setLoading(true);
     setError('');
     setSuccessMsg('');
+    setScores({});
 
-    // Fetch students and config in parallel
     Promise.all([
       api.get(`/api/v1/users?role=student&class=${classId}`),
       api.get(`/api/v1/assessment-configs/${classId}`).catch((err) => {
-        if (err.response?.status === 404) return null; // config not found
+        if (err.response?.status === 404) return null;
         throw err;
       }),
     ])
@@ -61,28 +62,31 @@ const EnterMarks = () => {
           setConfig(configRes.data.data);
         } else {
           setConfig(null);
-          setError('No assessment configuration found for this class. Please ask the admin to set it up first.');
+          setError(
+            'No assessment configuration found for this class. Please ask the admin to set it up first.'
+          );
         }
       })
       .catch((err) => {
         console.error(err);
-        setError('Failed to load data. Please try again.');
+        setError('Failed to load class data. Please try again.');
       })
       .finally(() => setLoading(false));
   }, [selectedAssignment, assignments]);
 
   // Handle score input change
   const handleScoreChange = (studentId, componentName, value) => {
-    setScores((prev) => ({
-      ...prev,
-      [`${studentId}-${componentName}`]: value,
-    }));
+    const key = `${studentId}-${componentName}`;
+    setScores((prev) => ({ ...prev, [key]: value }));
   };
 
   // Submit scores for a specific component
   const submitComponentScores = async (componentName) => {
     const assignment = assignments.find((a) => a._id === selectedAssignment);
-    if (!assignment) return;
+    if (!assignment || !config) return;
+
+    const component = config.components.find((c) => c.name === componentName);
+    if (!component) return;
 
     const payload = {
       class: assignment.class._id,
@@ -93,39 +97,48 @@ const EnterMarks = () => {
 
     students.forEach((student) => {
       const key = `${student._id}-${componentName}`;
-      const val = scores[key];
-      if (val !== undefined && val !== '') {
-        payload.scores.push({
-          student: student._id,
-          scoreObtained: Number(val),
-          maxScore: config.components.find((c) => c.name === componentName)?.maxScore || 100,
-        });
+      const rawValue = scores[key];
+      if (rawValue !== undefined && rawValue.trim() !== '') {
+        const numeric = parseFloat(rawValue);
+        if (!isNaN(numeric) && numeric >= 0 && numeric <= component.maxScore) {
+          payload.scores.push({
+            student: student._id,
+            scoreObtained: numeric,
+            maxScore: component.maxScore,
+          });
+        }
       }
     });
 
     if (payload.scores.length === 0) {
-      alert('No scores entered for this component.');
+      setError(`No valid scores entered for "${componentName}".`);
       return;
     }
+
+    setSubmitting((prev) => ({ ...prev, [componentName]: true }));
+    setError('');
+    setSuccessMsg('');
 
     try {
       await api.post('/api/v1/scores', payload);
       setSuccessMsg(`Scores for "${componentName}" saved successfully.`);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
-      alert(err.response?.data?.message || 'Error saving scores.');
+      setError(
+        err.response?.data?.message ||
+          `Failed to save scores for "${componentName}".`
+      );
+    } finally {
+      setSubmitting((prev) => ({ ...prev, [componentName]: false }));
     }
   };
 
-  // Get the selected assignment object
-  const assignmentObj = assignments.find((a) => a._id === selectedAssignment);
-
   return (
-    <div>
+    <div className="enter-marks">
       <h2 className="page-title">Enter Marks</h2>
 
       {/* Assignment selector */}
-      <div className="form-grid" style={{ marginBottom: '1rem' }}>
+      <div className="form-group">
         <select
           value={selectedAssignment}
           onChange={(e) => setSelectedAssignment(e.target.value)}
@@ -141,81 +154,86 @@ const EnterMarks = () => {
 
       {/* Messages */}
       {loading && <div className="spinner" />}
-      {error && <div className="error-message">{error}</div>}
-      {successMsg && <div className="success-message">{successMsg}</div>}
+      {error && <div className="message message--error">{error}</div>}
+      {successMsg && (
+        <div className="message message--success">{successMsg}</div>
+      )}
 
-      {/* Background placeholder when no assignment selected */}
-      {!selectedAssignment ? (
+      {/* Placeholder when no assignment is selected */}
+      {!selectedAssignment && (
         <div
           className="selection-placeholder"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url('${BACKGROUND_IMAGE}')`,
-          }}
+          style={{ backgroundImage: `url(${L})` }}
         >
           <p>Please select a course and class to enter marks</p>
         </div>
-      ) : (
-        /* If config loaded and students present, show table */
-        config && students.length > 0 && !loading && (
-          <div className="table-container" style={{ marginTop: '1rem' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  {config.components.map((comp) => (
-                    <th key={comp.name}>
-                      {comp.name} <br />
-                      <small>(max {comp.maxScore})</small>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((student) => (
-                  <tr key={student._id}>
-                    <td>{student.fullName}</td>
-                    {config.components.map((comp) => (
-                      <td key={comp.name}>
-                        <input
-                          type="number"
-                          min="0"
-                          max={comp.maxScore}
-                          step="any"
-                          value={scores[`${student._id}-${comp.name}`] || ''}
-                          onChange={(e) =>
-                            handleScoreChange(student._id, comp.name, e.target.value)
-                          }
-                          style={{
-                            width: '80px',
-                            padding: '0.4rem',
-                            borderRadius: '6px',
-                            border: '1px solid #ccc',
-                          }}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Save buttons */}
-            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-              {config.components.map((comp) => (
-                <button
-                  key={comp.name}
-                  className="btn btn-primary"
-                  onClick={() => submitComponentScores(comp.name)}
-                >
-                  Save {comp.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )
       )}
 
-      {/* Fallback if no students or config */}
+      {/* Data table */}
+      {selectedAssignment && config && students.length > 0 && !loading && (
+        <div className="marks-table-container">
+          <table className="marks-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                {config.components.map((comp) => (
+                  <th key={comp.name}>
+                    {comp.name}
+                    <br />
+                    <small>(max {comp.maxScore})</small>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {students.map((student) => (
+                <tr key={student._id}>
+                  <td>{student.fullName}</td>
+                  {config.components.map((comp) => (
+                    <td key={comp.name}>
+                      <input
+                        type="number"
+                        min="0"
+                        max={comp.maxScore}
+                        step="any"
+                        className="score-input"
+                        value={
+                          scores[`${student._id}-${comp.name}`] || ''
+                        }
+                        onChange={(e) =>
+                          handleScoreChange(
+                            student._id,
+                            comp.name,
+                            e.target.value
+                          )
+                        }
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Save buttons per component */}
+          <div className="save-buttons">
+            {config.components.map((comp) => (
+              <button
+                key={comp.name}
+                className="btn btn-primary"
+                onClick={() => submitComponentScores(comp.name)}
+                disabled={submitting[comp.name]}
+              >
+                {submitting[comp.name]
+                  ? 'Saving...'
+                  : `Save ${comp.name}`}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty states */}
       {!loading && selectedAssignment && !config && !error && (
         <EmptyState message="Set up assessment configuration for this class before entering marks." />
       )}

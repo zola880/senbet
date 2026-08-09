@@ -1,2 +1,121 @@
-/* ========== ENTER MARKS ========== */
-/* Uses global layout classes. Add specific overrides here. */
+/* ========== ENTER MARKS (Teacher) ========== */
+
+.enter-marks {
+  /* container */
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group select {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fdfcf8;
+  font-size: 0.95rem;
+}
+
+/* Placeholder before selection */
+.selection-placeholder {
+  min-height: 300px;
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.selection-placeholder p {
+  font-size: 1.2rem;
+  color: #fff;
+  background: rgba(0,0,0,0.5);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* Messages */
+.message {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.message--error {
+  background: #fff5f5;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+}
+
+.message--success {
+  background: #f0fff4;
+  color: var(--success);
+  border: 1px solid #c6f6d5;
+}
+
+/* Table */
+.marks-table-container {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+  padding: 1rem 0;
+}
+
+.marks-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.marks-table th,
+.marks-table td {
+  padding: 0.9rem 1.2rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.marks-table th {
+  background: #fef7f2;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.marks-table tr:hover td {
+  background: #fdf5ec;
+}
+
+.score-input {
+  width: 80px;
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+/* Save buttons */
+.save-buttons {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.2rem;
+  flex-wrap: wrap;
+}
+
+/* Spinner (already in global, but we can keep for reference) */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 1rem auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
