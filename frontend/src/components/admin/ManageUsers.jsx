@@ -1,10 +1,189 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiEdit2,
+  FiInbox,
+  FiPlus,
+  FiRefreshCw,
+  FiSearch,
+  FiTrash2,
+  FiUser,
+  FiX,
+} from 'react-icons/fi';
+
 import api from '../../services/api';
-import { FiEdit, FiTrash2, FiUserPlus } from 'react-icons/fi';
-import EmptyState from '../common/EmptyState';
+import bgImage from '../../assets/L.png';
 import './ManageUsers.css';
 
+/* --------------------------------------------------------------------------
+   Data hook: Fetch Users & Classes with AbortController
+   -------------------------------------------------------------------------- */
+const useUsersAndClasses = () => {
+  const [users, setUsers] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [status, setStatus] = useState('loading');
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
+
+  const reload = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setStatus('loading');
+    setError(null);
+
+    try {
+      const [usersRes, classesRes] = await Promise.all([
+        api.get('/api/v1/users', { signal: controller.signal }),
+        api.get('/api/v1/classes', { signal: controller.signal }),
+      ]);
+
+      setUsers(Array.isArray(usersRes.data?.data) ? usersRes.data.data : []);
+      setClasses(Array.isArray(classesRes.data?.data) ? classesRes.data.data : []);
+      setStatus('success');
+    } catch (err) {
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
+      console.error('Failed to load users/classes:', err);
+      setError('Unable to load users. Please try again.');
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    reload();
+    return () => abortRef.current?.abort();
+  }, [reload]);
+
+  return { users, classes, status, error, reload };
+};
+
+/* --------------------------------------------------------------------------
+   Modal Component
+   -------------------------------------------------------------------------- */
+const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, defaultRole }) => {
+  const [formData, setFormData] = useState({
+    fullName: '', email: '', password: '', role: defaultRole,
+    class: '', rollNumber: '', qualifications: '',
+  });
+  const inputRef = useRef(null);
+  const isEditing = Boolean(initialData);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        fullName: initialData?.fullName || '',
+        email: initialData?.email || '',
+        password: '',
+        role: initialData?.role || defaultRole,
+        class: initialData?.class?._id || initialData?.class || '',
+        rollNumber: initialData?.rollNumber || '',
+        qualifications: initialData?.qualifications || '',
+      });
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [isOpen, initialData, defaultRole]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const payload = { ...formData };
+    if (isEditing && !payload.password) delete payload.password;
+    onSubmit(payload);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <div className="mu-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="mu-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="mu-modal-header">
+          <h2>{isEditing ? 'Edit User' : 'Add New User'}</h2>
+          <button className="mu-modal-close" onClick={onClose} aria-label="Close modal">
+            <FiX size={20} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="mu-form">
+          <div className="mu-form-group">
+            <label htmlFor="mu-fullName" className="mu-label">Full Name <span className="mu-required">*</span></label>
+            <input id="mu-fullName" ref={inputRef} name="fullName" type="text" className="mu-input" placeholder="e.g., John Doe" value={formData.fullName} onChange={handleChange} required />
+          </div>
+          
+          <div className="mu-form-group">
+            <label htmlFor="mu-email" className="mu-label">Email <span className="mu-required">*</span></label>
+            <input id="mu-email" name="email" type="email" className="mu-input" placeholder="user@example.com" value={formData.email} onChange={handleChange} required />
+          </div>
+
+          <div className="mu-form-group">
+            <label htmlFor="mu-password" className="mu-label">
+              Password {isEditing && <span className="mu-optional">(leave blank to keep current)</span>}
+            </label>
+            <input id="mu-password" name="password" type="password" className="mu-input" placeholder="••••••••" value={formData.password} onChange={handleChange} required={!isEditing} />
+          </div>
+
+          <div className="mu-form-group">
+            <label htmlFor="mu-role" className="mu-label">Role</label>
+            <select id="mu-role" name="role" className="mu-select" value={formData.role} onChange={handleChange}>
+              <option value="admin">Admin</option>
+              <option value="teacher">Teacher</option>
+              <option value="student">Student</option>
+            </select>
+          </div>
+
+          {formData.role === 'student' && (
+            <>
+              <div className="mu-form-group">
+                <label htmlFor="mu-class" className="mu-label">Class</label>
+                <select id="mu-class" name="class" className="mu-select" value={formData.class} onChange={handleChange}>
+                  <option value="">Select Class</option>
+                  {classes.map((c) => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mu-form-group">
+                <label htmlFor="mu-rollNumber" className="mu-label">Roll Number</label>
+                <input id="mu-rollNumber" name="rollNumber" type="text" className="mu-input" placeholder="e.g., 101" value={formData.rollNumber} onChange={handleChange} />
+              </div>
+            </>
+          )}
+
+          {formData.role === 'teacher' && (
+            <div className="mu-form-group">
+              <label htmlFor="mu-qualifications" className="mu-label">Qualifications</label>
+              <input id="mu-qualifications" name="qualifications" type="text" className="mu-input" placeholder="e.g., B.Ed, M.A." value={formData.qualifications} onChange={handleChange} />
+            </div>
+          )}
+
+          <div className="mu-form-actions">
+            <button type="button" className="mu-btn mu-btn--ghost" onClick={onClose} disabled={isSaving}>Cancel</button>
+            <button type="submit" className="mu-btn mu-btn--primary" disabled={isSaving}>
+              {isSaving ? 'Saving...' : (isEditing ? 'Update User' : 'Create User')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+/* --------------------------------------------------------------------------
+   Main Page Component
+   -------------------------------------------------------------------------- */
 const TABS = [
   { key: 'admin', label: 'Admins' },
   { key: 'teacher', label: 'Teachers' },
@@ -13,252 +192,225 @@ const TABS = [
 
 const ManageUsers = () => {
   const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
+  const { users, classes, status, error, reload } = useUsersAndClasses();
+  
   const [activeTab, setActiveTab] = useState('admin');
-  const [showForm, setShowForm] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    role: activeTab === 'admin' ? 'admin' : activeTab === 'teacher' ? 'teacher' : 'student',
-    class: '',
-    rollNumber: '',
-    qualifications: '',
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState({ type: '', message: '' });
+  
+  const tabRefs = useRef({});
+
+  const isLoading = status === 'loading';
+  const hasUsers = users.length > 0;
+
+  const filteredUsers = users.filter((u) => {
+    if (u.role !== activeTab) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      u.fullName?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.class?.name?.toLowerCase().includes(q) ||
+      u.rollNumber?.toLowerCase().includes(q)
+    );
   });
-  const [classes, setClasses] = useState([]);
 
-  useEffect(() => {
-    fetchUsers();
-    fetchClasses();
-  }, []);
-
-  const fetchUsers = async () => {
-    const res = await api.get('/api/v1/users');
-    setUsers(res.data.data);
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast({ type: '', message: '' }), 4000);
   };
 
-  const fetchClasses = async () => {
-    const res = await api.get('/api/v1/classes');
-    setClasses(res.data.data);
-  };
+  const openNewModal = () => { setEditingUser(null); setModalOpen(true); };
+  const openEditModal = (user) => { setEditingUser(user); setModalOpen(true); };
+  const closeModal = () => { setModalOpen(false); setEditingUser(null); };
 
-  const filteredUsers = users.filter((u) => u.role === activeTab);
-
-  const openNewUserForm = () => {
-    setEditUser(null);
-    setFormData({
-      fullName: '',
-      email: '',
-      password: '',
-      role: activeTab,
-      class: '',
-      rollNumber: '',
-      qualifications: '',
-    });
-    setShowForm(true);
-  };
-
-  const openEditForm = (user, e) => {
-    if (e) e.stopPropagation();   // prevent row click if coming from button
-    setEditUser(user);
-    setFormData({
-      fullName: user.fullName || '',
-      email: user.email || '',
-      password: '',
-      role: user.role || activeTab,
-      class: user.class?._id || user.class || '',
-      rollNumber: user.rollNumber || '',
-      qualifications: user.qualifications || '',
-    });
-    setShowForm(true);
-  };
-
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSave = async (payload) => {
+    setIsSaving(true);
     try {
-      if (editUser) {
-        const payload = { ...formData };
-        if (!payload.password) delete payload.password;
-        await api.put(`/api/v1/users/${editUser._id}`, payload);
+      if (editingUser) {
+        await api.put(`/api/v1/users/${editingUser._id}`, payload);
+        showToast('success', 'User updated successfully.');
       } else {
-        await api.post('/api/v1/auth/register', formData);
+        await api.post('/api/v1/auth/register', payload);
+        showToast('success', 'User created successfully.');
       }
-      setShowForm(false);
-      setEditUser(null);
-      fetchUsers();
+      closeModal();
+      reload();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error saving user');
+      showToast('error', err.response?.data?.message || 'Error saving user.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDelete = async (id, e) => {
-    if (e) e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this user?')) {
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
+    try {
       await api.delete(`/api/v1/users/${id}`);
-      fetchUsers();
+      showToast('success', `${name} deleted successfully.`);
+      reload();
+    } catch (err) {
+      showToast('error', 'Failed to delete user.');
     }
   };
 
-  // Navigate to student detail page when row is clicked
   const handleRowClick = (userId) => {
-    navigate(`/admin/users/${userId}`);
+    if (activeTab === 'student') navigate(`/admin/users/${userId}`);
+  };
+
+  const handleTabKeyDown = (event, index) => {
+    const handledKeys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+    if (!handledKeys.includes(event.key)) return;
+    event.preventDefault();
+    let nextIndex;
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % TABS.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + TABS.length) % TABS.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else nextIndex = TABS.length - 1;
+    const nextTab = TABS[nextIndex];
+    setActiveTab(nextTab.key);
+    tabRefs.current[nextTab.key]?.focus();
   };
 
   return (
-    <div>
-      <h2 className="page-title">Manage Users</h2>
+    <section className="mu-page">
+      <div className="mu-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+      <div className="mu-wash" aria-hidden="true" />
 
-      <div className="tabs-container">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            className={`tab-button ${activeTab === tab.key ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
-        <button className="btn btn-primary" onClick={openNewUserForm}>
-          <FiUserPlus /> Add {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-        </button>
-      </div>
-
-      <div className="table-container">
-        {filteredUsers.length === 0 ? (
-          <EmptyState message={`No ${activeTab}s found. Click "Add" to create one.`} />
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                {activeTab === 'student' && <th>Class</th>}
-                {activeTab === 'student' && <th>Roll No</th>}
-                {activeTab === 'teacher' && <th>Qualifications</th>}
-                {/* Only show Actions column for non‑student roles or if we want edit/delete buttons for all? We'll keep for admins/teachers, remove for students. */}
-                {activeTab !== 'student' && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((u) => (
-                <tr
-                  key={u._id}
-                  onClick={activeTab === 'student' ? () => handleRowClick(u._id) : undefined}
-                  style={{
-                    cursor: activeTab === 'student' ? 'pointer' : 'default',
-                  }}
-                >
-                  <td>{u.fullName}</td>
-                  <td>{u.email}</td>
-                  {activeTab === 'student' && <td>{u.class?.name || '—'}</td>}
-                  {activeTab === 'student' && <td>{u.rollNumber || '—'}</td>}
-                  {activeTab === 'teacher' && <td>{u.qualifications || '—'}</td>}
-                  {activeTab !== 'student' && (
-                    <td>
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={(e) => openEditForm(u, e)}
-                      >
-                        <FiEdit />
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={(e) => handleDelete(u._id, e)}
-                        style={{ marginLeft: '0.5rem' }}
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {showForm && (
-        <div className="modal-backdrop" onClick={() => setShowForm(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>{editUser ? 'Edit User' : 'Add New User'}</h3>
-            <form onSubmit={handleSubmit} className="form-grid">
-              <input
-                name="fullName"
-                placeholder="Full Name"
-                value={formData.fullName}
-                onChange={handleFormChange}
-                required
-              />
-              <input
-                name="email"
-                type="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleFormChange}
-                required
-              />
-              <input
-                name="password"
-                type="password"
-                placeholder={editUser ? 'New password (leave blank to keep current)' : 'Password'}
-                value={formData.password}
-                onChange={handleFormChange}
-                required={!editUser}
-              />
-              <select name="role" value={formData.role} onChange={handleFormChange}>
-                <option value="admin">Admin</option>
-                <option value="teacher">Teacher</option>
-                <option value="student">Student</option>
-              </select>
-
-              {formData.role === 'student' && (
-                <>
-                  <select name="class" value={formData.class} onChange={handleFormChange}>
-                    <option value="">Select Class</option>
-                    {classes.map((c) => (
-                      <option key={c._id} value={c._id}>{c.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    name="rollNumber"
-                    placeholder="Roll Number"
-                    value={formData.rollNumber}
-                    onChange={handleFormChange}
-                  />
-                </>
-              )}
-
-              {formData.role === 'teacher' && (
-                <input
-                  name="qualifications"
-                  placeholder="Qualifications (optional)"
-                  value={formData.qualifications}
-                  onChange={handleFormChange}
-                />
-              )}
-
-              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
-                <button type="submit" className="btn btn-primary">
-                  {editUser ? 'Update' : 'Create'}
-                </button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+      {toast.message && (
+        <div className={`mu-toast mu-toast--${toast.type}`} role="alert">
+          {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
+          <span>{toast.message}</span>
+          <button className="mu-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close"><FiX size={16} /></button>
         </div>
       )}
-    </div>
+
+      <main className="mu-content">
+        <header className="mu-header">
+          <div>
+            <h1 className="mu-title">Manage Users</h1>
+            <p className="mu-subtitle">Create, edit, and organize admins, teachers, and students.</p>
+          </div>
+        </header>
+
+        <div className="mu-tabs" role="tablist" aria-label="User roles">
+          {TABS.map((tab, index) => (
+            <button
+              key={tab.key}
+              ref={(el) => { tabRefs.current[tab.key] = el; }}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              tabIndex={activeTab === tab.key ? 0 : -1}
+              className={`mu-tab ${activeTab === tab.key ? 'mu-tab--active' : ''}`}
+              onClick={() => setActiveTab(tab.key)}
+              onKeyDown={(e) => handleTabKeyDown(e, index)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mu-toolbar">
+          <div className="mu-search">
+            <FiSearch className="mu-search-icon" size={16} aria-hidden="true" />
+            <input
+              type="search"
+              className="mu-search-input"
+              placeholder={`Search ${activeTab}s...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search users"
+            />
+          </div>
+          <button className="mu-btn mu-btn--primary" onClick={openNewModal}>
+            <FiPlus size={18} /> Add {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+          </button>
+        </div>
+
+        {isLoading && !hasUsers ? (
+          <div className="mu-state" role="status">
+            <span className="mu-spinner" aria-hidden="true" />
+            <p>Loading users…</p>
+          </div>
+        ) : status === 'error' && !hasUsers ? (
+          <div className="mu-state mu-state--error" role="alert">
+            <FiAlertTriangle size={32} />
+            <h3>Failed to load users</h3>
+            <p>{error}</p>
+            <button className="mu-btn mu-btn--primary" onClick={reload}><FiRefreshCw size={16} /> Try Again</button>
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="mu-state">
+            <FiInbox size={40} />
+            <h3>No {activeTab}s found</h3>
+            <p>{searchQuery ? 'Try adjusting your search query.' : `Click "Add" to create a new ${activeTab}.`}</p>
+          </div>
+        ) : (
+          <div className="mu-table-wrapper">
+            <table className="mu-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  {activeTab === 'student' && <th>Class</th>}
+                  {activeTab === 'student' && <th>Roll No</th>}
+                  {activeTab === 'teacher' && <th>Qualifications</th>}
+                  {activeTab !== 'student' && <th className="mu-th-actions">Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((u) => (
+                  <tr
+                    key={u._id}
+                    className={activeTab === 'student' ? 'mu-row--clickable' : ''}
+                    onClick={() => handleRowClick(u._id)}
+                    tabIndex={activeTab === 'student' ? 0 : undefined}
+                    onKeyDown={(e) => { if (activeTab === 'student' && e.key === 'Enter') handleRowClick(u._id); }}
+                  >
+                    <td data-label="Name">
+                      <div className="mu-user-cell">
+                        <span className="mu-avatar" aria-hidden="true">{u.fullName?.charAt(0).toUpperCase() || '?'}</span>
+                        <span className="mu-user-name">{u.fullName}</span>
+                      </div>
+                    </td>
+                    <td data-label="Email">{u.email}</td>
+                    {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
+                    {activeTab === 'student' && <td data-label="Roll No">{u.rollNumber || '—'}</td>}
+                    {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
+                    {activeTab !== 'student' && (
+                      <td data-label="Actions" className="mu-td-actions">
+                        <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
+                          <button className="mu-icon-btn" onClick={() => openEditModal(u)} title="Edit" aria-label={`Edit ${u.fullName}`}>
+                            <FiEdit2 size={16} />
+                          </button>
+                          <button className="mu-icon-btn mu-icon-btn--danger" onClick={() => handleDelete(u._id, u.fullName)} title="Delete" aria-label={`Delete ${u.fullName}`}>
+                            <FiTrash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
+
+      <UserModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        onSubmit={handleSave}
+        initialData={editingUser}
+        classes={classes}
+        isSaving={isSaving}
+        defaultRole={activeTab}
+      />
+    </section>
   );
 };
 
