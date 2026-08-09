@@ -1,72 +1,185 @@
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiAlertTriangle,
   FiArrowRight,
   FiBook,
   FiBookOpen,
+  FiGrid,
   FiInbox,
+  FiRefreshCw,
+  FiSearch,
   FiUsers,
+  FiX,
 } from 'react-icons/fi';
-import './MyCourses.css';
+
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import bgImage from '../../assets/L.png';
+import './MyCourses.css';
 
+/** Base route for the course-management screen. */
+const MANAGE_ROUTE_BASE = '/teacher/courses';
 
-/**
- * Route opened when a teacher taps "Manage" on a course card.
- * TODO: point this to your real course-management screen.
- */
 const buildManageRoute = (assignment) =>
-  `/teacher/courses/${assignment?.course?._id || assignment?._id}`;
+  `${MANAGE_ROUTE_BASE}/${assignment?.course?._id || assignment?._id}`;
 
+const normalizeAssignments = (payload) =>
+  Array.isArray(payload) ? payload.filter((item) => item && item._id) : [];
+
+const isCancelError = (err) =>
+  err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError';
+
+/* --------------------------------------------------------------------------
+   Data hook: fetch + cancel + retry
+   -------------------------------------------------------------------------- */
+const useTeacherAssignments = (teacherId) => {
+  const [assignments, setAssignments] = useState([]);
+  const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
+
+  const reload = useCallback(async () => {
+    if (!teacherId) {
+      setAssignments([]);
+      setStatus('success');
+      return;
+    }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setStatus('loading');
+    setError(null);
+
+    try {
+      const response = await api.get(
+        `/api/v1/assignments/teacher/${teacherId}`,
+        { signal: controller.signal }
+      );
+
+      setAssignments(normalizeAssignments(response?.data?.data));
+      setStatus('success');
+    } catch (requestError) {
+      if (isCancelError(requestError)) return;
+
+      console.error('Failed to load teacher courses:', requestError);
+      setError('We could not load your courses. Please try again.');
+      setStatus('error');
+    }
+  }, [teacherId]);
+
+  useEffect(() => {
+    reload();
+    return () => abortRef.current?.abort();
+  }, [reload]);
+
+  return { assignments, status, error, reload };
+};
+
+/* --------------------------------------------------------------------------
+   Presentational sub-components
+   -------------------------------------------------------------------------- */
+const SkeletonCard = () => (
+  <div className="mc-skeleton-card" aria-hidden="true">
+    <div className="mc-sk-head">
+      <span className="mc-sk-icon" />
+      <span className="mc-sk-chip" />
+    </div>
+    <span className="mc-sk-title" />
+    <span className="mc-sk-line" />
+    <div className="mc-sk-foot">
+      <span className="mc-sk-hint" />
+      <span className="mc-sk-btn" />
+    </div>
+  </div>
+);
+
+const StatePanel = ({ variant, icon, title, message, actionLabel, onAction }) => (
+  <div
+    className={`mc-state ${variant === 'error' ? 'mc-state--error' : ''}`}
+    role={variant === 'error' ? 'alert' : 'status'}
+  >
+    {icon}
+    {title && <h3>{title}</h3>}
+    {message && <p>{message}</p>}
+    {actionLabel && onAction && (
+      <button type="button" className="mc-state-btn" onClick={onAction}>
+        {actionLabel}
+      </button>
+    )}
+  </div>
+);
+
+const CourseCard = ({ assignment, onManage }) => {
+  const courseName = assignment?.course?.name || 'Unnamed Course';
+  const className = assignment?.class?.name || 'General Class';
+  const courseCode = assignment?.course?.code;
+
+  return (
+    <article className="mc-card">
+      <div className="mc-card-head">
+        <span className="mc-card-icon" aria-hidden="true">
+          <FiBook size={20} />
+        </span>
+        <span className="mc-card-chip" title={className}>
+          <FiUsers size={13} aria-hidden="true" />
+          {className}
+        </span>
+      </div>
+
+      <h2 className="mc-card-title" title={courseName}>{courseName}</h2>
+      {courseCode && <p className="mc-card-meta">Code · {courseCode}</p>}
+
+      <div className="mc-card-footer">
+        <span className="mc-card-hint">Tap to manage</span>
+        <button
+          type="button"
+          className="mc-card-btn"
+          onClick={() => onManage(assignment)}
+          aria-label={`Manage ${courseName} (${className})`}
+        >
+          Manage <FiArrowRight size={15} aria-hidden="true" />
+        </button>
+      </div>
+    </article>
+  );
+};
+
+/* --------------------------------------------------------------------------
+   Page
+   -------------------------------------------------------------------------- */
 const MyCourses = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const teacherId = user?._id;
 
-  const [assignments, setAssignments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { assignments, status, error, reload } = useTeacherAssignments(teacherId);
+  const [query, setQuery] = useState('');
 
-  useEffect(() => {
-    if (!teacherId) {
-      setIsLoading(false);
-      return undefined;
-    }
+  const isLoading = status === 'loading';
+  const hasAssignments = assignments.length > 0;
 
-    let isMounted = true;
+  const uniqueClassCount = useMemo(
+    () => new Set(assignments.map((a) => a.class?._id).filter(Boolean)).size,
+    [assignments]
+  );
 
-    const loadAssignments = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const filteredAssignments = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return assignments;
+    return assignments.filter((a) =>
+      [a.course?.name, a.class?.name].some((v) => v?.toLowerCase().includes(q))
+    );
+  }, [assignments, query]);
 
-        const response = await api.get(`/api/v1/assignments/teacher/${teacherId}`);
-        const payload = response?.data?.data;
+  const handleManage = useCallback(
+    (assignment) => navigate(buildManageRoute(assignment)),
+    [navigate]
+  );
 
-        if (isMounted) {
-          setAssignments(Array.isArray(payload) ? payload : []);
-        }
-      } catch (requestError) {
-        console.error('Failed to load teacher courses:', requestError);
-        if (isMounted) {
-          setError('We could not load your courses. Please try again.');
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    loadAssignments();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [teacherId]);
-
-  const handleManage = (assignment) => navigate(buildManageRoute(assignment));
+  const showSkeletons = isLoading && !hasAssignments;
 
   return (
     <section className="mc-page">
@@ -86,67 +199,111 @@ const MyCourses = () => {
           </p>
         </div>
 
-        {!isLoading && !error && assignments.length > 0 && (
-          <span className="mc-count-badge">
-            <FiBookOpen size={16} aria-hidden="true" />
-            {assignments.length} {assignments.length === 1 ? 'Course' : 'Courses'}
-          </span>
+        {status === 'success' && hasAssignments && (
+          <div className="mc-header-badges">
+            <span className="mc-count-badge">
+              <FiBookOpen size={16} aria-hidden="true" />
+              {assignments.length} {assignments.length === 1 ? 'Course' : 'Courses'}
+            </span>
+            <span className="mc-count-badge mc-count-badge--gold">
+              <FiGrid size={16} aria-hidden="true" />
+              {uniqueClassCount} {uniqueClassCount === 1 ? 'Class' : 'Classes'}
+            </span>
+          </div>
         )}
       </header>
 
-      {isLoading ? (
-        <div className="mc-state" role="status" aria-live="polite">
-          <span className="mc-spinner" aria-hidden="true" />
-          <p>Loading your courses…</p>
+      {showSkeletons ? (
+        <div className="mc-grid" aria-busy="true" aria-label="Loading courses">
+          {Array.from({ length: 6 }, (_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
-      ) : error ? (
-        <div className="mc-state mc-state--error" role="alert">
-          <FiAlertTriangle size={30} aria-hidden="true" />
-          <h3>Something went wrong</h3>
-          <p>{error}</p>
-        </div>
-      ) : assignments.length === 0 ? (
-        <div className="mc-state">
-          <FiInbox size={32} aria-hidden="true" />
-          <h3>No courses assigned yet</h3>
-          <p>You have no teaching assignments at the moment.</p>
-        </div>
+      ) : status === 'error' && !hasAssignments ? (
+        <StatePanel
+          variant="error"
+          icon={<FiAlertTriangle size={30} aria-hidden="true" />}
+          title="Something went wrong"
+          message={error}
+          actionLabel="Try again"
+          onAction={reload}
+        />
+      ) : !hasAssignments ? (
+        <StatePanel
+          icon={<FiInbox size={32} aria-hidden="true" />}
+          title="No courses assigned yet"
+          message="You have no teaching assignments at the moment."
+        />
       ) : (
-        <div className="mc-grid">
-          {assignments.map((assignment) => {
-            const courseName = assignment.course?.name || 'Unnamed Course';
-            const className = assignment.class?.name || 'General Class';
+        <>
+          {status === 'error' && (
+            <div className="mc-banner" role="alert">
+              <FiAlertTriangle size={16} aria-hidden="true" />
+              Refresh failed — showing the last loaded data.
+            </div>
+          )}
 
-            return (
-              <article className="mc-card" key={assignment._id}>
-                <div className="mc-card-head">
-                  <span className="mc-card-icon" aria-hidden="true">
-                    <FiBook size={20} />
-                  </span>
-                  <span className="mc-card-chip" title={className}>
-                    <FiUsers size={13} aria-hidden="true" />
-                    {className}
-                  </span>
-                </div>
+          <div className="mc-toolbar">
+            <div className="mc-search">
+              <FiSearch className="mc-search-icon" size={16} aria-hidden="true" />
+              <input
+                type="search"
+                className="mc-search-input"
+                placeholder="Search by course or class…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Search courses"
+              />
+              {query && (
+                <button
+                  type="button"
+                  className="mc-search-clear"
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                >
+                  <FiX size={14} />
+                </button>
+              )}
+            </div>
 
-                <h2 className="mc-card-title" title={courseName}>
-                  {courseName}
-                </h2>
+            {query.trim() && (
+              <span className="mc-result-note">
+                Showing {filteredAssignments.length} of {assignments.length}
+              </span>
+            )}
 
-                <div className="mc-card-footer">
-                  <span className="mc-card-hint">Tap to manage</span>
-                  <button
-                    type="button"
-                    className="mc-card-btn"
-                    onClick={() => handleManage(assignment)}
-                  >
-                    Manage <FiArrowRight size={15} aria-hidden="true" />
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+            <button
+              type="button"
+              className={`mc-icon-btn ${isLoading ? 'is-spinning' : ''}`}
+              onClick={reload}
+              disabled={isLoading}
+              aria-label="Refresh courses"
+              title="Refresh"
+            >
+              <FiRefreshCw size={17} />
+            </button>
+          </div>
+
+          {filteredAssignments.length === 0 ? (
+            <StatePanel
+              icon={<FiSearch size={30} aria-hidden="true" />}
+              title="No matches found"
+              message={`No courses match “${query}”.`}
+              actionLabel="Clear search"
+              onAction={() => setQuery('')}
+            />
+          ) : (
+            <div className="mc-grid">
+              {filteredAssignments.map((assignment) => (
+                <CourseCard
+                  key={assignment._id}
+                  assignment={assignment}
+                  onManage={handleManage}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </section>
   );
