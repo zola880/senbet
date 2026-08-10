@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiAlertTriangle, FiArrowLeft, FiBookOpen, FiCheckCircle,
   FiDownload, FiEdit2, FiEye, FiFile, FiImage, FiInbox,
@@ -15,19 +15,25 @@ import './StudentCourseMaterials.css';
    -------------------------------------------------------------------------- */
 const getFileUrl = (filePath) => {
   const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-  const filename = filePath.split('/').pop();
-  return `${base}/api/v1/files/${filename}`;
+  const filename = filePath?.split('/').pop();
+  return filename ? `${base}/api/v1/files/${filename}` : null;
 };
 
-const handleFileAction = async (filePath, fileType, showToast) => {
+const handleFileAction = async (filePath, fileType, showToast, setBusyId, itemId) => {
+  const url = getFileUrl(filePath);
+  if (!url) {
+    showToast('error', 'This file link looks broken. Please contact your teacher.');
+    return;
+  }
+
+  setBusyId(itemId);
+  let blobUrl;
   try {
-    const url = getFileUrl(filePath);
     const response = await api.get(url, { responseType: 'blob' });
-    const blob = response.data;
-    const blobUrl = URL.createObjectURL(blob);
+    blobUrl = URL.createObjectURL(response.data);
 
     if (fileType === 'image') {
-      window.open(blobUrl, '_blank');
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
     } else {
       const filename = filePath.split('/').pop();
       const link = document.createElement('a');
@@ -37,10 +43,12 @@ const handleFileAction = async (filePath, fileType, showToast) => {
       link.click();
       document.body.removeChild(link);
     }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
   } catch (err) {
     console.error('Failed to fetch file:', err);
     showToast('error', 'Unable to access the file. Please try again.');
+  } finally {
+    if (blobUrl) setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+    setBusyId(null);
   }
 };
 
@@ -71,16 +79,16 @@ const useStudentCourses = (user) => {
     try {
       const res = await api.get(`/api/v1/assignments?class=${user.class._id}`, { signal });
       const assignments = Array.isArray(res.data?.data) ? res.data.data : [];
-      
+
       const uniqueCourses = [];
       const seen = new Set();
-      assignments.forEach(a => {
+      assignments.forEach((a) => {
         if (a.course?._id && !seen.has(a.course._id)) {
           uniqueCourses.push(a.course);
           seen.add(a.course._id);
         }
       });
-      
+
       setCourses(uniqueCourses);
       setStatus('success');
     } catch (err) {
@@ -107,13 +115,16 @@ const useCourseMaterials = (courseId) => {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
+  const [retryToken, setRetryToken] = useState(0);
+
+  const retry = useCallback(() => setRetryToken((n) => n + 1), []);
 
   useEffect(() => {
     if (!courseId) {
       setMaterials([]);
       setStatus('idle');
       setError(null);
-      return;
+      return undefined;
     }
 
     abortRef.current?.abort();
@@ -124,7 +135,8 @@ const useCourseMaterials = (courseId) => {
     setStatus('loading');
     setError(null);
 
-    api.get(`/api/v1/courses/${courseId}/materials`, { signal })
+    api
+      .get(`/api/v1/courses/${courseId}/materials`, { signal })
       .then((res) => {
         if (signal.aborted) return;
         setMaterials(Array.isArray(res.data?.data) ? res.data.data : []);
@@ -133,14 +145,15 @@ const useCourseMaterials = (courseId) => {
       .catch((err) => {
         if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
         console.error('Failed to load materials:', err);
-        setError('Unable to load course materials.');
+        setMaterials([]);
+        setError('Unable to load course materials. Please try again.');
         setStatus('error');
       });
 
     return () => controller.abort();
-  }, [courseId]);
+  }, [courseId, retryToken]);
 
-  return { materials, status, error, reload: () => {} };
+  return { materials, status, error, retry };
 };
 
 /* --------------------------------------------------------------------------
@@ -152,43 +165,81 @@ const TABS = [
   { id: 'message', label: 'Messages', icon: FiMessageSquare },
 ];
 
+const getFileIcon = (fileType) => {
+  if (fileType === 'image') return FiImage;
+  if (fileType === 'pdf') return FiFile;
+  return FiFile;
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—';
+  const parsed = new Date(dateStr);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+/* --------------------------------------------------------------------------
+   Small presentational helpers
+   -------------------------------------------------------------------------- */
+const Toast = ({ toast, onClose }) => {
+  if (!toast.message) return null;
+  return (
+    <div className={`scm-toast scm-toast--${toast.type}`} role="alert">
+      {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
+      <span>{toast.message}</span>
+      <button className="scm-toast-close" onClick={onClose} aria-label="Dismiss notification">
+        <FiX size={16} />
+      </button>
+    </div>
+  );
+};
+
 /* --------------------------------------------------------------------------
    Main Component
    -------------------------------------------------------------------------- */
 const StudentCourseMaterials = () => {
   const { user } = useContext(AuthContext);
   const { courses, status: coursesStatus, error: coursesError, reload: reloadCourses } = useStudentCourses(user);
-  
+
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [activeTab, setActiveTab] = useState('material');
   const [toast, setToast] = useState({ type: '', message: '' });
-  
+  const [busyId, setBusyId] = useState(null);
+  const toastTimerRef = useRef(null);
+
   const tabRefs = useRef({});
 
-  const { materials, status: materialsStatus, error: materialsError } = useCourseMaterials(selectedCourse?._id);
+  const { materials, status: materialsStatus, error: materialsError, retry: retryMaterials } =
+    useCourseMaterials(selectedCourse?._id);
 
   const isLoadingCourses = coursesStatus === 'loading';
   const hasCourses = courses.length > 0;
   const isLoadingMaterials = materialsStatus === 'loading';
-  const hasMaterials = materials.length > 0;
 
-  const filteredMaterials = useMemo(() => {
-    return materials.filter(m => m.type === activeTab);
-  }, [materials, activeTab]);
+  const filteredMaterials = useMemo(
+    () => materials.filter((m) => m.type === activeTab),
+    [materials, activeTab]
+  );
 
-  const showToast = (type, message) => {
+  const showToast = useCallback((type, message) => {
+    clearTimeout(toastTimerRef.current);
     setToast({ type, message });
-    setTimeout(() => setToast({ type: '', message: '' }), 4000);
-  };
+    toastTimerRef.current = setTimeout(() => setToast({ type: '', message: '' }), 4000);
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    clearTimeout(toastTimerRef.current);
+    setToast({ type: '', message: '' });
+  }, []);
+
+  useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   const handleCourseClick = (course) => {
     setSelectedCourse(course);
     setActiveTab('material');
   };
 
-  const handleBackToCourses = () => {
-    setSelectedCourse(null);
-  };
+  const handleBackToCourses = () => setSelectedCourse(null);
 
   const handleTabKeyDown = (event, index) => {
     const handledKeys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
@@ -207,21 +258,6 @@ const StudentCourseMaterials = () => {
     tabRefs.current[nextTab.id]?.focus();
   };
 
-  const getFileIcon = (fileType) => {
-    if (fileType === 'image') return FiImage;
-    if (fileType === 'pdf') return FiFile;
-    return FiFile;
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   // Course List View
   if (!selectedCourse) {
     return (
@@ -229,15 +265,7 @@ const StudentCourseMaterials = () => {
         <div className="scm-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
         <div className="scm-wash" aria-hidden="true" />
 
-        {toast.message && (
-          <div className={`scm-toast scm-toast--${toast.type}`} role="alert">
-            {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
-            <span>{toast.message}</span>
-            <button className="scm-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
+        <Toast toast={toast} onClose={dismissToast} />
 
         <main className="scm-content">
           <header className="scm-header">
@@ -280,14 +308,14 @@ const StudentCourseMaterials = () => {
                   className="scm-course-card"
                   onClick={() => handleCourseClick(course)}
                   tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCourseClick(course); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCourseClick(course); } }}
                   role="button"
                   aria-label={`Open ${course.name}`}
                 >
                   <div className="scm-course-icon" aria-hidden="true">
                     <FiBookOpen size={28} />
                   </div>
-                  
+
                   <div className="scm-course-content">
                     <h2 className="scm-course-title">{course.name}</h2>
                     {course.code && <span className="scm-course-code">{course.code}</span>}
@@ -308,15 +336,7 @@ const StudentCourseMaterials = () => {
       <div className="scm-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
       <div className="scm-wash" aria-hidden="true" />
 
-      {toast.message && (
-        <div className={`scm-toast scm-toast--${toast.type}`} role="alert">
-          {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
-          <span>{toast.message}</span>
-          <button className="scm-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close">
-            <FiX size={16} />
-          </button>
-        </div>
-      )}
+      <Toast toast={toast} onClose={dismissToast} />
 
       <main className="scm-content">
         <button className="scm-back-btn" onClick={handleBackToCourses}>
@@ -369,8 +389,8 @@ const StudentCourseMaterials = () => {
           aria-labelledby={`scm-tab-${activeTab}`}
         >
           {isLoadingMaterials ? (
-            <div className="scm-state" role="status">
-              <span className="scm-spinner" />
+            <div className="scm-state" role="status" aria-live="polite">
+              <span className="scm-spinner" aria-hidden="true" />
               <p>Loading {activeTab}s…</p>
             </div>
           ) : materialsStatus === 'error' ? (
@@ -378,6 +398,9 @@ const StudentCourseMaterials = () => {
               <FiAlertTriangle size={32} />
               <h3>Failed to load materials</h3>
               <p>{materialsError}</p>
+              <button className="scm-btn scm-btn--primary" onClick={retryMaterials}>
+                <FiRefreshCw size={16} /> Try Again
+              </button>
             </div>
           ) : filteredMaterials.length === 0 ? (
             <div className="scm-state">
@@ -389,16 +412,13 @@ const StudentCourseMaterials = () => {
             <div className="scm-materials-list">
               {filteredMaterials.map((item) => {
                 const FileIcon = getFileIcon(item.fileType);
+                const isBusy = busyId === item._id;
                 return (
                   <article key={item._id} className="scm-material-card">
                     <div className="scm-material-preview">
-                      {item.file ? (
-                        <FileIcon size={32} />
-                      ) : (
-                        <FiMessageSquare size={32} />
-                      )}
+                      {item.file ? <FileIcon size={32} /> : <FiMessageSquare size={32} />}
                     </div>
-                    
+
                     <div className="scm-material-info">
                       <h3 className="scm-material-title">{item.title || 'Untitled'}</h3>
                       {item.description && (
@@ -410,9 +430,7 @@ const StudentCourseMaterials = () => {
                           {item.postedBy?.fullName || 'Teacher'}
                         </span>
                         {item.createdAt && (
-                          <span className="scm-material-date">
-                            {formatDate(item.createdAt)}
-                          </span>
+                          <span className="scm-material-date">{formatDate(item.createdAt)}</span>
                         )}
                       </div>
                     </div>
@@ -421,9 +439,12 @@ const StudentCourseMaterials = () => {
                       <div className="scm-material-actions">
                         <button
                           className="scm-btn scm-btn--primary scm-btn--sm"
-                          onClick={() => handleFileAction(item.file, item.fileType, showToast)}
+                          disabled={isBusy}
+                          onClick={() => handleFileAction(item.file, item.fileType, showToast, setBusyId, item._id)}
                         >
-                          {item.fileType === 'image' ? (
+                          {isBusy ? (
+                            <><FiRefreshCw size={14} className="scm-spin-icon" /> Working…</>
+                          ) : item.fileType === 'image' ? (
                             <><FiEye size={14} /> View</>
                           ) : (
                             <><FiDownload size={14} /> Download</>
