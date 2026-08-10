@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiAlertTriangle,
+  FiArrowRight,
   FiBookOpen,
   FiCheckCircle,
   FiEdit2,
@@ -94,7 +95,7 @@ const ClassModal = ({ isOpen, onClose, onSubmit, initialData, isSaving }) => {
             <FiX size={20} />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="mc-form">
           <div className="mc-form-group">
             <label htmlFor="mc-name" className="mc-label">
@@ -144,7 +145,7 @@ const ClassModal = ({ isOpen, onClose, onSubmit, initialData, isSaving }) => {
 const ManageClasses = () => {
   const navigate = useNavigate();
   const { classes, status, error, reload } = useClasses();
-  
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -228,9 +229,7 @@ const ManageClasses = () => {
         <header className="mc-header">
           <div>
             <h1 className="mc-title">Manage Classes</h1>
-            <p className="mc-subtitle">
-              Organise your church school classes (ክፍሎች)
-            </p>
+            <p className="mc-subtitle">Organise your church school classes (ክፍሎች)</p>
           </div>
           <button className="mc-btn mc-btn--primary" onClick={openNewModal}>
             <FiPlus size={18} /> Add Class
@@ -241,7 +240,10 @@ const ManageClasses = () => {
           <div className="mc-grid" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="mc-skeleton-card" aria-hidden="true">
-                <div className="mc-sk-icon" />
+                <div className="mc-sk-row">
+                  <div className="mc-sk-icon" />
+                  <div className="mc-sk-actions" />
+                </div>
                 <div className="mc-sk-title" />
                 <div className="mc-sk-line" />
               </div>
@@ -285,34 +287,42 @@ const ManageClasses = () => {
                   role="button"
                   aria-label={`Open ${cls.name}`}
                 >
-                  <div className="mc-card-icon" aria-hidden="true">
-                    <FiBookOpen size={24} />
-                  </div>
-                  
-                  <div className="mc-card-content">
-                    <h2 className="mc-card-title">{cls.name}</h2>
-                    {cls.description && (
-                      <p className="mc-card-desc">{cls.description}</p>
-                    )}
+                  {/* Top row: icon + actions */}
+                  <div className="mc-card-top">
+                    <div className="mc-card-icon" aria-hidden="true">
+                      <FiBookOpen size={20} />
+                    </div>
+                    <div className="mc-card-actions" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="mc-icon-btn"
+                        onClick={(e) => openEditModal(cls, e)}
+                        aria-label={`Edit ${cls.name}`}
+                        title="Edit"
+                      >
+                        <FiEdit2 size={14} />
+                      </button>
+                      <button
+                        className="mc-icon-btn mc-icon-btn--danger"
+                        onClick={(e) => handleDelete(cls._id, cls.name, e)}
+                        aria-label={`Delete ${cls.name}`}
+                        title="Delete"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="mc-card-actions" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      className="mc-icon-btn"
-                      onClick={(e) => openEditModal(cls, e)}
-                      aria-label={`Edit ${cls.name}`}
-                      title="Edit"
-                    >
-                      <FiEdit2 size={16} />
-                    </button>
-                    <button
-                      className="mc-icon-btn mc-icon-btn--danger"
-                      onClick={(e) => handleDelete(cls._id, cls.name, e)}
-                      aria-label={`Delete ${cls.name}`}
-                      title="Delete"
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
+                  {/* Content */}
+                  <h2 className="mc-card-title">{cls.name}</h2>
+                  <p className={`mc-card-desc ${!cls.description ? 'mc-card-desc--empty' : ''}`}>
+                    {cls.description || 'No description added'}
+                  </p>
+
+                  {/* Footer */}
+                  <div className="mc-card-footer">
+                    <span className="mc-card-open">
+                      Open class <FiArrowRight size={14} />
+                    </span>
                   </div>
                 </article>
               ))}
