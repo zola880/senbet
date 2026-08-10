@@ -1,5 +1,177 @@
-/* ========== PRACTICE CALENDAR ========== */
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 1rem; }
-.calendar-day-header { text-align: center; font-weight: 600; color: var(--primary-dark); padding: 0.5rem; }
-.calendar-day { background: var(--card-bg); border: 1px solid var(--border); min-height: 80px; border-radius: 6px; padding: 4px; font-size: 0.8rem; }
-.calendar-day .session { background: #f0e6d2; padding: 2px 4px; margin-top: 2px; border-radius: 4px; font-weight: 500; }
+/* ==========================================================================
+   PRACTICE CALENDAR — School theme (maroon / gold / parchment) with L.png
+   Scoped with `.pc-` to prevent global style leakage.
+   ========================================================================== */
+
+.pc-page {
+  --pc-bg: #f3f0ea;
+  --pc-surface: #fffdf8;
+  --pc-border: #e6ddcf;
+  --pc-border-strong: #d8cbb6;
+  --pc-maroon: #6d1a28;
+  --pc-maroon-deep: #52101c;
+  --pc-maroon-soft: #8c2f3d;
+  --pc-gold: #d2a12c;
+  --pc-gold-soft: #f6e7c6;
+  --pc-ink: #33262a;
+  --pc-ink-soft: #7a6c6d;
+  --pc-danger: #b3403f;
+  --pc-success: #2e7d32;
+  --pc-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
+  background-color: var(--pc-bg);
+  color: var(--pc-ink);
+  font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
+}
+
+.pc-bg { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; }
+.pc-wash {
+  position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
+    linear-gradient(170deg, rgba(247, 244, 238, 0.94) 0%, rgba(243, 240, 234, 0.88) 45%, rgba(238, 231, 220, 0.93) 100%);
+}
+
+.pc-content { max-width: 900px; margin: 0 auto; display: grid; gap: 2rem; align-content: start; }
+
+/* Header */
+.pc-header { display: flex; align-items: center; gap: 1.25rem; }
+.pc-header-icon {
+  width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center;
+  background: linear-gradient(140deg, var(--pc-maroon-soft), var(--pc-maroon-deep)); color: var(--pc-gold-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 14px -8px rgba(82, 16, 28, 0.7); flex-shrink: 0;
+}
+.pc-title {
+  margin: 0; font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem); font-weight: 700; color: var(--pc-maroon);
+}
+.pc-title::after {
+  content: ''; display: block; width: 88px; height: 3px; margin-top: 0.55rem; border-radius: 999px;
+  background: linear-gradient(90deg, var(--pc-gold), rgba(210, 161, 44, 0.35));
+}
+.pc-subtitle { margin: 0.65rem 0 0; color: var(--pc-ink-soft); font-size: 0.95rem; }
+
+/* Summary Stats */
+.pc-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+.pc-summary-card {
+  background: var(--pc-surface); border: 1px solid var(--pc-border); border-top: 4px solid var(--pc-maroon);
+  border-radius: 14px; padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 1rem;
+  box-shadow: var(--pc-shadow); color: var(--pc-maroon);
+}
+.pc-summary-card strong { display: block; font-size: 1.75rem; font-weight: 800; color: var(--pc-ink); font-variant-numeric: tabular-nums; }
+.pc-summary-card span { font-size: 0.85rem; color: var(--pc-ink-soft); font-weight: 500; }
+.pc-summary-weekly { border-top-color: #7c3aed; color: #7c3aed; }
+.pc-summary-today { border-top-color: var(--pc-gold); color: #b8860b; }
+
+/* Practice List */
+.pc-list { display: flex; flex-direction: column; gap: 1rem; }
+
+.pc-card {
+  background: var(--pc-surface); border: 1px solid var(--pc-border); border-radius: 14px;
+  padding: 1.25rem 1.5rem; display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; align-items: center;
+  box-shadow: var(--pc-shadow); transition: all 0.2s ease;
+}
+.pc-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px -4px rgba(64, 20, 30, 0.15); }
+
+.pc-card--today {
+  background: linear-gradient(135deg, var(--pc-surface), #fef7f2);
+  border-left: 4px solid var(--pc-gold);
+}
+
+/* Day Block */
+.pc-card-day {
+  width: 68px; height: 68px; border-radius: 14px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0.1rem;
+  background: linear-gradient(140deg, var(--pc-maroon-soft), var(--pc-maroon-deep));
+  color: var(--pc-gold-soft); flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.pc-card--today .pc-card-day {
+  background: linear-gradient(140deg, #eab308, #b8860b);
+  color: #fffdf8;
+}
+.pc-day-name { font-size: 1.35rem; font-weight: 800; line-height: 1; }
+.pc-day-sub { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.9; }
+
+/* Card Body */
+.pc-card-body { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+
+.pc-card-top { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+
+.pc-card-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--pc-ink); }
+
+.pc-today-badge {
+  display: inline-block; padding: 0.2rem 0.7rem; background: var(--pc-gold); color: #fff;
+  border-radius: 999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+.pc-card-meta { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+.pc-type-badge {
+  display: inline-block; padding: 0.25rem 0.75rem; background: var(--pc-gold-soft);
+  border: 1px solid rgba(210, 161, 44, 0.35); color: var(--pc-maroon); border-radius: 999px;
+  font-size: 0.78rem; font-weight: 700; text-transform: capitalize;
+}
+
+.pc-meta-item {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.88rem; color: var(--pc-ink-soft); font-weight: 500;
+}
+
+/* Buttons */
+.pc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
+  border: none; border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.pc-btn--primary { background: var(--pc-maroon); color: #fff; box-shadow: 0 4px 6px -1px rgba(109, 26, 40, 0.2); }
+.pc-btn--primary:hover:not(:disabled) { background: var(--pc-maroon-deep); transform: translateY(-1px); }
+.pc-btn--primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* Skeleton */
+.pc-skeleton-card {
+  background: var(--pc-surface); border: 1px solid var(--pc-border); border-radius: 14px;
+  padding: 1.25rem 1.5rem; display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; align-items: center;
+  box-shadow: var(--pc-shadow);
+}
+.pc-skeleton-card > div, .pc-sk-day, .pc-sk-title, .pc-sk-line {
+  background: linear-gradient(90deg, #ece5d8 25%, #f8f3e9 50%, #ece5d8 75%);
+  background-size: 250% 100%; animation: pc-shimmer 1.3s ease infinite; border-radius: 6px;
+}
+.pc-sk-day { width: 68px; height: 68px; border-radius: 14px !important; }
+.pc-sk-body { display: flex; flex-direction: column; gap: 0.6rem; }
+.pc-sk-title { height: 20px; width: 45%; }
+.pc-sk-line { height: 14px; width: 70%; }
+@keyframes pc-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* States */
+.pc-state {
+  background: var(--pc-surface); border: 1px dashed var(--pc-border-strong); border-radius: 16px; padding: 4rem 1.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; color: var(--pc-ink-soft);
+  max-width: 600px; margin: 2rem auto;
+}
+.pc-state h3 { margin: 0.5rem 0 0; color: var(--pc-maroon); font-size: 1.25rem; }
+.pc-state p { margin: 0; max-width: 400px; }
+.pc-state--error { border-color: #e3b7b7; background: #fdf6f4; color: #8a4a4a; border-style: solid; }
+.pc-state--error h3 { color: #8a2430; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pc-page { padding: 1.5rem 1rem 2.5rem; }
+  .pc-header { flex-direction: column; align-items: flex-start; text-align: left; }
+  .pc-summary { grid-template-columns: 1fr; }
+  .pc-card { padding: 1rem 1.25rem; gap: 1rem; }
+  .pc-card-day { width: 58px; height: 58px; }
+  .pc-day-name { font-size: 1.15rem; }
+  .pc-card-meta { gap: 0.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-btn, .pc-card, .pc-skeleton-card > div, .pc-sk-day, .pc-sk-title, .pc-sk-line {
+    transition: none; animation: none;
+  }
+  .pc-card:hover { transform: none; }
+}
