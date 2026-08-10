@@ -1,6 +1,6 @@
 /* ==========================================================================
-   COURSES PAGE — School theme (maroon / gold / parchment) with L.png backdrop
-   All selectors are scoped with `.cp-` so global styles cannot override them.
+   COURSES PAGE — School theme (maroon / gold / parchment) with L.png
+   Scoped with `.cp-` to prevent global style leakage.
    ========================================================================== */
 
 .cp-page {
@@ -16,6 +16,7 @@
   --cp-ink: #33262a;
   --cp-ink-soft: #7a6c6d;
   --cp-danger: #b3403f;
+  --cp-success: #2e7d32;
   --cp-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
 
   position: relative;
@@ -148,7 +149,7 @@
   border-radius: 14px;
   padding: 1.5rem;
   box-shadow: var(--cp-shadow);
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  transition: all 0.22s ease;
   cursor: pointer;
   outline: none;
 }
@@ -233,7 +234,7 @@
   border: 1px solid var(--cp-border);
   color: var(--cp-ink-soft);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
 .cp-icon-btn:hover {
@@ -272,16 +273,10 @@
 .cp-sk-title { height: 22px; width: 70%; }
 .cp-sk-line { height: 14px; width: 100%; }
 .cp-sk-line.short { width: 40%; }
-
-@keyframes cp-shimmer {
-  from { background-position: 200% 0; }
-  to { background-position: -200% 0; }
-}
+@keyframes cp-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
 /* States */
 .cp-state {
-  max-width: 1200px;
-  margin: 0 auto;
   background: var(--cp-surface);
   border: 1px dashed var(--cp-border-strong);
   border-radius: 16px;
@@ -294,16 +289,29 @@
   color: var(--cp-ink-soft);
 }
 
-.cp-state h3 { margin: 0.5rem 0 0; color: var(--cp-maroon); font-size: 1.25rem; }
-.cp-state p { margin: 0; max-width: 400px; }
+.cp-state h3 {
+  margin: 0.5rem 0 0;
+  color: var(--cp-maroon);
+  font-size: 1.25rem;
+}
 
-.cp-state--error { border-color: #e3b7b7; background: #fdf6f4; color: #8a4a4a; border-style: solid; }
-.cp-state--error h3 { color: #8a2430; }
-.cp-state--error svg { color: #b3403f; }
+.cp-state p {
+  margin: 0;
+  max-width: 400px;
+}
+
+.cp-state--error {
+  border-color: #e3b7b7;
+  background: #fdf6f4;
+  color: #8a4a4a;
+  border-style: solid;
+}
+
+.cp-state--error h3 {
+  color: #8a2430;
+}
 
 .cp-banner {
-  max-width: 1200px;
-  margin: 0 auto 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -314,6 +322,54 @@
   color: #8a2430;
   font-size: 0.9rem;
   font-weight: 600;
+}
+
+/* Toast */
+.cp-toast {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+  font-weight: 600;
+  animation: cp-slideIn 0.3s ease;
+  max-width: 400px;
+}
+
+.cp-toast--success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: var(--cp-success);
+}
+
+.cp-toast--error {
+  background: #fdf6f4;
+  border: 1px solid #fecaca;
+  color: var(--cp-danger);
+}
+
+.cp-toast-close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.25rem;
+  opacity: 0.7;
+}
+
+.cp-toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes cp-slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 /* Modal */
@@ -334,8 +390,9 @@
   border-radius: 16px;
   width: 100%;
   max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
   animation: cp-slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -367,7 +424,10 @@
   transition: background 0.2s;
 }
 
-.cp-modal-close:hover { background: var(--cp-bg); color: var(--cp-maroon); }
+.cp-modal-close:hover {
+  background: var(--cp-bg);
+  color: var(--cp-maroon);
+}
 
 .cp-form {
   padding: 1.5rem;
@@ -376,7 +436,11 @@
   gap: 1.25rem;
 }
 
-.cp-form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.cp-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
 
 .cp-label {
   font-size: 0.85rem;
@@ -384,7 +448,9 @@
   color: var(--cp-ink-soft);
 }
 
-.cp-required { color: var(--cp-danger); }
+.cp-required {
+  color: var(--cp-danger);
+}
 
 .cp-input, .cp-textarea {
   padding: 0.75rem 1rem;
@@ -394,10 +460,14 @@
   font-size: 0.95rem;
   background: var(--cp-bg);
   color: var(--cp-ink);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s;
+  width: 100%;
 }
 
-.cp-textarea { resize: vertical; min-height: 80px; }
+.cp-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
 
 .cp-input:focus, .cp-textarea:focus {
   outline: none;
@@ -412,21 +482,46 @@
   margin-top: 0.5rem;
 }
 
-@keyframes cp-fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes cp-slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-/* Responsive */
-@media (max-width: 720px) {
-  .cp-page { padding: 1.5rem 1rem 2.5rem; }
-  .cp-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .cp-grid { grid-template-columns: 1fr; }
+@keyframes cp-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Accessibility */
+@keyframes cp-slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cp-page {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .cp-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .cp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cp-toast {
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
+    top: 1rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .cp-card, .cp-btn, .cp-icon-btn, .cp-modal, .cp-modal-backdrop, .cp-skeleton-card > div {
+  .cp-card, .cp-btn, .cp-icon-btn, .cp-modal, .cp-modal-backdrop, .cp-skeleton-card > div, .cp-toast {
     transition: none;
     animation: none;
   }
-  .cp-card:hover { transform: none; }
+  .cp-card:hover {
+    transform: none;
+  }
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   FiAlertTriangle,
   FiBook,
+  FiCheckCircle,
   FiEdit2,
   FiInbox,
   FiPlus,
@@ -21,7 +22,7 @@ import './CoursesPage.css';
    -------------------------------------------------------------------------- */
 const useCourses = () => {
   const [courses, setCourses] = useState([]);
-  const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
+  const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
 
@@ -166,9 +167,15 @@ const CoursesPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState({ type: '', message: '' });
 
   const isLoading = status === 'loading';
   const hasCourses = courses.length > 0;
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast({ type: '', message: '' }), 4000);
+  };
 
   const openNewModal = () => {
     setEditingCourse(null);
@@ -190,13 +197,15 @@ const CoursesPage = () => {
     try {
       if (editingCourse) {
         await api.put(`/api/v1/courses/${editingCourse._id}`, formData);
+        showToast('success', 'Course updated successfully.');
       } else {
         await api.post('/api/v1/courses', formData);
+        showToast('success', 'Course created successfully.');
       }
       closeModal();
       reload();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error saving course');
+      showToast('error', err.response?.data?.message || 'Error saving course.');
     } finally {
       setIsSaving(false);
     }
@@ -206,9 +215,10 @@ const CoursesPage = () => {
     if (!window.confirm(`Are you sure you want to delete "${courseName}"?`)) return;
     try {
       await api.delete(`/api/v1/courses/${courseId}`);
+      showToast('success', `"${courseName}" deleted successfully.`);
       reload();
     } catch (err) {
-      alert('Failed to delete course.');
+      showToast('error', 'Failed to delete course.');
     }
   };
 
@@ -221,6 +231,16 @@ const CoursesPage = () => {
     <section className="cp-page">
       <div className="cp-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
       <div className="cp-overlay" aria-hidden="true" />
+
+      {toast.message && (
+        <div className={`cp-toast cp-toast--${toast.type}`} role="alert">
+          {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
+          <span>{toast.message}</span>
+          <button className="cp-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close">
+            <FiX size={16} />
+          </button>
+        </div>
+      )}
 
       <header className="cp-header">
         <div>

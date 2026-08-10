@@ -1,16 +1,166 @@
-/* ========== EMPTY STATE ========== */
-/* Uses the global .empty-state class. 
-   Add any specific variations here if needed. */
-.empty-state {
+/* ==========================================================================
+   EMPTY STATE — School theme (maroon / gold / parchment)
+   Scoped with `.es-` to prevent global style leakage.
+   ========================================================================== */
+
+.es-wrapper {
+  --es-maroon: #6d1a28;
+  --es-maroon-deep: #52101c;
+  --es-gold: #d2a12c;
+  --es-gold-soft: #f6e7c6;
+  --es-ink: #33262a;
+  --es-ink-soft: #7a6c6d;
+  --es-surface: #fffdf8;
+  --es-border: #e6ddcf;
+  --es-border-strong: #d8cbb6;
+  --es-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
+
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  gap: 0.75rem;
   text-align: center;
-  color: var(--text-light);
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius);
-  border: 1px dashed var(--border);
+  background: var(--es-surface);
+  border: 1px dashed var(--es-border-strong);
+  border-radius: 16px;
+  color: var(--es-ink-soft);
+  padding: 3rem 1.5rem;
   margin: 1rem 0;
+  box-shadow: var(--es-shadow);
+  animation: es-fadeIn 0.4s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Size variants
+   -------------------------------------------------------------------------- */
+.es-wrapper--sm {
+  padding: 1.75rem 1rem;
+  gap: 0.5rem;
+}
+
+.es-wrapper--lg {
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   Icon container
+   -------------------------------------------------------------------------- */
+.es-icon-wrap {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--es-gold-soft), rgba(210, 161, 44, 0.2));
+  color: var(--es-gold);
+  border: 2px dashed rgba(210, 161, 44, 0.5);
+  margin-bottom: 0.5rem;
+  box-shadow: inset 0 0 0 4px rgba(255, 253, 248, 0.6);
+}
+
+.es-wrapper--sm .es-icon-wrap {
+  width: 56px;
+  height: 56px;
+}
+
+.es-wrapper--lg .es-icon-wrap {
+  width: 88px;
+  height: 88px;
+}
+
+/* --------------------------------------------------------------------------
+   Typography
+   -------------------------------------------------------------------------- */
+.es-title {
+  margin: 0;
+  font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--es-maroon);
+  letter-spacing: 0.01em;
+}
+
+.es-wrapper--sm .es-title {
+  font-size: 1.05rem;
+}
+
+.es-wrapper--lg .es-title {
+  font-size: 1.5rem;
+}
+
+.es-message {
+  margin: 0;
+  max-width: 420px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--es-ink-soft);
+}
+
+.es-wrapper--sm .es-message {
+  font-size: 0.85rem;
+}
+
+.es-wrapper--lg .es-message {
+  font-size: 1rem;
+  max-width: 500px;
+}
+
+/* --------------------------------------------------------------------------
+   Action button
+   -------------------------------------------------------------------------- */
+.es-action {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.5rem;
+  background: var(--es-maroon);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(109, 26, 40, 0.2);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.es-action:hover {
+  background: var(--es-maroon-deep);
+  transform: translateY(-1px);
+}
+
+.es-action:focus-visible {
+  outline: 3px solid rgba(210, 161, 44, 0.55);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Animations
+   -------------------------------------------------------------------------- */
+@keyframes es-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .es-wrapper,
+  .es-action {
+    animation: none;
+    transition: none;
+  }
 }
