@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiAlertTriangle, FiCalendar, FiCheck, FiCheckCircle,
-  FiClock, FiInbox, FiRefreshCw, FiTrendingUp, FiX, FiXCircle
+  FiClock, FiInbox, FiRefreshCw, FiTrendingUp, FiX
 } from 'react-icons/fi';
 
 import api from '../../services/api';
@@ -21,7 +21,8 @@ const useStudentAttendance = (userId) => {
   const reload = useCallback(async () => {
     if (!userId) {
       setAttendance([]);
-      setStatus('success');
+      setStatus('idle');
+      setError(null);
       return;
     }
 
@@ -41,7 +42,16 @@ const useStudentAttendance = (userId) => {
     } catch (err) {
       if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
       console.error('Failed to load attendance:', err);
-      setError('Unable to load your attendance records. Please try again.');
+      setAttendance([]);
+      if (err.response?.status === 500) {
+        setError('The server ran into a problem loading your attendance. Please try again shortly.');
+      } else if (err.response?.status === 404) {
+        setError('No attendance record was found for your account.');
+      } else if (!err.response) {
+        setError('Network error. Check your connection and try again.');
+      } else {
+        setError('Unable to load your attendance records. Please try again.');
+      }
       setStatus('error');
     }
   }, [userId]);
@@ -59,38 +69,60 @@ const useStudentAttendance = (userId) => {
    -------------------------------------------------------------------------- */
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
-  try {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return dateStr;
-  }
+  const parsed = new Date(dateStr);
+  if (Number.isNaN(parsed.getTime())) return dateStr;
+  return parsed.toLocaleDateString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 };
 
 const STATUS_CONFIG = {
-  present: {
-    label: 'Present',
-    icon: FiCheck,
-    badgeClass: 'ah-status-present',
-    statClass: 'ah-stat-present',
-  },
-  absent: {
-    label: 'Absent',
-    icon: FiX,
-    badgeClass: 'ah-status-absent',
-    statClass: 'ah-stat-absent',
-  },
-  late: {
-    label: 'Late',
-    icon: FiClock,
-    badgeClass: 'ah-status-late',
-    statClass: 'ah-stat-late',
-  },
+  present: { label: 'Present', icon: FiCheck, badgeClass: 'ah-status-present' },
+  absent: { label: 'Absent', icon: FiX, badgeClass: 'ah-status-absent' },
+  late: { label: 'Late', icon: FiClock, badgeClass: 'ah-status-late' },
 };
+
+const getStatusDisplay = (statusValue) =>
+  STATUS_CONFIG[statusValue] || {
+    label: statusValue || 'Unknown',
+    icon: FiX,
+    badgeClass: 'ah-status-unknown',
+  };
+
+/* --------------------------------------------------------------------------
+   Small presentational helpers
+   -------------------------------------------------------------------------- */
+const Toast = ({ toast, onClose }) => {
+  if (!toast.message) return null;
+  return (
+    <div className={`ah-toast ah-toast--${toast.type}`} role="alert">
+      {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
+      <span>{toast.message}</span>
+      <button className="ah-toast-close" onClick={onClose} aria-label="Dismiss notification">
+        <FiX size={16} />
+      </button>
+    </div>
+  );
+};
+
+const PageShell = ({ children }) => (
+  <section className="ah-page">
+    <div className="ah-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+    <div className="ah-wash" aria-hidden="true" />
+    <main className="ah-content">
+      <header className="ah-header">
+        <div>
+          <h1 className="ah-title">My Attendance</h1>
+          <p className="ah-subtitle">Track your attendance across all classes.</p>
+        </div>
+      </header>
+      {children}
+    </main>
+  </section>
+);
 
 /* --------------------------------------------------------------------------
    Main Component
@@ -99,14 +131,31 @@ const AttendanceHistory = () => {
   const { user } = useContext(AuthContext);
   const { attendance, status, error, reload } = useStudentAttendance(user?._id);
   const [toast, setToast] = useState({ type: '', message: '' });
+  const toastTimerRef = useRef(null);
 
   const isLoading = status === 'loading';
   const hasRecords = attendance.length > 0;
 
-  const showToast = (type, message) => {
+  const showToast = useCallback((type, message) => {
+    clearTimeout(toastTimerRef.current);
     setToast({ type, message });
-    setTimeout(() => setToast({ type: '', message: '' }), 4000);
-  };
+    toastTimerRef.current = setTimeout(() => setToast({ type: '', message: '' }), 4000);
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    clearTimeout(toastTimerRef.current);
+    setToast({ type: '', message: '' });
+  }, []);
+
+  useEffect(() => () => clearTimeout(toastTimerRef.current), []);
+
+  useEffect(() => {
+    if (status === 'error' && error && hasRecords) {
+      // Only toast on error if we still have stale data showing behind it;
+      // a full-page error state already covers the no-data case.
+      showToast('error', error);
+    }
+  }, [status, error, hasRecords, showToast]);
 
   const stats = useMemo(() => {
     const total = attendance.length;
@@ -115,60 +164,47 @@ const AttendanceHistory = () => {
     const late = attendance.filter((a) => a.status === 'late').length;
     const marked = present + absent + late;
     const percentage = marked > 0 ? ((present + late) / marked) * 100 : 0;
-    
+
     return { total, present, absent, late, percentage: percentage.toFixed(1) };
   }, [attendance]);
 
-  const getStatusDisplay = (statusValue) => {
-    return STATUS_CONFIG[statusValue] || {
-      label: statusValue || 'Unknown',
-      icon: FiX,
-      badgeClass: 'ah-status-unknown',
-      statClass: '',
-    };
-  };
+  // No logged-in user yet (auth still resolving, or user is signed out)
+  if (!user?._id) {
+    return (
+      <PageShell>
+        <div className="ah-state" role="status">
+          <span className="ah-spinner" aria-hidden="true" />
+          <p>Loading your account…</p>
+        </div>
+      </PageShell>
+    );
+  }
 
   // Loading State
   if (isLoading && !hasRecords) {
     return (
-      <section className="ah-page">
-        <div className="ah-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
-        <div className="ah-wash" aria-hidden="true" />
-        <main className="ah-content">
-          <header className="ah-header">
-            <h1 className="ah-title">My Attendance</h1>
-            <p className="ah-subtitle">Track your attendance across all classes.</p>
-          </header>
-          <div className="ah-state" role="status">
-            <span className="ah-spinner" />
-            <p>Loading your attendance records…</p>
-          </div>
-        </main>
-      </section>
+      <PageShell>
+        <div className="ah-state" role="status" aria-live="polite">
+          <span className="ah-spinner" aria-hidden="true" />
+          <p>Loading your attendance records…</p>
+        </div>
+      </PageShell>
     );
   }
 
-  // Error State
+  // Error State (no cached records to fall back on)
   if (status === 'error' && !hasRecords) {
     return (
-      <section className="ah-page">
-        <div className="ah-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
-        <div className="ah-wash" aria-hidden="true" />
-        <main className="ah-content">
-          <header className="ah-header">
-            <h1 className="ah-title">My Attendance</h1>
-            <p className="ah-subtitle">Track your attendance across all classes.</p>
-          </header>
-          <div className="ah-state ah-state--error" role="alert">
-            <FiAlertTriangle size={32} />
-            <h3>Failed to Load Attendance</h3>
-            <p>{error}</p>
-            <button className="ah-btn ah-btn--primary" onClick={reload}>
-              <FiRefreshCw size={16} /> Try Again
-            </button>
-          </div>
-        </main>
-      </section>
+      <PageShell>
+        <div className="ah-state ah-state--error" role="alert">
+          <FiAlertTriangle size={32} />
+          <h3>Failed to Load Attendance</h3>
+          <p>{error}</p>
+          <button className="ah-btn ah-btn--primary" onClick={reload}>
+            <FiRefreshCw size={16} /> Try Again
+          </button>
+        </div>
+      </PageShell>
     );
   }
 
@@ -177,15 +213,7 @@ const AttendanceHistory = () => {
       <div className="ah-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
       <div className="ah-wash" aria-hidden="true" />
 
-      {toast.message && (
-        <div className={`ah-toast ah-toast--${toast.type}`} role="alert">
-          {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
-          <span>{toast.message}</span>
-          <button className="ah-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close">
-            <FiX size={16} />
-          </button>
-        </div>
-      )}
+      <Toast toast={toast} onClose={dismissToast} />
 
       <main className="ah-content">
         <header className="ah-header">
@@ -193,8 +221,8 @@ const AttendanceHistory = () => {
             <h1 className="ah-title">My Attendance</h1>
             <p className="ah-subtitle">Track your attendance across all classes.</p>
           </div>
-          <button className="ah-btn ah-btn--ghost" onClick={reload} aria-label="Refresh attendance">
-            <FiRefreshCw size={16} /> Refresh
+          <button className="ah-btn ah-btn--ghost" onClick={reload} disabled={isLoading} aria-label="Refresh attendance">
+            <FiRefreshCw size={16} className={isLoading ? 'ah-spin-icon' : ''} /> Refresh
           </button>
         </header>
 
@@ -249,14 +277,16 @@ const AttendanceHistory = () => {
               </div>
               <div className="ah-rate-display">
                 <div className="ah-rate-circle">
-                  <svg viewBox="0 0 100 100" className="ah-rate-ring">
+                  <svg viewBox="0 0 100 100" className="ah-rate-ring" role="img" aria-label={`Attendance rate: ${stats.percentage}%`}>
                     <circle cx="50" cy="50" r="42" className="ah-rate-ring-bg" />
                     <circle
                       cx="50"
                       cy="50"
                       r="42"
-                      className={`ah-rate-ring-fill ${stats.percentage >= 80 ? 'ah-rate-high' : stats.percentage >= 60 ? 'ah-rate-mid' : 'ah-rate-low'}`}
-                      strokeDasharray={`${(stats.percentage / 100) * 264} 264`}
+                      className={`ah-rate-ring-fill ${
+                        stats.percentage >= 80 ? 'ah-rate-high' : stats.percentage >= 60 ? 'ah-rate-mid' : 'ah-rate-low'
+                      }`}
+                      strokeDasharray={`${(Number(stats.percentage) / 100) * 264} 264`}
                     />
                   </svg>
                   <span className="ah-rate-value">{stats.percentage}%</span>

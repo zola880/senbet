@@ -162,6 +162,9 @@
 .ah-btn--primary:disabled { opacity: 0.7; cursor: not-allowed; }
 .ah-btn--ghost { background: transparent; color: var(--ah-ink-soft); border: 1px solid var(--ah-border-strong); }
 .ah-btn--ghost:hover:not(:disabled) { background: var(--ah-bg); color: var(--ah-ink); }
+.ah-btn--ghost:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ah-spin-icon { animation: ah-spin 0.8s linear infinite; }
 
 /* States */
 .ah-state {
@@ -219,5 +222,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ah-btn, .ah-spinner, .ah-toast, .ah-rate-ring-fill { transition: none; animation: none; }
+  .ah-btn, .ah-spinner, .ah-toast, .ah-rate-ring-fill, .ah-spin-icon { transition: none; animation: none; }
 }
