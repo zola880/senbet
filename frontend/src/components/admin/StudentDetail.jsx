@@ -1,171 +1,378 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {
+  FiArrowLeft, FiBook, FiAward, FiMail, FiEdit2, FiTrash2, FiUsers,
+  FiHash, FiTrendingUp, FiX, FiCheckCircle, FiAlertTriangle, FiRefreshCw,
+  FiChevronDown, FiInbox
+} from 'react-icons/fi';
+import { FaCrown, FaMedal } from 'react-icons/fa';
+
 import api from '../../services/api';
-import { FiArrowLeft, FiBook, FiAward, FiMail, FiEdit, FiTrash2 } from 'react-icons/fi';
-import EmptyState from '../common/EmptyState';
+import bgImage from '../../assets/L.png';
 import './StudentDetail.css';
 
-const StudentDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
+/* --------------------------------------------------------------------------
+   Data Hook: Fetch Student, Scores, Rank & Classes
+   -------------------------------------------------------------------------- */
+const useStudentDetail = (id) => {
   const [student, setStudent] = useState(null);
   const [scores, setScores] = useState([]);
   const [rankData, setRankData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [classes, setClasses] = useState([]);
+  const [status, setStatus] = useState('loading');
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
 
-  useEffect(() => {
-    const fetchStudentData = async () => {
-      try {
-        const [studentRes, scoresRes, rankRes] = await Promise.all([
-          api.get(`/api/v1/users/${id}`),
-          api.get(`/api/v1/scores?student=${id}`),
-          api.get(`/api/v1/rankings/student/${id}`).catch(() => null),
-        ]);
+  const reload = useCallback(async () => {
+    if (!id) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const signal = controller.signal;
 
-        setStudent(studentRes.data.data);
-        setScores(scoresRes.data.data);
+    setStatus('loading');
+    setError(null);
 
-        if (rankRes && rankRes.data) {
-          setRankData(rankRes.data.data);
-        }
-      } catch (err) {
-        console.error(err);
-        setError('Failed to load student details.');
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      const [studentRes, scoresRes, rankRes, classesRes] = await Promise.all([
+        api.get(`/api/v1/users/${id}`, { signal }),
+        api.get(`/api/v1/scores?student=${id}`, { signal }),
+        api.get(`/api/v1/rankings/student/${id}`, { signal }).catch(() => ({ data: { data: null } })),
+        api.get('/api/v1/classes', { signal })
+      ]);
 
-    fetchStudentData();
+      setStudent(studentRes.data?.data || null);
+      setScores(Array.isArray(scoresRes.data?.data) ? scoresRes.data.data : []);
+      setRankData(rankRes.data?.data || null);
+      setClasses(Array.isArray(classesRes.data?.data) ? classesRes.data.data : []);
+      setStatus('success');
+    } catch (err) {
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
+      console.error('Failed to load student details:', err);
+      setError('Failed to load student details.');
+      setStatus('error');
+    }
   }, [id]);
 
-  const scoresByCourse = scores.reduce((acc, score) => {
-    const courseId = score.course?._id || 'unknown';
-    if (!acc[courseId]) {
-      acc[courseId] = {
-        courseName: score.course?.name || 'Unknown Course',
-        components: [],
-      };
-    }
-    acc[courseId].components.push(score);
-    return acc;
-  }, {});
+  useEffect(() => { reload(); return () => abortRef.current?.abort(); }, [reload]);
+  return { student, scores, rankData, classes, status, error, reload, setStudent };
+};
 
-  if (loading) return <div className="spinner" />;
-  if (error) return <div className="error-message">{error}</div>;
-  if (!student) return <div className="error-message">Student not found.</div>;
+/* --------------------------------------------------------------------------
+   Modals
+   -------------------------------------------------------------------------- */
+const BaseModal = ({ isOpen, onClose, children, title }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   return (
-    <div>
-      <button
-        className="btn btn-secondary"
-        onClick={() => navigate('/admin/users')}
-        style={{ marginBottom: '1rem' }}
-      >
-        <FiArrowLeft /> Back to Users
-      </button>
+    <div className="sd-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="sd-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="sd-modal-header">
+          <h2>{title}</h2>
+          <button className="sd-modal-close" onClick={onClose} aria-label="Close modal"><FiX size={20} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
 
-      {/* Student Header Card (red rectangle) */}
-      <div className="student-header-card" style={{ position: 'relative' }}>
-        <div className="student-avatar">
-          {/* Removed FiUser icon – just a plain background */}
+const EditStudentModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving }) => {
+  const [form, setForm] = useState({ fullName: '', email: '', class: '', rollNumber: '' });
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setForm({
+        fullName: initialData.fullName || '',
+        email: initialData.email || '',
+        class: initialData.class?._id || '',
+        rollNumber: initialData.rollNumber || '',
+      });
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [isOpen, initialData]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Edit Student">
+      <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="sd-form">
+        <div className="sd-form-group">
+          <label className="sd-label">Full Name <span className="sd-required">*</span></label>
+          <input ref={inputRef} name="fullName" className="sd-input" value={form.fullName} onChange={handleChange} required />
         </div>
-        <div className="student-header-info">
-          <h2>{student.fullName}</h2>
-          <p className="student-class">
-            {student.class?.name || 'No class assigned'}
-            {student.rollNumber && ` · Roll No: ${student.rollNumber}`}
-          </p>
-          <p className="student-email">
-            <FiMail style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} />
-            {student.email}
-          </p>
+        <div className="sd-form-group">
+          <label className="sd-label">Email <span className="sd-required">*</span></label>
+          <input name="email" type="email" className="sd-input" value={form.email} onChange={handleChange} required />
         </div>
-        {/* Edit & Delete buttons – bottom‑right of the header card */}
-        <div style={{
-          position: 'absolute',
-          bottom: '1rem',
-          right: '1rem',
-          display: 'flex',
-          gap: '0.5rem',
-        }}>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => {
-              // For simplicity, you can navigate to a modal or call the same edit logic.
-              // Here we just show an alert, but you could open the edit modal from ManageUsers.
-              alert('Edit functionality can be added here.');
-            }}
-          >
-            <FiEdit />
+        <div className="sd-form-group">
+          <label className="sd-label">Class</label>
+          <div className="sd-select-wrapper">
+            <select name="class" className="sd-select" value={form.class} onChange={handleChange}>
+              <option value="">No Class Assigned</option>
+              {classes.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+            </select>
+            <FiChevronDown className="sd-select-icon" />
+          </div>
+        </div>
+        <div className="sd-form-group">
+          <label className="sd-label">Roll Number</label>
+          <input name="rollNumber" className="sd-input" value={form.rollNumber} onChange={handleChange} />
+        </div>
+        <div className="sd-form-actions">
+          <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose} disabled={isSaving}>Cancel</button>
+          <button type="submit" className="sd-btn sd-btn--primary" disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={async () => {
-              if (window.confirm('Delete this student? This action cannot be undone.')) {
-                await api.delete(`/api/v1/users/${student._id}`);
-                navigate('/admin/users');
-              }
-            }}
-          >
-            <FiTrash2 />
+        </div>
+      </form>
+    </BaseModal>
+  );
+};
+
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, isConfirming }) => {
+  if (!isOpen) return null;
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose} title={title}>
+      <div className="sd-confirm-body">
+        <p>{message}</p>
+        <div className="sd-form-actions">
+          <button className="sd-btn sd-btn--ghost" onClick={onClose} disabled={isConfirming}>Cancel</button>
+          <button className="sd-btn sd-btn--danger" onClick={onConfirm} disabled={isConfirming}>
+            {isConfirming ? 'Deleting...' : 'Delete Student'}
           </button>
         </div>
       </div>
+    </BaseModal>
+  );
+};
 
-      {/* Rank Card */}
-      {rankData && (
-        <div className="card" style={{ marginTop: '1.5rem' }}>
-          <h3><FiAward /> Current Rank</h3>
-          <div className="rank-display">
-            <span className={`rank-badge ${rankData.rank <= 3 ? `rank-${rankData.rank}` : ''}`}>
-              {rankData.rank}
-            </span>
-            <span className="rank-total">
-              Total Score: {rankData.overallTotal?.toFixed(2)}
-            </span>
-          </div>
+/* --------------------------------------------------------------------------
+   Main Component
+   -------------------------------------------------------------------------- */
+const StudentDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  
+  const { student, scores, rankData, classes, status, error, reload, setStudent } = useStudentDetail(id);
+  
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toast, setToast] = useState({ type: '', message: '' });
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast({ type: '', message: '' }), 4000);
+  };
+
+  const scoresByCourse = useMemo(() => {
+    return scores.reduce((acc, score) => {
+      const courseId = score.course?._id || 'unknown';
+      if (!acc[courseId]) {
+        acc[courseId] = { courseName: score.course?.name || 'Unknown Course', components: [] };
+      }
+      acc[courseId].components.push(score);
+      return acc;
+    }, {});
+  }, [scores]);
+
+  const averageScore = useMemo(() => {
+    if (scores.length === 0) return 0;
+    const totalPct = scores.reduce((sum, s) => sum + ((s.scoreObtained / s.maxScore) * 100), 0);
+    return (totalPct / scores.length).toFixed(1);
+  }, [scores]);
+
+  const handleUpdateStudent = async (formData) => {
+    setIsSaving(true);
+    try {
+      const res = await api.put(`/api/v1/users/${student._id}`, formData);
+      setStudent(res.data?.data || { ...student, ...formData });
+      setEditModalOpen(false);
+      showToast('success', 'Student updated successfully.');
+    } catch (err) {
+      showToast('error', err.response?.data?.message || 'Failed to update student.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteStudent = async () => {
+    setIsDeleting(true);
+    try {
+      await api.delete(`/api/v1/users/${student._id}`);
+      showToast('success', 'Student deleted successfully.');
+      setTimeout(() => navigate('/admin/users'), 1000);
+    } catch (err) {
+      showToast('error', 'Failed to delete student.');
+      setDeleteModalOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (status === 'loading' && !student) {
+    return (
+      <section className="sd-page">
+        <div className="sd-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+        <div className="sd-wash" aria-hidden="true" />
+        <div className="sd-state"><span className="sd-spinner" /> <p>Loading student profile…</p></div>
+      </section>
+    );
+  }
+
+  if (status === 'error' && !student) {
+    return (
+      <section className="sd-page">
+        <div className="sd-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+        <div className="sd-wash" aria-hidden="true" />
+        <div className="sd-state sd-state--error" role="alert">
+          <FiAlertTriangle size={32} />
+          <h3>Failed to load student</h3>
+          <p>{error}</p>
+          <button className="sd-btn sd-btn--primary" onClick={reload}><FiRefreshCw size={16} /> Try Again</button>
+        </div>
+      </section>
+    );
+  }
+
+  if (!student) return null;
+
+  const initial = student.fullName?.charAt(0).toUpperCase() || '?';
+  const rankClass = rankData ? (rankData.rank === 1 ? 'sd-rank-1' : rankData.rank === 2 ? 'sd-rank-2' : rankData.rank === 3 ? 'sd-rank-3' : 'sd-rank-default') : '';
+
+  return (
+    <section className="sd-page">
+      <div className="sd-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+      <div className="sd-wash" aria-hidden="true" />
+
+      {toast.message && (
+        <div className={`sd-toast sd-toast--${toast.type}`} role="alert">
+          {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
+          <span>{toast.message}</span>
+          <button className="sd-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close"><FiX size={16} /></button>
         </div>
       )}
 
-      {/* Marks Summary */}
-      <div className="card" style={{ marginTop: '1.5rem' }}>
-        <h3><FiBook /> Marks Summary</h3>
-        {Object.keys(scoresByCourse).length === 0 ? (
-          <EmptyState message="No marks recorded yet." />
-        ) : (
-          <div className="marks-summary-grid">
-            {Object.entries(scoresByCourse).map(([courseId, courseData]) => (
-              <div key={courseId} className="marks-course-card">
-                <h4>{courseData.courseName}</h4>
-                <table className="mini-table">
-                  <thead>
-                    <tr>
-                      <th>Component</th>
-                      <th>Score</th>
-                      <th>Max</th>
-                      <th>%</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {courseData.components.map((sc) => (
-                      <tr key={sc._id}>
-                        <td>{sc.componentName}</td>
-                        <td>{sc.scoreObtained}</td>
-                        <td>{sc.maxScore}</td>
-                        <td>{((sc.scoreObtained / sc.maxScore) * 100).toFixed(1)}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ))}
+      <main className="sd-content">
+        <button className="sd-back-btn" onClick={() => navigate('/admin/users')}>
+          <FiArrowLeft size={18} /> Back to Users
+        </button>
+
+        {/* Profile Header Card */}
+        <div className="sd-profile-card">
+          <div className="sd-avatar" aria-hidden="true">{initial}</div>
+          <div className="sd-profile-info">
+            <h1 className="sd-name">{student.fullName}</h1>
+            <div className="sd-pills">
+              <span className="sd-pill"><FiUsers size={14} /> {student.class?.name || 'No Class Assigned'}</span>
+              {student.rollNumber && <span className="sd-pill"><FiHash size={14} /> Roll: {student.rollNumber}</span>}
+              <span className="sd-pill sd-pill--email"><FiMail size={14} /> {student.email}</span>
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+          <div className="sd-profile-actions">
+            <button className="sd-btn sd-btn--ghost" onClick={() => setEditModalOpen(true)}>
+              <FiEdit2 size={16} /> Edit
+            </button>
+            <button className="sd-btn sd-btn--danger" onClick={() => setDeleteModalOpen(true)}>
+              <FiTrash2 size={16} /> Delete
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div className="sd-stats">
+          {rankData && (
+            <div className="sd-stat-card sd-stat-rank">
+              <div className={`sd-rank-badge ${rankClass}`} aria-hidden="true">
+                {rankData.rank === 1 ? <FaCrown size={24} /> : rankData.rank <= 3 ? <FaMedal size={20} /> : rankData.rank}
+              </div>
+              <div>
+                <strong>Rank #{rankData.rank}</strong>
+                <span>Overall Score: {rankData.overallTotal?.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+          <div className="sd-stat-card">
+            <div className="sd-stat-icon sd-icon-courses"><FiBook size={20} /></div>
+            <div>
+              <strong>{Object.keys(scoresByCourse).length}</strong>
+              <span>Courses Graded</span>
+            </div>
+          </div>
+          <div className="sd-stat-card">
+            <div className="sd-stat-icon sd-icon-avg"><FiTrendingUp size={20} /></div>
+            <div>
+              <strong>{averageScore}%</strong>
+              <span>Average Performance</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Marks Summary */}
+        <div className="sd-section">
+          <h2 className="sd-section-title">Marks Summary</h2>
+          {Object.keys(scoresByCourse).length === 0 ? (
+            <div className="sd-state">
+              <FiInbox size={40} />
+              <h3>No Marks Recorded</h3>
+              <p>This student doesn't have any graded components yet.</p>
+            </div>
+          ) : (
+            <div className="sd-marks-grid">
+              {Object.entries(scoresByCourse).map(([courseId, courseData]) => (
+                <div key={courseId} className="sd-course-card">
+                  <h3 className="sd-course-name">{courseData.courseName}</h3>
+                  <div className="sd-table-wrapper">
+                    <table className="sd-table">
+                      <thead>
+                        <tr>
+                          <th>Component</th>
+                          <th>Score</th>
+                          <th>Max</th>
+                          <th className="sd-th-right">Percentage</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {courseData.components.map((sc) => {
+                          const pct = ((sc.scoreObtained / sc.maxScore) * 100).toFixed(1);
+                          return (
+                            <tr key={sc._id}>
+                              <td data-label="Component"><strong>{sc.componentName}</strong></td>
+                              <td data-label="Score">{sc.scoreObtained}</td>
+                              <td data-label="Max">{sc.maxScore}</td>
+                              <td data-label="Percentage" className="sd-td-right">
+                                <span className={`sd-pct-badge ${pct >= 80 ? 'sd-pct-high' : pct >= 50 ? 'sd-pct-mid' : 'sd-pct-low'}`}>
+                                  {pct}%
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+
+      <EditStudentModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} onSubmit={handleUpdateStudent} initialData={student} classes={classes} isSaving={isSaving} />
+      <ConfirmModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={handleDeleteStudent} title="Delete Student" message="Are you sure you want to delete this student? This action cannot be undone and will remove all their associated records." isConfirming={isDeleting} />
+    </section>
   );
 };
 
