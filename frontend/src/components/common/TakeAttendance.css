@@ -1,0 +1,200 @@
+/* ==========================================================================
+   TAKE ATTENDANCE — School theme (maroon / gold / parchment) with L.png
+   Scoped with `.ta-` to prevent global style leakage.
+   ========================================================================== */
+
+.ta-page {
+  --ta-bg: #f3f0ea;
+  --ta-surface: #fffdf8;
+  --ta-border: #e6ddcf;
+  --ta-border-strong: #d8cbb6;
+  --ta-maroon: #6d1a28;
+  --ta-maroon-deep: #52101c;
+  --ta-maroon-soft: #8c2f3d;
+  --ta-gold: #d2a12c;
+  --ta-gold-soft: #f6e7c6;
+  --ta-ink: #33262a;
+  --ta-ink-soft: #7a6c6d;
+  --ta-danger: #b3403f;
+  --ta-success: #2e7d32;
+  --ta-warning: #ea580c;
+  --ta-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
+  background-color: var(--ta-bg);
+  color: var(--ta-ink);
+  font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
+}
+
+.ta-bg { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; }
+.ta-wash {
+  position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
+    linear-gradient(170deg, rgba(247, 244, 238, 0.94) 0%, rgba(243, 240, 234, 0.88) 45%, rgba(238, 231, 220, 0.93) 100%);
+}
+
+.ta-content { max-width: 1100px; margin: 0 auto; display: grid; gap: 2rem; align-content: start; }
+
+/* Header */
+.ta-title {
+  margin: 0; font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem); font-weight: 700; color: var(--ta-maroon);
+}
+.ta-title::after {
+  content: ''; display: block; width: 88px; height: 3px; margin-top: 0.55rem; border-radius: 999px;
+  background: linear-gradient(90deg, var(--ta-gold), rgba(210, 161, 44, 0.35));
+}
+.ta-subtitle { margin: 0.65rem 0 0; color: var(--ta-ink-soft); font-size: 0.95rem; }
+
+/* Toolbar */
+.ta-toolbar {
+  display: flex; align-items: flex-end; gap: 1.25rem; flex-wrap: wrap;
+  background: var(--ta-surface); border: 1px solid var(--ta-border); border-radius: 14px;
+  padding: 1.25rem 1.5rem; box-shadow: var(--ta-shadow);
+}
+.ta-select-group { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-width: 200px; }
+.ta-label { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ta-ink-soft); }
+.ta-select-wrapper { position: relative; display: flex; align-items: center; }
+.ta-select, .ta-input {
+  width: 100%; padding: 0.75rem 1rem; font-size: 1rem; font-family: inherit;
+  color: var(--ta-ink); background-color: var(--ta-bg); border: 1px solid var(--ta-border-strong);
+  border-radius: 8px; transition: all 0.2s;
+}
+.ta-select { appearance: none; -webkit-appearance: none; padding-right: 2.5rem; cursor: pointer; }
+.ta-select:focus, .ta-input:focus { outline: none; border-color: var(--ta-maroon); box-shadow: 0 0 0 3px rgba(109, 26, 40, 0.15); }
+.ta-select:disabled { opacity: 0.6; cursor: not-allowed; }
+.ta-select-icon { position: absolute; right: 1rem; color: var(--ta-ink-soft); pointer-events: none; }
+
+.ta-active-badge {
+  display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.65rem 1.1rem;
+  background: var(--ta-gold-soft); border: 1px solid rgba(210, 161, 44, 0.35); border-radius: 999px;
+  color: var(--ta-maroon); font-size: 0.9rem; font-weight: 600;
+}
+
+/* Attendance Card */
+.ta-attendance-card {
+  background: var(--ta-surface); border: 1px solid var(--ta-border); border-radius: 16px;
+  box-shadow: var(--ta-shadow); overflow: hidden;
+}
+.ta-card-header {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--ta-border); flex-wrap: wrap;
+}
+.ta-card-title { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--ta-maroon); }
+.ta-bulk-actions { display: flex; gap: 0.5rem; }
+
+.ta-card-footer {
+  display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1.25rem 1.75rem;
+  border-top: 1px solid var(--ta-border); background: #faf6ef;
+}
+
+/* Buttons */
+.ta-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
+  border: none; border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.ta-btn--sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
+.ta-btn--primary { background: var(--ta-maroon); color: #fff; box-shadow: 0 4px 6px -1px rgba(109, 26, 40, 0.2); }
+.ta-btn--primary:hover:not(:disabled) { background: var(--ta-maroon-deep); transform: translateY(-1px); }
+.ta-btn--primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+.ta-btn--ghost { background: transparent; color: var(--ta-ink-soft); border: 1px solid var(--ta-border-strong); }
+.ta-btn--ghost:hover:not(:disabled) { background: var(--ta-bg); color: var(--ta-ink); }
+
+/* Table */
+.ta-table-wrapper { overflow-x: auto; }
+.ta-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.ta-table thead { background: #faf6ef; border-bottom: 2px solid var(--ta-border); }
+.ta-table th {
+  padding: 1rem 1.5rem; text-align: left; font-weight: 600; font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--ta-ink-soft);
+}
+.ta-table td { padding: 1.15rem 1.5rem; border-bottom: 1px solid var(--ta-border); vertical-align: middle; }
+.ta-table tbody tr:last-child td { border-bottom: none; }
+.ta-table tbody tr:hover { background: #fcfaf5; }
+
+.ta-student-cell { display: flex; align-items: center; gap: 0.75rem; }
+.ta-avatar {
+  width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(140deg, var(--ta-maroon-soft), var(--ta-maroon-deep));
+  color: var(--ta-gold-soft); display: grid; place-items: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0;
+}
+.ta-student-name { font-weight: 600; color: var(--ta-ink); }
+
+/* Status Buttons */
+.ta-status-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.ta-status-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem;
+  border: 1px solid var(--ta-border); border-radius: 8px; background: var(--ta-bg);
+  color: var(--ta-ink-soft); font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+}
+.ta-status-btn:hover { background: #fff; border-color: var(--ta-border-strong); }
+.ta-status-btn--active { font-weight: 700; }
+.ta-status-btn.ta-status-present.ta-status-btn--active { background: #ecfdf5; color: #059669; border-color: #059669; }
+.ta-status-btn.ta-status-absent.ta-status-btn--active { background: #fef2f2; color: #dc2626; border-color: #dc2626; }
+.ta-status-btn.ta-status-late.ta-status-btn--active { background: #fff7ed; color: #ea580c; border-color: #ea580c; }
+
+/* States */
+.ta-state {
+  background: var(--ta-surface); border: 1px dashed var(--ta-border-strong); border-radius: 16px; padding: 4rem 1.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; color: var(--ta-ink-soft);
+  max-width: 600px; margin: 2rem auto;
+}
+.ta-state h3 { margin: 0.5rem 0 0; color: var(--ta-maroon); font-size: 1.25rem; }
+.ta-state p { margin: 0; max-width: 400px; }
+.ta-state--error { border-color: #e3b7b7; background: #fdf6f4; color: #8a4a4a; border-style: solid; }
+.ta-state--error h3 { color: #8a2430; }
+
+.ta-spinner {
+  width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(109, 26, 40, 0.15);
+  border-top-color: var(--ta-maroon); animation: ta-spin 0.8s linear infinite;
+}
+.ta-spinner--sm { width: 16px; height: 16px; border-width: 2px; }
+@keyframes ta-spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.ta-toast {
+  position: fixed; top: 1.5rem; right: 1.5rem; z-index: 2000; display: flex; align-items: center; gap: 0.75rem;
+  padding: 1rem 1.25rem; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem; font-weight: 600; animation: ta-slideIn 0.3s ease; max-width: 400px;
+}
+.ta-toast--success { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--ta-success); }
+.ta-toast--error { background: #fdf6f4; border: 1px solid #fecaca; color: var(--ta-danger); }
+.ta-toast-close { background: transparent; border: none; color: inherit; cursor: pointer; padding: 0.25rem; opacity: 0.7; }
+.ta-toast-close:hover { opacity: 1; }
+@keyframes ta-slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ta-page { padding: 1.5rem 1rem 2.5rem; }
+  .ta-toolbar { flex-direction: column; align-items: stretch; }
+  .ta-select-group { min-width: auto; }
+  
+  .ta-card-header { flex-direction: column; align-items: flex-start; }
+  .ta-bulk-actions { width: 100%; }
+  .ta-bulk-actions .ta-btn { flex: 1; }
+  
+  .ta-card-footer { flex-direction: column; }
+  .ta-card-footer .ta-btn { width: 100%; }
+  
+  .ta-table-wrapper { overflow: visible; }
+  .ta-table, .ta-table thead, .ta-table tbody, .ta-table th, .ta-table td, .ta-table tr { display: block; }
+  .ta-table thead { display: none; }
+  .ta-table tr { background: var(--ta-bg); border: 1px solid var(--ta-border); border-radius: 12px; margin-bottom: 1rem; padding: 0.5rem 0; }
+  .ta-table td { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--ta-border); text-align: right; }
+  .ta-table td:last-child { border-bottom: none; }
+  .ta-table td::before { content: attr(data-label); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--ta-ink-soft); text-align: left; margin-right: 1rem; }
+  
+  .ta-student-cell { justify-content: flex-end; text-align: right; }
+  .ta-avatar { order: 2; margin-left: 0.5rem; }
+  
+  .ta-status-group { justify-content: flex-end; }
+  
+  .ta-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ta-btn, .ta-status-btn, .ta-toast, .ta-spinner { transition: none; animation: none; }
+}
