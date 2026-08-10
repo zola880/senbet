@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const mongoose = require('mongoose');
+const compression = require('compression');
 
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
@@ -46,6 +47,8 @@ connectDB().catch(err => {
 });
 
 const app = express();
+
+app.use(compression());
 
 // Trust proxy (needed for rate limiting behind reverse proxy like nginx/Vercel)
 app.set('trust proxy', 1);
@@ -120,6 +123,7 @@ app.use(cors({
 // Body parser with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 
 // Request ID middleware for tracing
 app.use((req, res, next) => {

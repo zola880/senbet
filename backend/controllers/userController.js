@@ -24,9 +24,14 @@ const getUsers = async (req, res, next) => {
       // Better: in a real app, restrict to classes they teach. We'll keep simple.
     }
 
+    // OPTIMIZATION: Added .select() to fetch only needed fields
+    // OPTIMIZATION: Added .populate('class', 'name') to fetch only class name
+    // OPTIMIZATION: Added .lean() for plain objects (2-3x faster, less memory)
     const users = await User.find(query)
-      .populate('class')
-      .sort({ fullName: 1 });
+      .select('fullName email role rollNumber qualifications class')
+      .populate('class', 'name')
+      .sort({ fullName: 1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -43,13 +48,19 @@ const getUsers = async (req, res, next) => {
 // @access  Private
 const getUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id).populate('class');
+    // OPTIMIZATION: Added .lean() for plain object (faster, less memory)
+    // Note: We fetch full document because edit modal needs all fields
+    const user = await User.findById(req.params.id)
+      .populate('class', 'name')
+      .lean();
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
       });
     }
+
     res.status(200).json({
       success: true,
       data: user,
@@ -68,6 +79,7 @@ const updateUser = async (req, res, next) => {
 
     // If password is being updated, handle separately
     if (password) {
+      // NO .lean() here - we need Mongoose document to call .save()
       const user = await User.findById(req.params.id).select('+password');
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
@@ -77,11 +89,14 @@ const updateUser = async (req, res, next) => {
       delete updateData.password;
     }
 
+    // OPTIMIZATION: Added .lean() to the returned document (faster serialization)
     const user = await User.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('class');
+    )
+      .populate('class', 'name')
+      .lean();
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -101,10 +116,12 @@ const updateUser = async (req, res, next) => {
 // @access  Private/Admin
 const deleteUser = async (req, res, next) => {
   try {
+    // No optimization needed - we don't return the document, just success message
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
     res.status(200).json({
       success: true,
       message: 'User deleted successfully',

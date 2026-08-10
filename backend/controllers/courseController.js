@@ -18,6 +18,7 @@ const createCourse = async (req, res, next) => {
       });
     }
 
+    // No optimization needed - course is already in memory from create()
     res.status(201).json({ success: true, data: course });
   } catch (error) {
     next(error);
@@ -33,28 +34,33 @@ const getCourses = async (req, res, next) => {
 
     if (req.user.role === 'admin' || req.user.role === 'student') {
       // Admin and students can see all courses
-      courses = await Course.find().sort({ name: 1 });
+      // OPTIMIZATION: Added .select() for only needed fields
+      // OPTIMIZATION: Added .lean() for plain objects (2-3x faster)
+      courses = await Course.find()
+        .select('name code description')
+        .sort({ name: 1 })
+        .lean();
     } else if (req.user.role === 'teacher') {
-      // Teacher sees only assigned courses
-      const assignments = await TeacherAssignment.find({ teacher: req.user._id })
-        .populate('course')
-        .select('course');
-      courses = assignments.map((a) => a.course).filter(Boolean);
-      // Remove duplicates
-      const uniqueCourses = [];
-      const seen = new Set();
-      for (const c of courses) {
-        if (!seen.has(c._id.toString())) {
-          uniqueCourses.push(c);
-          seen.add(c._id.toString());
-        }
-      }
-      courses = uniqueCourses;
+      // OPTIMIZATION: Use .distinct() to get unique course IDs in one query
+      // This replaces the JS-level deduplication (faster and cleaner)
+      const courseIds = await TeacherAssignment.distinct('course', {
+        teacher: req.user._id,
+      });
+
+      // Fetch courses with those IDs
+      courses = await Course.find({ _id: { $in: courseIds } })
+        .select('name code description')
+        .sort({ name: 1 })
+        .lean();
     } else {
       courses = [];
     }
 
-    res.status(200).json({ success: true, count: courses.length, data: courses });
+    res.status(200).json({
+      success: true,
+      count: courses.length,
+      data: courses,
+    });
   } catch (error) {
     next(error);
   }
@@ -65,17 +71,25 @@ const getCourses = async (req, res, next) => {
 // @access  Private
 const getCourse = async (req, res, next) => {
   try {
-    const course = await Course.findById(req.params.id);
+    // OPTIMIZATION: Added .lean() for plain object (faster serialization)
+    const course = await Course.findById(req.params.id).lean();
     if (!course) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
     }
 
     // If teacher, verify they are assigned to this course
     if (req.user.role === 'teacher') {
+      // OPTIMIZATION: Only select _id field and add .lean() for existence check
       const assignment = await TeacherAssignment.findOne({
         teacher: req.user._id,
         course: req.params.id,
-      });
+      })
+        .select('_id')
+        .lean();
+
       if (!assignment) {
         return res.status(403).json({
           success: false,
@@ -95,13 +109,21 @@ const getCourse = async (req, res, next) => {
 // @access  Private/Admin
 const updateCourse = async (req, res, next) => {
   try {
-    const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    // OPTIMIZATION: Added .lean() to returned document (faster serialization)
+    // Note: We don't modify the document after update, just return it
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    ).lean();
+
     if (!course) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
     }
+
     res.status(200).json({ success: true, data: course });
   } catch (error) {
     next(error);
@@ -113,13 +135,22 @@ const updateCourse = async (req, res, next) => {
 // @access  Private/Admin
 const deleteCourse = async (req, res, next) => {
   try {
+    // No optimization needed - we don't return the document, just success message
     const course = await Course.findByIdAndDelete(req.params.id);
     if (!course) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
     }
+
     // Also remove related TeacherAssignments
     await TeacherAssignment.deleteMany({ course: req.params.id });
-    res.status(200).json({ success: true, message: 'Course deleted' });
+
+    res.status(200).json({
+      success: true,
+      message: 'Course deleted',
+    });
   } catch (error) {
     next(error);
   }

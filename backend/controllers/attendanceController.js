@@ -11,13 +11,20 @@ const getAttendance = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Class and date are required' });
     }
 
+    // OPTIMIZATION: Added .lean() for plain objects (faster serialization)
+    // Note: Populates already have field selection - good!
     const attendance = await Attendance.findOne({ class: classId, date })
       .populate('records.student', 'fullName rollNumber')
-      .populate('markedBy', 'fullName');
+      .populate('markedBy', 'fullName')
+      .lean();
 
     if (!attendance) {
       // No attendance taken yet – return list of students with status null
-      const students = await User.find({ class: classId, role: 'student' }).select('fullName rollNumber');
+      // OPTIMIZATION: Added .lean() for plain objects
+      const students = await User.find({ class: classId, role: 'student' })
+        .select('fullName rollNumber')
+        .lean();
+
       return res.status(200).json({
         success: true,
         data: {
@@ -48,6 +55,8 @@ const markAttendance = async (req, res, next) => {
     }
 
     // Upsert
+    // OPTIMIZATION: Added .lean() to returned document (faster serialization)
+    // Note: We don't modify the document after update, so .lean() is safe
     const attendance = await Attendance.findOneAndUpdate(
       { class: classId, date },
       {
@@ -59,7 +68,8 @@ const markAttendance = async (req, res, next) => {
       { upsert: true, new: true, runValidators: true }
     )
       .populate('records.student', 'fullName rollNumber')
-      .populate('markedBy', 'fullName');
+      .populate('markedBy', 'fullName')
+      .lean();
 
     res.status(200).json({ success: true, data: attendance });
   } catch (error) {
@@ -83,13 +93,16 @@ const getStudentAttendance = async (req, res, next) => {
       if (endDate) dateFilter.date.$lte = endDate;
     }
 
+    // OPTIMIZATION: Added .lean() for plain objects (much faster for history queries)
+    // Note: .toString() on ObjectId still works with .lean()
     const attendances = await Attendance.find({
       'records.student': studentId,
       ...dateFilter,
     })
       .populate('class', 'name')
       .populate('records.student', 'fullName rollNumber')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .lean();
 
     // Format for student view
     const result = attendances.map(a => {

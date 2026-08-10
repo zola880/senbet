@@ -10,7 +10,9 @@ const computeRanking = require('../utils/rankingHelper');
 const getClassRanking = async (req, res, next) => {
   try {
     const classId = req.params.classId;
-    const config = await AssessmentConfig.findOne({ class: classId });
+
+    // OPTIMIZATION: Added .lean() - read only, no updates
+    const config = await AssessmentConfig.findOne({ class: classId }).lean();
     if (!config) {
       return res.status(400).json({
         success: false,
@@ -18,26 +20,36 @@ const getClassRanking = async (req, res, next) => {
       });
     }
 
-    // Get all students in the class
-    const students = await User.find({ class: classId, role: 'student' }).select('-password');
+    // OPTIMIZATION: Specific field selection instead of excluding password
+    // OPTIMIZATION: Added .lean() for plain objects (2-3x faster)
+    const students = await User.find({ class: classId, role: 'student' })
+      .select('fullName rollNumber class')
+      .lean();
+
     if (students.length === 0) {
       return res.status(200).json({ success: true, data: [] });
     }
 
-    // Get all courses assigned to this class (through TeacherAssignment)
-    const assignments = await TeacherAssignment.find({ class: classId }).populate('course');
-    // Unique courses
-    const courseIds = [...new Set(assignments.map(a => a.course._id))];
-    const courses = assignments.map(a => a.course).filter((v, i, a) => a.findIndex(t => t._id.equals(v._id)) === i);
+    // OPTIMIZATION: Only populate course fields we need (name) for breakdown
+    // OPTIMIZATION: Added .lean() for plain objects
+    const assignments = await TeacherAssignment.find({ class: classId })
+      .populate('course', 'name')
+      .lean();
 
-    // Fetch all scores for these students, courses, class
+    // Unique courses - this logic is preserved
+    const courseIds = [...new Set(assignments.map(a => a.course._id.toString()))];
+    const courses = assignments
+      .map(a => a.course)
+      .filter((v, i, a) => a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+
+    // OPTIMIZATION: Added .lean() for plain objects (faster serialization)
     const scores = await StudentScore.find({
       class: classId,
       course: { $in: courseIds },
       student: { $in: students.map(s => s._id) },
-    });
+    }).lean();
 
-    // Compute ranking using helper
+    // Compute ranking using helper - works with plain objects thanks to .lean()
     const ranking = computeRanking(students, courses, config, scores);
 
     res.status(200).json({
@@ -54,7 +66,11 @@ const getClassRanking = async (req, res, next) => {
 // @access  Private (Student sees own, Admin/Teacher can see any)
 const getStudentRanking = async (req, res, next) => {
   try {
-    const student = await User.findById(req.params.studentId);
+    // OPTIMIZATION: Added .lean() - read only, just checking role and getting class
+    const student = await User.findById(req.params.studentId)
+      .select('fullName rollNumber role class')
+      .lean();
+
     if (!student || student.role !== 'student') {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
@@ -64,24 +80,37 @@ const getStudentRanking = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Student is not assigned to any class' });
     }
 
-    const config = await AssessmentConfig.findOne({ class: classId });
+    // OPTIMIZATION: Added .lean()
+    const config = await AssessmentConfig.findOne({ class: classId }).lean();
     if (!config) {
       return res.status(400).json({ success: false, message: 'Assessment config not found' });
     }
 
-    // Get all students in that class
-    const allStudents = await User.find({ class: classId, role: 'student' }).select('-password');
-    const assignments = await TeacherAssignment.find({ class: classId }).populate('course');
-    const courseIds = [...new Set(assignments.map(a => a.course._id))];
-    const courses = assignments.map(a => a.course).filter((v, i, a) => a.findIndex(t => t._id.equals(v._id)) === i);
+    // OPTIMIZATION: Specific fields + .lean()
+    const allStudents = await User.find({ class: classId, role: 'student' })
+      .select('fullName rollNumber class')
+      .lean();
 
+    // OPTIMIZATION: Limited populate + .lean()
+    const assignments = await TeacherAssignment.find({ class: classId })
+      .populate('course', 'name')
+      .lean();
+
+    const courseIds = [...new Set(assignments.map(a => a.course._id.toString()))];
+    const courses = assignments
+      .map(a => a.course)
+      .filter((v, i, a) => a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+
+    // OPTIMIZATION: Added .lean()
     const scores = await StudentScore.find({
       class: classId,
       course: { $in: courseIds },
       student: { $in: allStudents.map(s => s._id) },
-    });
+    }).lean();
 
     const fullRanking = computeRanking(allStudents, courses, config, scores);
+
+    // Use string comparison since _id is now an ObjectId in plain object
     const studentRank = fullRanking.find(r => r.studentId.toString() === req.params.studentId);
 
     if (!studentRank) {
