@@ -179,7 +179,7 @@ const AdminDashboard = () => {
         <section className="admin-dashboard-section">
           <div className="admin-section-heading">
             <div>
-              <span className="admin-section-label">OVERVIEW</span>
+              
               <h2>School Statistics</h2>
             </div>
 
