@@ -1,52 +1,219 @@
-/* ========== COURSE MATERIALS (Student) ========== */
-.materials-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+/* ==========================================================================
+   STUDENT COURSE MATERIALS — School theme (maroon / gold / parchment) with L.png
+   Scoped with `.scm-` to prevent global style leakage.
+   ========================================================================== */
+
+.scm-page {
+  --scm-bg: #f3f0ea;
+  --scm-surface: #fffdf8;
+  --scm-border: #e6ddcf;
+  --scm-border-strong: #d8cbb6;
+  --scm-maroon: #6d1a28;
+  --scm-maroon-deep: #52101c;
+  --scm-maroon-soft: #8c2f3d;
+  --scm-gold: #d2a12c;
+  --scm-gold-soft: #f6e7c6;
+  --scm-ink: #33262a;
+  --scm-ink-soft: #7a6c6d;
+  --scm-danger: #b3403f;
+  --scm-success: #2e7d32;
+  --scm-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
+  background-color: var(--scm-bg);
+  color: var(--scm-ink);
+  font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
 }
 
-.material-item {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  transition: var(--transition);
-  box-shadow: var(--shadow-sm);
+.scm-bg { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; }
+.scm-wash {
+  position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
+    linear-gradient(170deg, rgba(247, 244, 238, 0.94) 0%, rgba(243, 240, 234, 0.88) 45%, rgba(238, 231, 220, 0.93) 100%);
 }
 
-.material-item:hover {
-  box-shadow: var(--shadow);
+.scm-content { max-width: 1100px; margin: 0 auto; display: grid; gap: 2rem; align-content: start; }
+
+/* Header */
+.scm-title {
+  margin: 0; font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem); font-weight: 700; color: var(--scm-maroon);
+}
+.scm-title::after {
+  content: ''; display: block; width: 88px; height: 3px; margin-top: 0.55rem; border-radius: 999px;
+  background: linear-gradient(90deg, var(--scm-gold), rgba(210, 161, 44, 0.35));
+}
+.scm-subtitle { margin: 0.65rem 0 0; color: var(--scm-ink-soft); font-size: 0.95rem; }
+
+/* Back Button */
+.scm-back-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; background: var(--scm-surface);
+  border: 1px solid var(--scm-border); border-radius: 999px; color: var(--scm-maroon); font-weight: 600; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.2s ease; box-shadow: var(--scm-shadow); width: fit-content;
+}
+.scm-back-btn:hover { background: var(--scm-maroon); color: #fff; border-color: var(--scm-maroon); }
+
+/* Course Header */
+.scm-course-header { display: flex; align-items: center; gap: 1.25rem; }
+.scm-course-header-icon {
+  width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center;
+  background: linear-gradient(140deg, var(--scm-maroon-soft), var(--scm-maroon-deep)); color: var(--scm-gold-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 14px -8px rgba(82, 16, 28, 0.7); flex-shrink: 0;
+}
+.scm-code-badge {
+  display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.75rem; background: var(--scm-gold-soft);
+  color: var(--scm-maroon); border-radius: 6px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;
+}
+.scm-course-desc { margin: 0.75rem 0 0; color: var(--scm-ink-soft); font-size: 0.95rem; line-height: 1.6; max-width: 700px; }
+
+/* Course Grid */
+.scm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+
+.scm-course-card {
+  position: relative; display: flex; flex-direction: column; background: var(--scm-surface);
+  border: 1px solid var(--scm-border); border-top: 4px solid var(--scm-maroon); border-radius: 14px;
+  padding: 1.5rem; box-shadow: var(--scm-shadow); transition: all 0.22s ease; cursor: pointer; outline: none;
+}
+.scm-course-card:hover, .scm-course-card:focus-visible {
+  transform: translateY(-4px); border-top-color: var(--scm-gold);
+  box-shadow: 0 2px 4px rgba(64, 20, 30, 0.08), 0 22px 34px -20px rgba(64, 20, 30, 0.4);
+}
+.scm-course-card:focus-visible { outline: 3px solid rgba(210, 161, 44, 0.55); outline-offset: 3px; }
+
+.scm-course-icon {
+  width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center;
+  background: linear-gradient(140deg, var(--scm-maroon-soft), var(--scm-maroon-deep)); color: var(--scm-gold-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 14px -8px rgba(82, 16, 28, 0.7); margin-bottom: 1.25rem;
 }
 
-.material-image {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
+.scm-course-content { display: flex; flex-direction: column; gap: 0.5rem; }
+.scm-course-title { margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--scm-ink); line-height: 1.3; }
+.scm-course-code {
+  display: inline-block; width: fit-content; padding: 0.2rem 0.6rem; background: var(--scm-gold-soft);
+  color: var(--scm-maroon); border-radius: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;
+}
+.scm-course-hint { margin-top: 0.5rem; font-size: 0.85rem; color: var(--scm-ink-soft); font-style: italic; }
+
+/* Tabs */
+.scm-tabs { display: flex; gap: 0.4rem; border-bottom: 2px solid var(--scm-border); overflow-x: auto; scrollbar-width: none; }
+.scm-tabs::-webkit-scrollbar { display: none; }
+.scm-tab {
+  display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.85rem 1.3rem; background: transparent;
+  border: none; border-bottom: 3px solid transparent; border-radius: 10px 10px 0 0; margin-bottom: -2px;
+  color: var(--scm-ink-soft); font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.scm-tab:hover { color: var(--scm-maroon); background: rgba(109, 26, 40, 0.05); }
+.scm-tab--active { color: var(--scm-maroon); border-bottom-color: var(--scm-gold); }
+.scm-tab:focus-visible { outline: 3px solid rgba(210, 161, 44, 0.55); outline-offset: 2px; }
+
+.scm-panel { animation: scm-fade 0.3s ease; }
+@keyframes scm-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Materials List */
+.scm-materials-list { display: grid; gap: 1rem; }
+
+.scm-material-card {
+  background: var(--scm-surface); border: 1px solid var(--scm-border); border-radius: 14px;
+  padding: 1.5rem; display: grid; grid-template-columns: auto 1fr auto; gap: 1.25rem; align-items: center;
+  box-shadow: var(--scm-shadow); transition: all 0.2s ease;
+}
+.scm-material-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px -4px rgba(64, 20, 30, 0.15); }
+
+.scm-material-preview {
+  width: 64px; height: 64px; border-radius: 12px; display: grid; place-items: center;
+  background: linear-gradient(140deg, var(--scm-maroon-soft), var(--scm-maroon-deep)); color: var(--scm-gold-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18); flex-shrink: 0;
 }
 
-.material-file {
-  width: 100%;
-  height: 100px;
-  background: #f5f0e8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: var(--primary);
+.scm-material-info { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.scm-material-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--scm-ink); }
+.scm-material-desc {
+  margin: 0; font-size: 0.9rem; color: var(--scm-ink-soft); line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-.material-info {
-  padding: 0.8rem;
+.scm-material-meta { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.25rem; }
+.scm-material-author, .scm-material-date {
+  display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--scm-ink-soft);
 }
 
-.material-info h4 {
-  font-size: 1rem;
-  margin-bottom: 0.3rem;
+.scm-material-actions { display: flex; align-items: center; }
+
+/* Buttons */
+.scm-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
+  border: none; border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.scm-btn--sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
+.scm-btn--primary { background: var(--scm-maroon); color: #fff; box-shadow: 0 4px 6px -1px rgba(109, 26, 40, 0.2); }
+.scm-btn--primary:hover:not(:disabled) { background: var(--scm-maroon-deep); transform: translateY(-1px); }
+.scm-btn--primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* States */
+.scm-state {
+  background: var(--scm-surface); border: 1px dashed var(--scm-border-strong); border-radius: 16px; padding: 4rem 1.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; color: var(--scm-ink-soft);
+}
+.scm-state h3 { margin: 0.5rem 0 0; color: var(--scm-maroon); font-size: 1.25rem; }
+.scm-state p { margin: 0; max-width: 400px; }
+.scm-state--error { border-color: #e3b7b7; background: #fdf6f4; color: #8a4a4a; border-style: solid; }
+.scm-state--error h3 { color: #8a2430; }
+
+.scm-spinner {
+  width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(109, 26, 40, 0.15);
+  border-top-color: var(--scm-maroon); animation: scm-spin 0.8s linear infinite;
+}
+@keyframes scm-spin { to { transform: rotate(360deg); } }
+
+/* Skeleton */
+.scm-skeleton-card {
+  background: var(--scm-surface); border: 1px solid var(--scm-border); border-top: 4px solid var(--scm-border);
+  border-radius: 14px; padding: 1.5rem; box-shadow: var(--scm-shadow); display: flex; flex-direction: column; gap: 1rem;
+}
+.scm-skeleton-card > div {
+  background: linear-gradient(90deg, #ece5d8 25%, #f8f3e9 50%, #ece5d8 75%);
+  background-size: 250% 100%; animation: scm-shimmer 1.3s ease infinite; border-radius: 6px;
+}
+.scm-sk-icon { width: 56px; height: 56px; border-radius: 14px !important; }
+.scm-sk-title { height: 22px; width: 70%; }
+.scm-sk-line { height: 14px; width: 50%; }
+@keyframes scm-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* Toast */
+.scm-toast {
+  position: fixed; top: 1.5rem; right: 1.5rem; z-index: 2000; display: flex; align-items: center; gap: 0.75rem;
+  padding: 1rem 1.25rem; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem; font-weight: 600; animation: scm-slideIn 0.3s ease; max-width: 400px;
+}
+.scm-toast--success { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--scm-success); }
+.scm-toast--error { background: #fdf6f4; border: 1px solid #fecaca; color: var(--scm-danger); }
+.scm-toast-close { background: transparent; border: none; color: inherit; cursor: pointer; padding: 0.25rem; opacity: 0.7; }
+.scm-toast-close:hover { opacity: 1; }
+@keyframes scm-slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scm-page { padding: 1.5rem 1rem 2.5rem; }
+  .scm-grid { grid-template-columns: 1fr; }
+  .scm-course-header { flex-direction: column; align-items: flex-start; text-align: left; }
+  .scm-course-header-icon { margin: 0; }
+  
+  .scm-material-card { grid-template-columns: 1fr; text-align: center; gap: 1rem; padding: 1.25rem; }
+  .scm-material-preview { margin: 0 auto; }
+  .scm-material-meta { justify-content: center; }
+  .scm-material-actions { justify-content: center; width: 100%; }
+  .scm-btn { width: 100%; }
+  
+  .scm-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; }
 }
 
-.material-info p {
-  font-size: 0.85rem;
-  color: var(--text-light);
-  margin-bottom: 0.5rem;
+@media (prefers-reduced-motion: reduce) {
+  .scm-course-card, .scm-material-card, .scm-btn, .scm-tab, .scm-spinner, .scm-toast, .scm-skeleton-card > div, .scm-back-btn {
+    transition: none; animation: none;
+  }
+  .scm-course-card:hover, .scm-material-card:hover { transform: none; }
 }

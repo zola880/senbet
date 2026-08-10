@@ -1,21 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FiAlertTriangle, FiAward, FiCheckCircle, FiChevronDown,
-  FiInbox, FiRefreshCw, FiTrendingUp, FiTrophy, FiUsers, FiX
+  FiInbox, FiRefreshCw, FiTrendingUp, FiUsers, FiX
 } from 'react-icons/fi';
 import { FaCrown, FaMedal } from 'react-icons/fa';
 
 import api from '../../services/api';
 import bgImage from '../../assets/L.png';
 import './FullRanking.css';
-
-/* --------------------------------------------------------------------------
-   Helpers
-   -------------------------------------------------------------------------- */
-const formatScore = (value) =>
-  typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '—';
-
-const getInitials = (name) => (name?.trim()?.charAt(0).toUpperCase()) || '?';
 
 /* --------------------------------------------------------------------------
    Data Hook: Classes
@@ -41,11 +33,7 @@ const useClasses = () => {
     }
   }, []);
 
-  useEffect(() => {
-    reload();
-    return () => abortRef.current?.abort();
-  }, [reload]);
-
+  useEffect(() => { reload(); return () => abortRef.current?.abort(); }, [reload]);
   return { classes, status, reload };
 };
 
@@ -57,26 +45,18 @@ const useRanking = (selectedClass) => {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
-  const [retryToken, setRetryToken] = useState(0);
-
-  const retry = useCallback(() => setRetryToken((n) => n + 1), []);
 
   useEffect(() => {
     if (!selectedClass) {
-      setRanking([]);
-      setStatus('idle');
-      setError(null);
-      return undefined;
+      setRanking([]); setStatus('idle'); setError(null);
+      return;
     }
-
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    setStatus('loading');
-    setError(null);
+    setStatus('loading'); setError(null);
 
-    api
-      .get(`/api/v1/rankings/class/${selectedClass}`, { signal: controller.signal })
+    api.get(`/api/v1/rankings/class/${selectedClass}`, { signal: controller.signal })
       .then((res) => {
         if (controller.signal.aborted) return;
         const data = Array.isArray(res.data?.data) ? res.data.data : [];
@@ -89,11 +69,8 @@ const useRanking = (selectedClass) => {
       .catch((err) => {
         if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
         console.error('Failed to load ranking:', err);
-        setRanking([]);
         if (err.response?.status === 400) {
           setError('Assessment configuration is missing for this class. Please set it up first.');
-        } else if (!err.response) {
-          setError('Network error. Check your connection and try again.');
         } else {
           setError('Failed to load ranking data.');
         }
@@ -101,140 +78,110 @@ const useRanking = (selectedClass) => {
       });
 
     return () => controller.abort();
-  }, [selectedClass, retryToken]);
+  }, [selectedClass]);
 
-  return { ranking, status, error, retry };
+  return { ranking, status, error };
 };
 
 /* --------------------------------------------------------------------------
    Podium Component (Top 3)
    -------------------------------------------------------------------------- */
-const PODIUM_META = {
-  1: { position: 'fr-podium-1', label: 'Champion', icon: <FaCrown size={22} aria-hidden="true" /> },
-  2: { position: 'fr-podium-2', label: 'Runner-up', icon: <FaMedal size={18} aria-hidden="true" /> },
-  3: { position: 'fr-podium-3', label: 'Third Place', icon: <FaMedal size={18} aria-hidden="true" /> },
-};
-
-const PodiumSlot = ({ student, rank }) => {
-  const meta = PODIUM_META[rank];
-
-  if (!student) {
-    return <div className={`fr-podium-block fr-podium-empty ${meta.position}`} aria-hidden="true" />;
-  }
-
-  return (
-    <div className={`fr-podium-block ${meta.position}`}>
-      <div className="fr-podium-crown">{meta.icon}</div>
-      <div className="fr-podium-avatar">{getInitials(student.fullName)}</div>
-      <h3 className="fr-podium-name" title={student.fullName}>{student.fullName || 'Unnamed student'}</h3>
-      <span className="fr-podium-score">{formatScore(student.overallTotal)}</span>
-      <span className="fr-podium-rank">{meta.label}</span>
-      <div className="fr-podium-pillar" />
-    </div>
-  );
-};
-
 const Podium = ({ top3 }) => {
   if (top3.length === 0) return null;
 
-  // Visual podium order is 2nd, 1st, 3rd — keeps the champion centered.
-  const layout = [
-    { student: top3[1], rank: 2 },
-    { student: top3[0], rank: 1 },
-    { student: top3[2], rank: 3 },
-  ];
+  const getInitials = (name) => name?.charAt(0).toUpperCase() || '?';
+
+  const renderPodiumBlock = (student, position) => {
+    if (!student) return <div className="fr-podium-slot fr-podium-empty" key={`empty-${position}`} />;
+
+    const positionClass = `fr-podium-${position}`;
+    const rankColors = {
+      1: { bg: 'linear-gradient(140deg, #f59e0b, #d97706)', text: '#fffdf8', shadow: '0 8px 24px -8px rgba(245, 158, 11, 0.6)' },
+      2: { bg: 'linear-gradient(140deg, #94a3b8, #64748b)', text: '#fffdf8', shadow: '0 8px 24px -8px rgba(148, 163, 184, 0.5)' },
+      3: { bg: 'linear-gradient(140deg, #cd7f32, #8b4513)', text: '#fffdf8', shadow: '0 8px 24px -8px rgba(205, 127, 50, 0.5)' },
+    };
+    const colors = rankColors[position];
+
+    return (
+      <div className={`fr-podium-block ${positionClass}`} key={student.studentId}>
+        <div className="fr-podium-crown" aria-hidden="true">
+          {position === 1 ? <FaCrown size={24} /> : <FaMedal size={20} />}
+        </div>
+        <div className="fr-podium-avatar" style={{ background: colors.bg, color: colors.text, boxShadow: colors.shadow }}>
+          {getInitials(student.fullName)}
+        </div>
+        <h3 className="fr-podium-name">{student.fullName}</h3>
+        <span className="fr-podium-score">{student.overallTotal?.toFixed(2) ?? '—'}</span>
+        <span className="fr-podium-rank">
+          {position === 1 ? 'Champion' : position === 2 ? 'Runner-up' : 'Third Place'}
+        </span>
+        <div className="fr-podium-pillar" style={{ background: colors.bg }} />
+      </div>
+    );
+  };
+
+  // Reorder for podium layout: 2nd, 1st, 3rd
+  const ordered = [top3[1], top3[0], top3[2]];
+  const positions = [2, 1, 3];
 
   return (
     <div className="fr-podium" aria-label="Top 3 students">
-      {layout.map(({ student, rank }) => (
-        <PodiumSlot key={student?.studentId ?? `empty-${rank}`} student={student} rank={rank} />
-      ))}
+      {ordered.map((student, idx) => renderPodiumBlock(student, positions[idx]))}
     </div>
   );
 };
-
-/* --------------------------------------------------------------------------
-   Small presentational helpers
-   -------------------------------------------------------------------------- */
-const Toast = ({ toast, onClose }) => {
-  if (!toast.message) return null;
-  return (
-    <div className={`fr-toast fr-toast--${toast.type}`} role="alert">
-      {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
-      <span>{toast.message}</span>
-      <button className="fr-toast-close" onClick={onClose} aria-label="Dismiss notification">
-        <FiX size={16} />
-      </button>
-    </div>
-  );
-};
-
-const EmptyState = ({ icon, title, children, action }) => (
-  <div className="fr-state">
-    {icon}
-    <h3>{title}</h3>
-    <p>{children}</p>
-    {action}
-  </div>
-);
 
 /* --------------------------------------------------------------------------
    Main Component
    -------------------------------------------------------------------------- */
 const FullRanking = () => {
-  const { classes, status: classStatus, reload: reloadClasses } = useClasses();
+  const { classes, status: classStatus } = useClasses();
   const [selectedClass, setSelectedClass] = useState('');
   const [toast, setToast] = useState({ type: '', message: '' });
-  const toastTimerRef = useRef(null);
 
-  const { ranking, status, error, retry } = useRanking(selectedClass);
+  const { ranking, status, error } = useRanking(selectedClass);
 
   const isLoading = status === 'loading';
   const hasRanking = ranking.length > 0;
-  const selectedClassName = classes.find((c) => c._id === selectedClass)?.name;
+  const selectedClassName = classes.find(c => c._id === selectedClass)?.name;
 
-  const { top3, rest, maxScore } = useMemo(() => {
-    const sorted = ranking;
-    const scores = sorted.map((s) => s.overallTotal || 0);
-    return {
-      top3: sorted.slice(0, 3),
-      rest: sorted.slice(3),
-      maxScore: scores.length > 0 ? Math.max(...scores) : 0,
-    };
-  }, [ranking]);
+  const top3 = ranking.slice(0, 3);
+  const rest = ranking.slice(3);
+  const maxScore = ranking.length > 0 ? Math.max(...ranking.map(s => s.overallTotal || 0)) : 0;
 
-  const showToast = useCallback((type, message) => {
-    clearTimeout(toastTimerRef.current);
+  const showToast = (type, message) => {
     setToast({ type, message });
-    toastTimerRef.current = setTimeout(() => setToast({ type: '', message: '' }), 4000);
-  }, []);
-
-  const dismissToast = useCallback(() => {
-    clearTimeout(toastTimerRef.current);
-    setToast({ type: '', message: '' });
-  }, []);
-
-  useEffect(() => () => clearTimeout(toastTimerRef.current), []);
+    setTimeout(() => setToast({ type: '', message: '' }), 4000);
+  };
 
   useEffect(() => {
-    if (error && status === 'error') {
+    if (error && status !== 'loading') {
       showToast('error', error);
     }
-  }, [error, status, showToast]);
+  }, [error, status]);
 
   return (
     <section className="fr-page">
       <div className="fr-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
       <div className="fr-wash" aria-hidden="true" />
 
-      <Toast toast={toast} onClose={dismissToast} />
+      {toast.message && (
+        <div className={`fr-toast fr-toast--${toast.type}`} role="alert">
+          {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
+          <span>{toast.message}</span>
+          <button className="fr-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close"><FiX size={16} /></button>
+        </div>
+      )}
 
       <main className="fr-content">
         <header className="fr-header">
-          <div className="fr-header-icon" aria-hidden="true"><FiTrophy size={28} /></div>
+          {/* Replaced FiTrophy with FiAward */}
+          <div className="fr-header-icon" aria-hidden="true"><FiAward size={28} /></div>
           <div>
             <h1 className="fr-title">Class Ranking</h1>
-            <p className="fr-subtitle">View academic performance rankings across your classes.</p>
+            <p className="fr-subtitle">
+              View academic performance rankings across your classes.
+            </p>
           </div>
         </header>
 
@@ -248,16 +195,12 @@ const FullRanking = () => {
                 className="fr-select"
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                disabled={classStatus === 'loading' || (classStatus === 'success' && classes.length === 0)}
+                disabled={classStatus === 'loading'}
               >
-                <option value="">
-                  {classStatus === 'loading' ? 'Loading classes…' : '-- Choose a class --'}
-                </option>
-                {classes.map((c) => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
+                <option value="">{classStatus === 'loading' ? 'Loading classes...' : '-- Choose a class --'}</option>
+                {classes.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
               </select>
-              <FiChevronDown className="fr-select-icon" aria-hidden="true" />
+              <FiChevronDown className="fr-select-icon" />
             </div>
           </div>
 
@@ -267,44 +210,16 @@ const FullRanking = () => {
               <span>Viewing: <strong>{selectedClassName}</strong></span>
             </div>
           )}
-
-          {hasRanking && !isLoading && (
-            <button className="fr-btn fr-btn--ghost fr-refresh-btn" onClick={retry}>
-              <FiRefreshCw size={15} /> Refresh
-            </button>
-          )}
         </div>
 
-        {/* Classes failed to load */}
-        {classStatus === 'error' && (
-          <EmptyState
-            icon={<FiAlertTriangle size={32} />}
-            title="Couldn't load classes"
-            action={
-              <button className="fr-btn fr-btn--primary" onClick={reloadClasses}>
-                <FiRefreshCw size={16} /> Try Again
-              </button>
-            }
-          >
-            Something went wrong while fetching your class list. Please try again.
-          </EmptyState>
-        )}
-
-        {/* No classes exist yet */}
-        {classStatus === 'success' && classes.length === 0 && (
-          <EmptyState icon={<FiInbox size={40} />} title="No classes found">
-            Create a class first to start tracking rankings.
-          </EmptyState>
-        )}
-
         {/* Initial State */}
-        {!selectedClass && classStatus === 'success' && classes.length > 0 && (
+        {!selectedClass && classStatus === 'success' && (
           <div className="fr-hero">
             <div className="fr-hero-icon" aria-hidden="true"><FiTrendingUp size={48} /></div>
             <h2>Ready to View Rankings</h2>
             <p>Select a class from the dropdown above to see student rankings based on their overall academic performance.</p>
             <div className="fr-hero-quote">
-              <span className="fr-quote-mark" aria-hidden="true">&ldquo;</span>
+              <span className="fr-quote-mark">&ldquo;</span>
               <p>በትጋት ያለው ሁሉ ይበልጣል፤ ሰነፉ ግን ያሳፍራል</p>
               <span className="fr-quote-author">– ምሳሌ 10:4</span>
             </div>
@@ -313,25 +228,10 @@ const FullRanking = () => {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="fr-state" role="status" aria-live="polite">
-            <span className="fr-spinner" aria-hidden="true" />
+          <div className="fr-state" role="status">
+            <span className="fr-spinner" />
             <p>Calculating rankings…</p>
           </div>
-        )}
-
-        {/* Ranking failed to load (and no cached data to fall back on) */}
-        {!isLoading && status === 'error' && !hasRanking && error && (
-          <EmptyState
-            icon={<FiAlertTriangle size={32} />}
-            title="Couldn't load rankings"
-            action={
-              <button className="fr-btn fr-btn--primary" onClick={retry}>
-                <FiRefreshCw size={16} /> Try Again
-              </button>
-            }
-          >
-            {error}
-          </EmptyState>
         )}
 
         {/* Ranking Results */}
@@ -355,7 +255,7 @@ const FullRanking = () => {
               <div className="fr-summary-card">
                 <FiTrendingUp size={20} />
                 <div>
-                  <strong>{formatScore(maxScore)}</strong>
+                  <strong>{maxScore.toFixed(2)}</strong>
                   <span>Highest Score</span>
                 </div>
               </div>
@@ -380,20 +280,20 @@ const FullRanking = () => {
                       {rest.map((student) => (
                         <tr key={student.studentId}>
                           <td data-label="Rank">
-                            <span className="fr-rank-badge">{student.rank ?? '—'}</span>
+                            <span className="fr-rank-badge">{student.rank}</span>
                           </td>
                           <td data-label="Name">
                             <div className="fr-student-cell">
                               <span className="fr-avatar" aria-hidden="true">
-                                {getInitials(student.fullName)}
+                                {student.fullName?.charAt(0).toUpperCase() || '?'}
                               </span>
-                              <span className="fr-student-name">{student.fullName || 'Unnamed student'}</span>
+                              <span className="fr-student-name">{student.fullName}</span>
                             </div>
                           </td>
                           <td data-label="Roll No">{student.rollNumber || '—'}</td>
                           <td data-label="Total Score" className="fr-td-right">
                             <div className="fr-score-cell">
-                              <strong>{formatScore(student.overallTotal)}</strong>
+                              <strong>{student.overallTotal?.toFixed(2) ?? '—'}</strong>
                               <div className="fr-progress-bar">
                                 <div
                                   className="fr-progress-fill"
@@ -412,11 +312,13 @@ const FullRanking = () => {
           </>
         )}
 
-        {/* Empty State: class selected, request succeeded, but no data */}
-        {!isLoading && !hasRanking && selectedClass && status === 'success' && (
-          <EmptyState icon={<FiInbox size={40} />} title="No Rankings Available">
-            No students or scores found for this class. Enter marks first to generate rankings.
-          </EmptyState>
+        {/* Empty State */}
+        {!isLoading && !hasRanking && selectedClass && !error && (
+          <div className="fr-state">
+            <FiInbox size={40} />
+            <h3>No Rankings Available</h3>
+            <p>No students or scores found for this class. Enter marks first to generate rankings.</p>
+          </div>
         )}
       </main>
     </section>
