@@ -1,53 +1,206 @@
-/* ========== VIEW ATTENDANCE (Admin) ========== */
-/* Global utilities: .form-grid, .spinner, .table-container, table,
-   th, td, .attendance-status-group, .attendance-btn,
-   .attendance-present, .attendance-absent, .attendance-late,
-   .attendance-badge, .btn (from global.css).
-   Component-specific styles below. */
+/* ==========================================================================
+   VIEW ATTENDANCE — School theme (maroon / gold / parchment) with L.png
+   Scoped with `.va-` to prevent global style leakage.
+   ========================================================================== */
 
-/* Filters row – date picker + class select */
-.view-attendance-filters {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+.va-page {
+  --va-bg: #f3f0ea;
+  --va-surface: #fffdf8;
+  --va-border: #e6ddcf;
+  --va-border-strong: #d8cbb6;
+  --va-maroon: #6d1a28;
+  --va-maroon-deep: #52101c;
+  --va-maroon-soft: #8c2f3d;
+  --va-gold: #d2a12c;
+  --va-gold-soft: #f6e7c6;
+  --va-ink: #33262a;
+  --va-ink-soft: #7a6c6d;
+  --va-danger: #b3403f;
+  --va-success: #2e7d32;
+  --va-warning: #ea580c;
+  --va-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
+
+  position: relative; isolation: isolate; min-height: 100vh;
+  padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
+  background-color: var(--va-bg); color: var(--va-ink);
+  font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
 }
 
-.view-attendance-filters select,
-.view-attendance-filters input[type="date"] {
-  width: 100%;
-  padding: 0.7rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fdfcf8;
-  font-size: 0.95rem;
-  color: var(--text);
-  transition: var(--transition);
+.va-bg { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; }
+.va-wash {
+  position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
+    linear-gradient(170deg, rgba(247, 244, 238, 0.94) 0%, rgba(243, 240, 234, 0.88) 45%, rgba(238, 231, 220, 0.93) 100%);
 }
 
-.view-attendance-filters select:focus,
-.view-attendance-filters input[type="date"]:focus {
-  border-color: var(--secondary);
-  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
-  outline: none;
+.va-content { max-width: 1100px; margin: 0 auto; display: grid; gap: 2rem; align-content: start; }
+
+/* Header */
+.va-title {
+  margin: 0; font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem); font-weight: 700; color: var(--va-maroon);
+}
+.va-title::after {
+  content: ''; display: block; width: 88px; height: 3px; margin-top: 0.55rem; border-radius: 999px;
+  background: linear-gradient(90deg, var(--va-gold), rgba(210, 161, 44, 0.35));
+}
+.va-subtitle { margin: 0.65rem 0 0; color: var(--va-ink-soft); font-size: 0.95rem; }
+
+/* Toolbar */
+.va-toolbar {
+  display: flex; align-items: flex-end; gap: 1.25rem; flex-wrap: wrap;
+  background: var(--va-surface); border: 1px solid var(--va-border); border-radius: 14px;
+  padding: 1.25rem 1.5rem; box-shadow: var(--va-shadow);
+}
+.va-select-group { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-width: 200px; }
+.va-label { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--va-ink-soft); }
+.va-select-wrapper { position: relative; display: flex; align-items: center; }
+.va-select, .va-input {
+  width: 100%; padding: 0.75rem 1rem; font-size: 1rem; font-family: inherit;
+  color: var(--va-ink); background-color: var(--va-bg); border: 1px solid var(--va-border-strong);
+  border-radius: 8px; transition: all 0.2s;
+}
+.va-select { appearance: none; -webkit-appearance: none; padding-right: 2.5rem; cursor: pointer; }
+.va-select:focus, .va-input:focus { outline: none; border-color: var(--va-maroon); box-shadow: 0 0 0 3px rgba(109, 26, 40, 0.15); }
+.va-select:disabled { opacity: 0.6; cursor: not-allowed; }
+.va-select-icon { position: absolute; right: 1rem; color: var(--va-ink-soft); pointer-events: none; }
+
+.va-active-badge {
+  display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.65rem 1.1rem;
+  background: var(--va-gold-soft); border: 1px solid rgba(210, 161, 44, 0.35); border-radius: 999px;
+  color: var(--va-maroon); font-size: 0.9rem; font-weight: 600;
 }
 
-/* Row of save/cancel buttons under the table */
-.view-attendance-footer-btns {
-  display: flex;
-  gap: 0.6rem;
-  margin-top: 1rem;
-  flex-wrap: wrap;
+/* Attendance Card */
+.va-attendance-card {
+  background: var(--va-surface); border: 1px solid var(--va-border); border-radius: 16px;
+  box-shadow: var(--va-shadow); overflow: hidden;
+}
+.va-card-header {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--va-border); flex-wrap: wrap;
+}
+.va-card-title { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--va-maroon); }
+.va-card-footer {
+  display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1.25rem 1.75rem;
+  border-top: 1px solid var(--va-border); background: #faf6ef;
 }
 
+/* Buttons */
+.va-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
+  border: none; border-radius: 8px; font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.va-btn--primary { background: var(--va-maroon); color: #fff; box-shadow: 0 4px 6px -1px rgba(109, 26, 40, 0.2); }
+.va-btn--primary:hover:not(:disabled) { background: var(--va-maroon-deep); transform: translateY(-1px); }
+.va-btn--primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+.va-btn--ghost { background: transparent; color: var(--va-ink-soft); border: 1px solid var(--va-border-strong); }
+.va-btn--ghost:hover:not(:disabled) { background: var(--va-bg); color: var(--va-ink); }
+
+/* Table */
+.va-table-wrapper { overflow-x: auto; }
+.va-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.va-table thead { background: #faf6ef; border-bottom: 2px solid var(--va-border); }
+.va-table th {
+  padding: 1rem 1.5rem; text-align: left; font-weight: 600; font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--va-ink-soft);
+}
+.va-th-actions { text-align: center; width: 80px; }
+.va-table td { padding: 1.15rem 1.5rem; border-bottom: 1px solid var(--va-border); vertical-align: middle; }
+.va-table tbody tr:last-child td { border-bottom: none; }
+.va-table tbody tr:hover { background: #fcfaf5; }
+
+.va-student-cell { display: flex; align-items: center; gap: 0.75rem; }
+.va-avatar {
+  width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(140deg, var(--va-maroon-soft), var(--va-maroon-deep));
+  color: var(--va-gold-soft); display: grid; place-items: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0;
+}
+.va-student-name { font-weight: 600; color: var(--va-ink); }
+
+.va-td-actions { text-align: center; }
+.va-check-icon { color: var(--va-success); }
+
+/* Status Badges (View Mode) */
+.va-status-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.85rem;
+  border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+}
+.va-status-present { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.va-status-absent { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.va-status-late { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+
+/* Status Buttons (Edit Mode) */
+.va-status-group {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+}
+.va-status-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem;
+  border: 1px solid var(--va-border); border-radius: 8px; background: var(--va-bg);
+  color: var(--va-ink-soft); font-size: 0.8rem; font-weight: 500; cursor: pointer;
+  transition: all 0.2s;
+}
+.va-status-btn:hover { background: #fff; border-color: var(--va-border-strong); }
+.va-status-btn--active { font-weight: 700; }
+.va-status-btn.va-status-present.va-status-btn--active { background: #ecfdf5; color: #059669; border-color: #059669; }
+.va-status-btn.va-status-absent.va-status-btn--active { background: #fef2f2; color: #dc2626; border-color: #dc2626; }
+.va-status-btn.va-status-late.va-status-btn--active { background: #fff7ed; color: #ea580c; border-color: #ea580c; }
+
+/* States */
+.va-state {
+  background: var(--va-surface); border: 1px dashed var(--va-border-strong); border-radius: 16px; padding: 4rem 1.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; color: var(--va-ink-soft);
+}
+.va-state h3 { margin: 0.5rem 0 0; color: var(--va-maroon); font-size: 1.25rem; }
+.va-state p { margin: 0; max-width: 400px; }
+.va-state--error { border-color: #e3b7b7; background: #fdf6f4; color: #8a4a4a; border-style: solid; }
+.va-state--error h3 { color: #8a2430; }
+
+.va-spinner {
+  width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(109, 26, 40, 0.15);
+  border-top-color: var(--va-maroon); animation: va-spin 0.8s linear infinite;
+}
+.va-spinner--sm { width: 16px; height: 16px; border-width: 2px; }
+@keyframes va-spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.va-toast {
+  position: fixed; top: 1.5rem; right: 1.5rem; z-index: 2000; display: flex; align-items: center; gap: 0.75rem;
+  padding: 1rem 1.25rem; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem; font-weight: 600; animation: va-slideIn 0.3s ease; max-width: 400px;
+}
+.va-toast--success { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--va-success); }
+.va-toast--error { background: #fdf6f4; border: 1px solid #fecaca; color: var(--va-danger); }
+.va-toast-close { background: transparent; border: none; color: inherit; cursor: pointer; padding: 0.25rem; opacity: 0.7; }
+@keyframes va-slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Responsive */
 @media (max-width: 768px) {
-  .view-attendance-filters {
-    grid-template-columns: 1fr;
-  }
-  .view-attendance-footer-btns {
-    flex-direction: column;
-  }
-  .view-attendance-footer-btns .btn {
-    width: 100%;
-  }
+  .va-page { padding: 1.5rem 1rem 2.5rem; }
+  .va-toolbar { flex-direction: column; align-items: stretch; }
+  .va-select-group { min-width: auto; }
+  
+  .va-card-header { flex-direction: column; align-items: flex-start; }
+  .va-card-footer { flex-direction: column; }
+  .va-card-footer .va-btn { width: 100%; }
+  
+  .va-table-wrapper { overflow: visible; }
+  .va-table, .va-table thead, .va-table tbody, .va-table th, .va-table td, .va-table tr { display: block; }
+  .va-table thead { display: none; }
+  .va-table tr { background: var(--va-bg); border: 1px solid var(--va-border); border-radius: 12px; margin-bottom: 1rem; padding: 0.5rem 0; }
+  .va-table td { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--va-border); text-align: right; }
+  .va-table td:last-child { border-bottom: none; }
+  .va-table td::before { content: attr(data-label); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--va-ink-soft); text-align: left; margin-right: 1rem; }
+  
+  .va-student-cell { justify-content: flex-end; text-align: right; }
+  .va-avatar { order: 2; margin-left: 0.5rem; }
+  
+  .va-status-group { justify-content: flex-end; }
+  .va-td-actions { justify-content: center; }
+  
+  .va-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .va-btn, .va-status-btn, .va-toast, .va-spinner { transition: none; animation: none; }
 }
