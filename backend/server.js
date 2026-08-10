@@ -32,22 +32,24 @@ const churchClothRoutes = require('./routes/churchClothRoutes');
 dotenv.config();
 
 // Validate required environment variables
-const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'CLIENT_URL'];
+// Note: Using MONGO_URI to match your existing Render environment
+const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET', 'CLIENT_URL'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error(`ERROR: Missing required environment variables: ${missingVars.join(', ')}`);
   process.exit(1);
 }
 
 // Connect to database with error handling
 connectDB().catch(err => {
-  console.error('❌ Database connection failed:', err.message);
+  console.error('ERROR: Database connection failed:', err.message);
   process.exit(1);
 });
 
 const app = express();
 
+// Enable compression for all responses
 app.use(compression());
 
 // Trust proxy (needed for rate limiting behind reverse proxy like nginx/Vercel)
@@ -97,7 +99,7 @@ app.use('/api/v1/auth/register', authLimiter);
 // Apply general limiter to all other API routes
 app.use('/api/', apiLimiter);
 
-// CORS – allow multiple frontend origins
+// CORS - allow multiple frontend origins
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map((o) => o.trim())
   : [
@@ -123,7 +125,6 @@ app.use(cors({
 // Body parser with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
 
 // Request ID middleware for tracing
 app.use((req, res, next) => {
@@ -157,7 +158,7 @@ app.get('/health', (req, res) => {
   }
 });
 
-// Static files – uploads directory
+// Static files - uploads directory
 // Note: In production, if you need to serve uploaded files publicly,
 // remove the 'protect' middleware or use a CDN like Cloudinary/S3
 if (process.env.NODE_ENV === 'production') {
@@ -200,11 +201,11 @@ const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
   console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║   Server running in ${process.env.NODE_ENV || 'development'} mode                    ║
-║   Listening on port ${PORT}                                ║
-║   Health check: http://localhost:${PORT}/health            ║
-╚═══════════════════════════════════════════════════════════╝
+============================================================
+  Server running in ${process.env.NODE_ENV || 'development'} mode
+  Listening on port ${PORT}
+  Health check: http://localhost:${PORT}/health
+============================================================
   `);
 });
 
@@ -213,23 +214,23 @@ const gracefulShutdown = async (signal) => {
   console.log(`\n${signal} received, shutting down gracefully...`);
   
   server.close(async () => {
-    console.log('✓ HTTP server closed');
+    console.log('[OK] HTTP server closed');
     
     // Close database connection
     try {
       await mongoose.connection.close();
-      console.log('✓ Database connection closed');
+      console.log('[OK] Database connection closed');
     } catch (err) {
-      console.error('Error closing database connection:', err);
+      console.error('[ERROR] Error closing database connection:', err);
     }
     
-    console.log('✓ Process terminated');
+    console.log('[OK] Process terminated');
     process.exit(0);
   });
   
   // Force shutdown after 10 seconds
   setTimeout(() => {
-    console.error('⚠️  Could not close connections in time, forcefully shutting down');
+    console.error('[WARNING] Could not close connections in time, forcefully shutting down');
     process.exit(1);
   }, 10000);
 };
@@ -240,14 +241,14 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-  console.error('❌ UNCAUGHT EXCEPTION! Shutting down...');
+  console.error('[FATAL] UNCAUGHT EXCEPTION! Shutting down...');
   console.error(err.name, err.message);
   process.exit(1);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-  console.error('❌ UNHANDLED REJECTION! Shutting down...');
+  console.error('[FATAL] UNHANDLED REJECTION! Shutting down...');
   console.error(err.name, err.message);
   server.close(() => process.exit(1));
 });
