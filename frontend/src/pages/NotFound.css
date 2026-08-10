@@ -1,2 +1,335 @@
-/* ========== NOT FOUND PAGE ========== */
-/* Simple 404 styles */
+/* ==========================================================================
+   NOT FOUND (404) — School theme (maroon / gold / parchment) with L.png
+   Scoped with `.nf-` to prevent global style leakage.
+   ========================================================================== */
+
+.nf-page {
+  --nf-bg: #f3f0ea;
+  --nf-surface: #fffdf8;
+  --nf-border: #e6ddcf;
+  --nf-border-strong: #d8cbb6;
+  --nf-maroon: #6d1a28;
+  --nf-maroon-deep: #52101c;
+  --nf-maroon-soft: #8c2f3d;
+  --nf-gold: #d2a12c;
+  --nf-gold-soft: #f6e7c6;
+  --nf-ink: #33262a;
+  --nf-ink-soft: #7a6c6d;
+  --nf-shadow: 0 8px 32px rgba(64, 20, 30, 0.15),
+    0 16px 48px -24px rgba(64, 20, 30, 0.4);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 2rem 1rem;
+  background-color: var(--nf-bg);
+  color: var(--nf-ink);
+  font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: clip;
+}
+
+/* Background & Overlay */
+.nf-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  transform: scale(1.05);
+}
+
+.nf-wash {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1200px 400px at 50% 0%, rgba(109, 26, 40, 0.08), transparent 70%),
+    linear-gradient(
+      170deg,
+      rgba(247, 244, 238, 0.94) 0%,
+      rgba(243, 240, 234, 0.88) 45%,
+      rgba(238, 231, 220, 0.93) 100%
+    );
+}
+
+/* Content */
+.nf-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+/* Card */
+.nf-card {
+  width: 100%;
+  background: var(--nf-surface);
+  border: 1px solid var(--nf-border);
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  box-shadow: var(--nf-shadow);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  animation: nf-fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes nf-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Icon */
+.nf-icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(140deg, var(--nf-gold-soft), rgba(210, 161, 44, 0.2));
+  color: var(--nf-gold);
+  border: 2px dashed rgba(210, 161, 44, 0.5);
+  box-shadow: inset 0 0 0 4px rgba(255, 253, 248, 0.6);
+  margin-bottom: 0.5rem;
+}
+
+/* 404 Code */
+.nf-code {
+  font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
+  font-size: clamp(5rem, 14vw, 8rem);
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(
+    135deg,
+    var(--nf-maroon) 0%,
+    var(--nf-maroon-deep) 50%,
+    var(--nf-gold) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.05em;
+  margin: 0.25rem 0;
+}
+
+/* Title */
+.nf-title {
+  margin: 0;
+  font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: var(--nf-maroon);
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.nf-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--nf-gold), rgba(210, 161, 44, 0.35));
+}
+
+/* Description */
+.nf-description {
+  margin: 0.5rem 0 0;
+  max-width: 400px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--nf-ink-soft);
+}
+
+/* Quote */
+.nf-quote {
+  margin-top: 1.25rem;
+  background: var(--nf-bg);
+  border: 1px solid var(--nf-border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.nf-quote-mark {
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  font-size: 3.5rem;
+  color: var(--nf-gold);
+  font-family: serif;
+  line-height: 1;
+}
+
+.nf-quote p {
+  margin: 0 0 0.4rem;
+  font-family: 'Noto Serif Ethiopic', serif;
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--nf-ink);
+}
+
+.nf-quote-author {
+  display: block;
+  text-align: right;
+  color: var(--nf-maroon);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* Actions */
+.nf-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.nf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 160px;
+}
+
+.nf-btn--primary {
+  background: linear-gradient(135deg, var(--nf-maroon) 0%, var(--nf-maroon-deep) 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(109, 26, 40, 0.3);
+}
+
+.nf-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(109, 26, 40, 0.4);
+}
+
+.nf-btn--ghost {
+  background: transparent;
+  color: var(--nf-maroon);
+  border: 1px solid var(--nf-border-strong);
+}
+
+.nf-btn--ghost:hover {
+  background: var(--nf-bg);
+  color: var(--nf-maroon-deep);
+  border-color: var(--nf-gold);
+}
+
+.nf-btn:focus-visible {
+  outline: 3px solid var(--nf-gold);
+  outline-offset: 2px;
+}
+
+/* Footer */
+.nf-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.nf-footer p {
+  margin: 0;
+  font-family: 'Noto Serif Ethiopic', serif;
+  font-size: 0.9rem;
+  color: var(--nf-ink-soft);
+  font-style: italic;
+}
+
+.nf-footer-cross {
+  display: inline-block;
+  margin-right: 0.5rem;
+  color: var(--nf-maroon);
+  font-weight: 700;
+  font-size: 1.1rem;
+  font-style: normal;
+}
+
+.nf-login-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--nf-maroon);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.nf-login-link:hover {
+  background: var(--nf-gold-soft);
+  border-color: rgba(210, 161, 44, 0.35);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .nf-page {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .nf-card {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .nf-actions {
+    flex-direction: column;
+  }
+
+  .nf-btn {
+    width: 100%;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .nf-card,
+  .nf-btn,
+  .nf-login-link {
+    transition: none;
+    animation: none;
+  }
+
+  .nf-btn--primary:hover {
+    transform: none;
+  }
+}
