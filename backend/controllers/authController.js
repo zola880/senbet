@@ -25,8 +25,12 @@ const register = async (req, res, next) => {
       phone,
     } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // OPTIMIZATION: Added .select('_id') and .lean() for existence check
+    // We only need to know if user exists, don't need full document
+    const existingUser = await User.findOne({ email })
+      .select('_id')
+      .lean();
+
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -72,7 +76,8 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Find user and include password
+    // NO .lean() here - we MUST keep full Mongoose document to call user.matchPassword()
+    // This is a Mongoose instance method that doesn't exist on plain objects
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({
@@ -107,7 +112,12 @@ const login = async (req, res, next) => {
 // @access  Private
 const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).populate('class');
+    // OPTIMIZATION: Added .lean() for plain object (faster serialization)
+    // OPTIMIZATION: Limited populate to only 'name' field (frontend only shows class name)
+    const user = await User.findById(req.user.id)
+      .populate('class', 'name')
+      .lean();
+
     res.status(200).json({
       success: true,
       data: user,
