@@ -201,10 +201,10 @@
   .ah-page { padding: 1.5rem 1rem 2.5rem; }
   .ah-header { flex-direction: column; align-items: stretch; gap: 1rem; }
   .ah-summary { grid-template-columns: 1fr 1fr; }
-  
+
   .ah-rate-card { flex-direction: column; align-items: center; text-align: center; padding: 1.5rem; }
   .ah-rate-info { flex-direction: column; }
-  
+
   .ah-table-card { padding: 1.25rem; }
   .ah-table-wrapper { margin: 0; width: 100%; }
   .ah-table, .ah-table thead, .ah-table tbody, .ah-table th, .ah-table td, .ah-table tr { display: block; }
@@ -214,7 +214,7 @@
   .ah-table td:last-child { border-bottom: none; }
   .ah-table td::before { content: attr(data-label); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--ah-ink-soft); text-align: left; margin-right: 1rem; }
   .ah-td-right { text-align: right; }
-  
+
   .ah-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; }
 }
 
