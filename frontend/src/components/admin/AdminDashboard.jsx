@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiUsers,
@@ -26,6 +26,140 @@ const numberFormatter = new Intl.NumberFormat();
 
 const formatNumber = (value) =>
   numberFormatter.format(Number(value) || 0);
+
+/* --------------------------------------------------------------------------
+   Scripture verses — rotate on a timer inside the illuminated ribbon.
+   Add / edit verses here; the ribbon adapts to however many you provide.
+   -------------------------------------------------------------------------- */
+const VERSES = [
+  {
+    text: 'የሰማይ አምላክ ያከናውንልናል፤ እኛም ባሪያዎቹ ተነሥተን እንሠራለን።',
+    source: 'ነህምያ 2:20',
+  },
+  {
+    text: 'ሥራህን ለጌታ አደራ ስጥ፤ ሐሳብህም ይጸናል።',
+    source: 'ምሳሌ 16:3',
+  },
+  {
+    text: 'የምትሠሩትን ሁሉ ለሰው ሳይሆን ለጌታ እንደምትሠሩ በትጋት አድርጉት።',
+    source: 'ቆላሲስ 3:23',
+  },
+  {
+    text: 'መልካም ማድረግን አንታክት፤ ካልደከምን በጊዜው እናጭዳለንና።',
+    source: 'ገላትያ 6:9',
+  },
+  {
+    text: 'ኃይልን በሚሰጠኝ በክርስቶስ ሁሉን እችላለሁ።',
+    source: 'ፊልጵስዩስ 4:13',
+  },
+];
+
+const VERSE_INTERVAL_MS = 7000;
+
+/* --------------------------------------------------------------------------
+   Illuminated verse ribbon — the dashboard's signature element.
+   Fades between scripture verses; pauses politely on hover/focus.
+   -------------------------------------------------------------------------- */
+const VerseRibbon = () => {
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+  const pausedRef = useRef(false);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      if (pausedRef.current) return;
+
+      setVisible(false);
+
+      window.setTimeout(() => {
+        setIndex((prev) => (prev + 1) % VERSES.length);
+        setVisible(true);
+      }, 380);
+    }, VERSE_INTERVAL_MS);
+
+    return () => clearInterval(tick);
+  }, []);
+
+  const verse = VERSES[index];
+
+  return (
+    <div
+      className="admin-verse-ribbon"
+      onMouseEnter={() => (pausedRef.current = true)}
+      onMouseLeave={() => (pausedRef.current = false)}
+      onFocus={() => (pausedRef.current = true)}
+      onBlur={() => (pausedRef.current = false)}
+      role="region"
+      aria-label="Scripture of the day"
+    >
+      <span className="admin-verse-mark" aria-hidden="true">
+        ✝
+      </span>
+
+      <div
+        className={`admin-verse-copy ${visible ? 'is-visible' : ''}`}
+        key={index}
+      >
+        <p className="admin-verse-text">{verse.text}</p>
+        <span className="admin-verse-source">{verse.source}</span>
+      </div>
+
+      <div className="admin-verse-dots" aria-hidden="true">
+        {VERSES.map((v, i) => (
+          <span
+            key={v.source}
+            className={`admin-verse-dot ${
+              i === index ? 'is-active' : ''
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* --------------------------------------------------------------------------
+   Count-up number — small bit of life for the stat cards once data lands.
+   -------------------------------------------------------------------------- */
+const useCountUp = (target, active) => {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setValue(0);
+      return;
+    }
+
+    const duration = 700;
+    const start = performance.now();
+    const from = 0;
+
+    let frame;
+    const step = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(from + (target - from) * eased));
+      if (progress < 1) frame = requestAnimationFrame(step);
+    };
+
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [target, active]);
+
+  return value;
+};
+
+const StatValue = ({ target, isLoading }) => {
+  const value = useCountUp(target, !isLoading);
+
+  if (isLoading) {
+    return (
+      <span className="admin-stat-skeleton" aria-hidden="true" />
+    );
+  }
+
+  return <>{formatNumber(value)}</>;
+};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -143,28 +277,21 @@ const AdminDashboard = () => {
         aria-hidden="true"
       />
 
-      <div
-        className="admin-dashboard-background-wash"
-        aria-hidden="true"
-      />
+      <div className="admin-dashboard-pattern" aria-hidden="true" />
+      <div className="admin-dashboard-background-wash" aria-hidden="true" />
 
       <main className="admin-dashboard-content">
         <header className="admin-dashboard-header">
           <div className="admin-dashboard-header-left">
-            
-
-            <h1 className="admin-dashboard-title">
-              Admin Dashboard
-            </h1>
+            <h1 className="admin-dashboard-title">Admin Dashboard</h1>
 
             <p className="admin-dashboard-subtitle-am">
               መስቀለ ብርሃን ስንበት ትምህርት ቤት
             </p>
-
-          
           </div>
-
         </header>
+
+        <VerseRibbon />
 
         {hasError && (
           <div className="admin-dashboard-alert" role="alert">
@@ -179,7 +306,7 @@ const AdminDashboard = () => {
         <section className="admin-dashboard-section">
           <div className="admin-section-heading">
             <div>
-              
+              <span className="admin-section-label">OVERVIEW</span>
               <h2>School Statistics</h2>
             </div>
 
@@ -216,23 +343,16 @@ const AdminDashboard = () => {
                       </span>
 
                       <span className="admin-stat-arrow">
-                        <FiArrowUpRight
-                          size={18}
-                          strokeWidth={2}
-                        />
+                        <FiArrowUpRight size={18} strokeWidth={2} />
                       </span>
                     </span>
 
                     <span className="admin-stat-details">
                       <span className="admin-stat-value">
-                        {isLoading ? (
-                          <span
-                            className="admin-stat-skeleton"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          formatNumber(card.count)
-                        )}
+                        <StatValue
+                          target={card.count}
+                          isLoading={isLoading}
+                        />
                       </span>
 
                       <span className="admin-stat-label">

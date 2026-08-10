@@ -1,22 +1,25 @@
 /* ==========================================================================
-   ADMIN DASHBOARD — School theme (maroon / gold / parchment) with L.png
+   ADMIN DASHBOARD — Illuminated manuscript theme (maroon / gold / parchment)
+   Signature element: the rotating scripture ribbon (.admin-verse-ribbon)
    All selectors are scoped with `admin-` so global styles cannot override.
    ========================================================================== */
 
 .admin-dashboard-page {
-  --ad-bg: #f3f0ea;
-  --ad-surface: #fffdf8;
-  --ad-border: #e6ddcf;
-  --ad-border-strong: #d8cbb6;
-  --ad-maroon: #6d1a28;
-  --ad-maroon-deep: #52101c;
-  --ad-maroon-soft: #8c2f3d;
-  --ad-gold: #d2a12c;
-  --ad-gold-soft: #f6e7c6;
-  --ad-ink: #33262a;
-  --ad-ink-soft: #7a6c6d;
-  --ad-shadow: 0 1px 2px rgba(64, 20, 30, 0.08),
-    0 14px 28px -20px rgba(64, 20, 30, 0.35);
+  --ad-bg: #f6efe1;
+  --ad-surface: #fffbf3;
+  --ad-border: #e6d7b3;
+  --ad-border-strong: #d8c393;
+  --ad-maroon: #6e1626;
+  --ad-maroon-deep: #430d18;
+  --ad-maroon-soft: #8e2c3c;
+  --ad-gold: #c89b3c;
+  --ad-gold-bright: #e9c874;
+  --ad-gold-soft: #f6e7be;
+  --ad-forest: #2f5d4e;
+  --ad-ink: #2b1810;
+  --ad-ink-soft: #7c6a5c;
+  --ad-shadow: 0 1px 2px rgba(67, 13, 24, 0.08),
+    0 16px 30px -20px rgba(67, 13, 24, 0.4);
 
   position: relative;
   isolation: isolate;
@@ -30,16 +33,27 @@
 }
 
 /* --------------------------------------------------------------------------
-   Background image + readability wash
+   Background image + cross-lattice texture + readability wash
    -------------------------------------------------------------------------- */
 
 .admin-dashboard-background {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: -3;
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
+}
+
+/* A faint repeating Ethiopian-cross lattice, drawn in pure CSS so no extra
+   asset is required. Sits above the photo, under the parchment wash. */
+.admin-dashboard-pattern {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%236e1626' stroke-width='1.4'%3E%3Cpath d='M36 12v48M12 36h48M22 22l28 28M50 22 22 50'/%3E%3Ccircle cx='36' cy='36' r='9'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
 }
 
 .admin-dashboard-background-wash {
@@ -47,12 +61,12 @@
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
+    radial-gradient(1100px 320px at 50% 0%, rgba(110, 22, 38, 0.07), transparent 70%),
     linear-gradient(
       170deg,
-      rgba(247, 244, 238, 0.94) 0%,
-      rgba(243, 240, 234, 0.88) 45%,
-      rgba(238, 231, 220, 0.93) 100%
+      rgba(249, 244, 232, 0.95) 0%,
+      rgba(246, 239, 225, 0.9) 45%,
+      rgba(240, 229, 205, 0.94) 100%
     );
 }
 
@@ -66,7 +80,7 @@
   max-width: 1200px;
   margin: 0 auto;
   display: grid;
-  gap: 2.25rem;
+  gap: 1.75rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -88,42 +102,6 @@
   max-width: 640px;
 }
 
-.admin-dashboard-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
-  background: var(--ad-surface);
-  border: 1px solid var(--ad-border);
-  color: var(--ad-maroon);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  box-shadow: var(--ad-shadow);
-}
-
-.admin-dashboard-badge-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ad-gold);
-  animation: admin-badge-pulse 2.2s ease-out infinite;
-}
-
-@keyframes admin-badge-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(210, 161, 44, 0.45);
-  }
-  70% {
-    box-shadow: 0 0 0 9px rgba(210, 161, 44, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(210, 161, 44, 0);
-  }
-}
-
 .admin-dashboard-title {
   margin: 0;
   font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia,
@@ -141,7 +119,14 @@
   height: 3px;
   margin-top: 0.55rem;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--ad-gold), rgba(210, 161, 44, 0.35));
+  background: linear-gradient(90deg, var(--ad-gold), rgba(200, 155, 60, 0.25));
+  background-size: 200% 100%;
+  animation: admin-gold-sweep 3.4s ease-in-out infinite;
+}
+
+@keyframes admin-gold-sweep {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
 }
 
 .admin-dashboard-subtitle-am {
@@ -151,49 +136,117 @@
   color: var(--ad-ink);
 }
 
-.admin-dashboard-description {
-  margin: 0;
-  color: var(--ad-ink-soft);
-  line-height: 1.65;
-}
+/* --------------------------------------------------------------------------
+   Verse ribbon — signature element. An illuminated scroll that quietly
+   cycles through scripture on a timer.
+   -------------------------------------------------------------------------- */
 
-.admin-dashboard-header-decoration {
-  display: flex;
+.admin-verse-ribbon {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 0.9rem;
-  background: var(--ad-surface);
-  border: 1px solid var(--ad-border);
+  gap: 1.1rem;
+  padding: 1.1rem 1.5rem;
   border-radius: 16px;
-  padding: 1rem 1.35rem;
-  box-shadow: var(--ad-shadow);
+  background: linear-gradient(120deg, var(--ad-maroon-deep), var(--ad-maroon) 60%, var(--ad-maroon-soft));
+  box-shadow: 0 18px 34px -20px rgba(67, 13, 24, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  min-height: 4.5rem;
 }
 
-.admin-dashboard-header-decoration span {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ad-ink-soft);
+.admin-verse-ribbon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(233, 200, 116, 0.07) 0px,
+    rgba(233, 200, 116, 0.07) 1px,
+    transparent 1px,
+    transparent 14px
+  );
+  pointer-events: none;
 }
 
-.admin-dashboard-header-decoration strong {
-  display: block;
-  font-size: 1.05rem;
-  color: var(--ad-maroon);
-}
-
-.admin-dashboard-decoration-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
+.admin-verse-mark {
+  position: relative;
   display: grid;
   place-items: center;
-  background: linear-gradient(140deg, var(--ad-maroon-soft), var(--ad-maroon-deep));
-  color: var(--ad-gold-soft);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 6px 14px -8px rgba(82, 16, 28, 0.7);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid rgba(233, 200, 116, 0.55);
+  color: var(--ad-gold-bright);
+  font-size: 1.25rem;
   flex-shrink: 0;
+  animation: admin-mark-glow 3.6s ease-in-out infinite;
+}
+
+@keyframes admin-mark-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(233, 200, 116, 0.25); }
+  50% { box-shadow: 0 0 0 8px rgba(233, 200, 116, 0); }
+}
+
+.admin-verse-copy {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: admin-verse-in 0.5s ease forwards;
+}
+
+.admin-verse-copy.is-visible {
+  animation: admin-verse-in 0.5s ease forwards;
+}
+
+@keyframes admin-verse-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-verse-text {
+  margin: 0;
+  color: #fbf3e2;
+  font-family: 'Noto Serif Ethiopic', 'Playfair Display', Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.admin-verse-source {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ad-gold-bright);
+}
+
+.admin-verse-dots {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.admin-verse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.admin-verse-dot.is-active {
+  background: var(--ad-gold-bright);
+  transform: scale(1.35);
 }
 
 /* --------------------------------------------------------------------------
@@ -248,9 +301,9 @@
   gap: 0.45rem;
   padding: 0.4rem 0.85rem;
   border-radius: 999px;
-  background: rgba(46, 125, 50, 0.08);
-  border: 1px solid rgba(46, 125, 50, 0.25);
-  color: #2e7d32;
+  background: rgba(47, 93, 78, 0.08);
+  border: 1px solid rgba(47, 93, 78, 0.25);
+  color: var(--ad-forest);
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
@@ -298,12 +351,12 @@
 
 .admin-stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 2px 4px rgba(64, 20, 30, 0.08),
-    0 22px 34px -20px rgba(64, 20, 30, 0.4);
+  box-shadow: 0 2px 4px rgba(67, 13, 24, 0.08),
+    0 24px 36px -20px rgba(67, 13, 24, 0.42);
 }
 
 .admin-stat-card:focus-visible {
-  outline: 3px solid rgba(210, 161, 44, 0.55);
+  outline: 3px solid rgba(200, 155, 60, 0.55);
   outline-offset: 3px;
 }
 
@@ -344,11 +397,12 @@
 .admin-stat-value {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
-  font-size: 2.1rem;
+  min-height: 38px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.3rem;
   line-height: 1;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   color: var(--ad-ink);
   font-variant-numeric: tabular-nums;
 }
@@ -367,9 +421,9 @@
 .admin-stat-skeleton {
   display: inline-block;
   width: 72px;
-  height: 30px;
+  height: 32px;
   border-radius: 8px;
-  background: linear-gradient(90deg, #ece5d8 25%, #f8f3e9 50%, #ece5d8 75%);
+  background: linear-gradient(90deg, #ece1c6 25%, #f8f0dc 50%, #ece1c6 75%);
   background-size: 250% 100%;
   animation: admin-shimmer 1.3s ease infinite;
 }
@@ -398,7 +452,7 @@
   border-radius: 18px;
   background: linear-gradient(140deg, var(--ad-maroon-soft), var(--ad-maroon-deep) 72%);
   color: #ffffff;
-  box-shadow: 0 18px 40px -18px rgba(82, 16, 28, 0.55);
+  box-shadow: 0 18px 40px -18px rgba(67, 13, 24, 0.55);
 }
 
 .admin-welcome-content {
@@ -506,11 +560,11 @@
   background: #ffffff;
   border-color: var(--ad-border-strong);
   transform: translateY(-2px);
-  box-shadow: 0 8px 18px -10px rgba(64, 20, 30, 0.25);
+  box-shadow: 0 8px 18px -10px rgba(67, 13, 24, 0.25);
 }
 
 .admin-quick-action:focus-visible {
-  outline: 3px solid rgba(210, 161, 44, 0.55);
+  outline: 3px solid rgba(200, 155, 60, 0.55);
   outline-offset: 2px;
 }
 
@@ -575,8 +629,12 @@
     align-items: stretch;
   }
 
-  .admin-dashboard-header-decoration {
-    justify-content: flex-start;
+  .admin-verse-ribbon {
+    grid-template-columns: auto 1fr;
+  }
+
+  .admin-verse-dots {
+    display: none;
   }
 
   .admin-section-heading {
@@ -610,13 +668,20 @@
   .admin-quick-action,
   .admin-quick-arrow,
   .admin-stat-skeleton,
-  .admin-dashboard-badge-dot {
+  .admin-dashboard-title::after,
+  .admin-verse-mark,
+  .admin-verse-copy {
     transition: none;
     animation: none;
   }
 
   .admin-stat-card:hover,
   .admin-quick-action:hover {
+    transform: none;
+  }
+
+  .admin-verse-copy {
+    opacity: 1;
     transform: none;
   }
 }
