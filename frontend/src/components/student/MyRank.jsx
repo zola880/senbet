@@ -1,87 +1,28 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FiAlertTriangle, FiBook, FiCheckCircle, FiChevronDown,
+  FiAlertTriangle, FiAward, FiBookOpen, FiCheckCircle,
   FiInbox, FiRefreshCw, FiTrendingUp, FiX
 } from 'react-icons/fi';
+import { FaCrown, FaMedal } from 'react-icons/fa';
 
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import bgImage from '../../assets/L.png';
-import './MyMarks.css';
+import './MyRank.css';
 
 /* --------------------------------------------------------------------------
-   Data Hook: Student Courses
+   Data Hook: Student Rank & Courses
    -------------------------------------------------------------------------- */
-const useStudentCourses = (user) => {
-  const [courses, setCourses] = useState([]);
+const useStudentRank = (userId) => {
+  const [rankData, setRankData] = useState(null);
+  const [courseArray, setCourseArray] = useState([]);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
 
   const reload = useCallback(async () => {
-    if (!user?.class?._id) {
-      setCourses([]);
+    if (!userId) {
       setStatus('success');
-      return;
-    }
-
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    setStatus('loading');
-    setError(null);
-
-    try {
-      const res = await api.get(`/api/v1/assignments?class=${user.class._id}`, {
-        signal: controller.signal,
-      });
-      
-      const assignments = Array.isArray(res.data?.data) ? res.data.data : [];
-      const uniqueCourses = [];
-      const seen = new Set();
-      
-      assignments.forEach(a => {
-        if (a.course?._id && !seen.has(a.course._id)) {
-          uniqueCourses.push(a.course);
-          seen.add(a.course._id);
-        }
-      });
-      
-      setCourses(uniqueCourses);
-      setStatus('success');
-    } catch (err) {
-      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
-      console.error('Failed to load courses:', err);
-      setError('Unable to load your courses. Please try again.');
-      setStatus('error');
-    }
-  }, [user?.class?._id]);
-
-  useEffect(() => {
-    reload();
-    return () => abortRef.current?.abort();
-  }, [reload]);
-
-  return { courses, status, error, reload };
-};
-
-/* --------------------------------------------------------------------------
-   Data Hook: Student Marks
-   -------------------------------------------------------------------------- */
-const useStudentMarks = (user, selectedCourse) => {
-  const [scores, setScores] = useState([]);
-  const [config, setConfig] = useState(null);
-  const [status, setStatus] = useState('idle');
-  const [error, setError] = useState(null);
-  const abortRef = useRef(null);
-
-  useEffect(() => {
-    if (!selectedCourse || !user?._id) {
-      setScores([]);
-      setConfig(null);
-      setStatus('idle');
-      setError(null);
       return;
     }
 
@@ -93,305 +34,272 @@ const useStudentMarks = (user, selectedCourse) => {
     setStatus('loading');
     setError(null);
 
-    const scoresPromise = api.get(`/api/v1/scores?student=${user._id}&course=${selectedCourse}`, { signal });
-    const configPromise = user.class?._id
-      ? api.get(`/api/v1/assessment-configs/${user.class._id}`, { signal }).catch(() => null)
-      : Promise.resolve(null);
+    try {
+      const [rankRes, coursesRes] = await Promise.all([
+        api.get(`/api/v1/rankings/student/${userId}`, { signal }),
+        api.get('/api/v1/courses', { signal }),
+      ]);
 
-    Promise.all([scoresPromise, configPromise])
-      .then(([scoresRes, configRes]) => {
-        if (signal.aborted) return;
-        
-        setScores(Array.isArray(scoresRes.data?.data) ? scoresRes.data.data : []);
-        setConfig(configRes?.data?.data || null);
-        setStatus('success');
-      })
-      .catch((err) => {
-        if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
-        console.error('Failed to load marks:', err);
-        setError('Failed to load your marks.');
-        setStatus('error');
+      const ranking = rankRes.data?.data;
+      setRankData(ranking);
+
+      const courses = Array.isArray(coursesRes.data?.data) ? coursesRes.data.data : [];
+      const nameMap = {};
+      courses.forEach((c) => {
+        nameMap[c._id] = c.name;
       });
 
-    return () => controller.abort();
-  }, [selectedCourse, user]);
+      const breakdown = ranking?.courseBreakdown;
+      if (breakdown) {
+        const arr = Object.entries(breakdown).map(([courseId, details]) => ({
+          courseId,
+          courseName: nameMap[courseId] || details.courseName || 'Unknown Course',
+          total: details.courseTotal || 0,
+        }));
+        setCourseArray(arr);
+      } else {
+        setCourseArray([]);
+      }
+      setStatus('success');
+    } catch (err) {
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
+      console.error('Failed to load rank data:', err);
+      if (err.response?.status === 404) {
+        setError('No ranking data yet. Your teacher may not have entered marks.');
+      } else {
+        setError('Could not load your rank. Please try again.');
+      }
+      setStatus('error');
+    }
+  }, [userId]);
 
-  return { scores, config, status, error };
+  useEffect(() => {
+    reload();
+    return () => abortRef.current?.abort();
+  }, [reload]);
+
+  return { rankData, courseArray, status, error, reload };
 };
 
 /* --------------------------------------------------------------------------
    Main Component
    -------------------------------------------------------------------------- */
-const MyMarks = () => {
+const MyRank = () => {
   const { user } = useContext(AuthContext);
-  const { courses, status: coursesStatus, error: coursesError, reload: reloadCourses } = useStudentCourses(user);
-  
-  const [selectedCourse, setSelectedCourse] = useState('');
+  const { rankData, courseArray, status, error, reload } = useStudentRank(user?._id);
   const [toast, setToast] = useState({ type: '', message: '' });
 
-  const { scores, config, status: marksStatus, error: marksError } = useStudentMarks(user, selectedCourse);
-
-  const isLoadingCourses = coursesStatus === 'loading';
-  const hasCourses = courses.length > 0;
-  const isLoadingMarks = marksStatus === 'loading';
-  const selectedCourseName = courses.find(c => c._id === selectedCourse)?.name;
+  const isLoading = status === 'loading';
+  const hasRankData = Boolean(rankData);
+  const hasCourseBreakdown = courseArray.length > 0;
 
   const showToast = (type, message) => {
     setToast({ type, message });
     setTimeout(() => setToast({ type: '', message: '' }), 4000);
   };
 
-  // Group scores by component name
-  const groupedScores = useMemo(() => {
-    const grouped = {};
-    scores.forEach(sc => {
-      if (!grouped[sc.componentName]) {
-        grouped[sc.componentName] = {
-          componentName: sc.componentName,
-          scoreObtained: sc.scoreObtained,
-          maxScore: sc.maxScore,
-        };
-      } else {
-        grouped[sc.componentName].scoreObtained += sc.scoreObtained;
-      }
-    });
-    return grouped;
-  }, [scores]);
-
-  // Build table rows
-  const tableRows = useMemo(() => {
-    const rows = [];
-    
-    if (config) {
-      config.components.forEach(comp => {
-        const scoreData = groupedScores[comp.name];
-        const score = scoreData ? scoreData.scoreObtained : 0;
-        const max = scoreData ? scoreData.maxScore : comp.maxScore;
-        const percentage = scoreData ? (score / max) * 100 : 0;
-        
-        rows.push({
-          component: comp.name,
-          score: scoreData ? score : '-',
-          max: max,
-          percentage: scoreData ? percentage.toFixed(1) : null,
-          percentageNum: percentage,
-        });
-      });
-    } else {
-      Object.values(groupedScores).forEach(scoreData => {
-        const percentage = (scoreData.scoreObtained / scoreData.maxScore) * 100;
-        rows.push({
-          component: scoreData.componentName,
-          score: scoreData.scoreObtained,
-          max: scoreData.maxScore,
-          percentage: percentage.toFixed(1),
-          percentageNum: percentage,
-        });
-      });
-    }
-    
-    return rows;
-  }, [groupedScores, config]);
-
-  const averageScore = useMemo(() => {
-    const validRows = tableRows.filter(r => r.percentage !== null);
-    if (validRows.length === 0) return null;
-    const total = validRows.reduce((sum, r) => sum + r.percentageNum, 0);
-    return (total / validRows.length).toFixed(1);
-  }, [tableRows]);
-
-  const getPercentageColor = (pct) => {
-    if (pct >= 80) return 'mm-pct-high';
-    if (pct >= 60) return 'mm-pct-mid';
-    if (pct >= 40) return 'mm-pct-low';
-    return 'mm-pct-fail';
+  const getRankColor = (rank) => {
+    if (rank === 1) return 'mr-rank-gold';
+    if (rank === 2) return 'mr-rank-silver';
+    if (rank === 3) return 'mr-rank-bronze';
+    return 'mr-rank-default';
   };
 
+  const getMotivationalMessage = (rank) => {
+    if (rank === 1) return { text: 'ብቁ ሆነህ አገልግል! አሁን ላገኘኸው ክብር ምስጋና ይግባህ።', sub: 'Well done, faithful servant!' };
+    if (rank <= 3) return { text: 'በጣም ጥሩ ሥራ! ልብህን አጽንተህ ቀጥል።', sub: 'Excellent work! Keep striving for excellence.' };
+    if (rank <= 10) return { text: 'መልካም ጥረት! ጠንክረህ ተማር።', sub: 'Great effort! Keep pushing forward.' };
+    return { text: 'እያንዳንዱ እርምጃ እድገት ነው። መማርህን ቀጥል!', sub: 'Every step is progress. Keep learning and growing!' };
+  };
+
+  const maxCourseScore = useMemo(() => {
+    if (!hasCourseBreakdown) return 100;
+    return Math.max(...courseArray.map(c => c.total || 0), 100);
+  }, [courseArray, hasCourseBreakdown]);
+
+  const averageScore = useMemo(() => {
+    if (!hasCourseBreakdown) return 0;
+    const total = courseArray.reduce((sum, c) => sum + (c.total || 0), 0);
+    return (total / courseArray.length).toFixed(1);
+  }, [courseArray, hasCourseBreakdown]);
+
+  // Loading State
+  if (isLoading) {
+    return (
+      <section className="mr-page">
+        <div className="mr-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+        <div className="mr-wash" aria-hidden="true" />
+        <div className="mr-state" role="status">
+          <span className="mr-spinner" />
+          <p>Calculating your rank…</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Error State
+  if (status === 'error' && !hasRankData) {
+    return (
+      <section className="mr-page">
+        <div className="mr-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+        <div className="mr-wash" aria-hidden="true" />
+        <div className="mr-state mr-state--error" role="alert">
+          <FiAlertTriangle size={32} />
+          <h3>Unable to Load Rank</h3>
+          <p>{error}</p>
+          <button className="mr-btn mr-btn--primary" onClick={reload}>
+            <FiRefreshCw size={16} /> Try Again
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  // Empty State
+  if (!hasRankData) {
+    return (
+      <section className="mr-page">
+        <div className="mr-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+        <div className="mr-wash" aria-hidden="true" />
+        <main className="mr-content">
+          <header className="mr-header">
+            <h1 className="mr-title">My Rank</h1>
+            <p className="mr-subtitle">View your academic standing within your class.</p>
+          </header>
+          <div className="mr-state">
+            <FiInbox size={40} />
+            <h3>No Ranking Available</h3>
+            <p>Your teacher hasn't entered marks yet. Check back later!</p>
+          </div>
+        </main>
+      </section>
+    );
+  }
+
+  const { rank, overallTotal } = rankData;
+  const rankColorClass = getRankColor(rank);
+  const motivation = getMotivationalMessage(rank);
+
   return (
-    <section className="mm-page">
-      <div className="mm-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
-      <div className="mm-wash" aria-hidden="true" />
+    <section className="mr-page">
+      <div className="mr-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
+      <div className="mr-wash" aria-hidden="true" />
 
       {toast.message && (
-        <div className={`mm-toast mm-toast--${toast.type}`} role="alert">
+        <div className={`mr-toast mr-toast--${toast.type}`} role="alert">
           {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
           <span>{toast.message}</span>
-          <button className="mm-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close">
+          <button className="mr-toast-close" onClick={() => setToast({ type: '', message: '' })} aria-label="Close">
             <FiX size={16} />
           </button>
         </div>
       )}
 
-      <main className="mm-content">
-        <header className="mm-header">
-          <h1 className="mm-title">My Marks</h1>
-          <p className="mm-subtitle">
-            View your academic performance across all courses and assessments.
-          </p>
+      <main className="mr-content">
+        <header className="mr-header">
+          <h1 className="mr-title">My Rank</h1>
+          <p className="mr-subtitle">View your academic standing within your class.</p>
         </header>
 
-        {/* Course Selector */}
-        <div className="mm-toolbar">
-          <div className="mm-select-group">
-            <label htmlFor="mm-course-select" className="mm-label">Select Course</label>
-            <div className="mm-select-wrapper">
-              <select
-                id="mm-course-select"
-                className="mm-select"
-                value={selectedCourse}
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                disabled={isLoadingCourses}
-              >
-                <option value="">{isLoadingCourses ? 'Loading courses...' : '-- Choose a course --'}</option>
-                {courses.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-              </select>
-              <FiChevronDown className="mm-select-icon" />
-            </div>
+        {/* Hero Rank Card */}
+        <div className="mr-hero">
+          <div className={`mr-rank-badge ${rankColorClass}`} aria-label={`Rank ${rank}`}>
+            {rank === 1 ? <FaCrown size={32} /> : rank <= 3 ? <FaMedal size={28} /> : <span className="mr-rank-number">{rank}</span>}
           </div>
-
-          {selectedCourse && (
-            <div className="mm-active-badge">
-              <FiBook size={16} />
-              <span>Viewing: <strong>{selectedCourseName}</strong></span>
+          <h2 className="mr-hero-title">Your Overall Rank</h2>
+          <div className="mr-hero-score">
+            <span className="mr-hero-score-value">#{rank}</span>
+            <span className="mr-hero-score-label">of your class</span>
+          </div>
+          <p className="mr-hero-total">
+            Total Score: <strong>{overallTotal?.toFixed(2) ?? '—'}</strong>
+          </p>
+          
+          {rank <= 3 && (
+            <div className="mr-hero-achievement">
+              <FiAward size={18} />
+              <span>
+                {rank === 1 ? 'Champion' : rank === 2 ? 'Runner-up' : 'Third Place'}
+              </span>
             </div>
           )}
         </div>
 
-        {/* Initial State */}
-        {!selectedCourse && !isLoadingCourses && coursesStatus === 'success' && (
-          <div className="mm-state">
-            <FiTrendingUp size={48} aria-hidden="true" />
-            <h3>Select a Course</h3>
-            <p>Choose a course from the dropdown above to view your marks and performance.</p>
-          </div>
-        )}
-
-        {/* Loading Courses Error */}
-        {!selectedCourse && coursesStatus === 'error' && !hasCourses && (
-          <div className="mm-state mm-state--error" role="alert">
-            <FiAlertTriangle size={32} />
-            <h3>Failed to Load Courses</h3>
-            <p>{coursesError}</p>
-            <button className="mm-btn mm-btn--primary" onClick={reloadCourses}>
-              <FiRefreshCw size={16} /> Try Again
-            </button>
-          </div>
-        )}
-
-        {/* No Courses */}
-        {!selectedCourse && !isLoadingCourses && coursesStatus === 'success' && !hasCourses && (
-          <div className="mm-state">
-            <FiInbox size={40} />
-            <h3>No Courses Available</h3>
-            <p>There are no courses assigned to your class yet.</p>
-          </div>
-        )}
-
-        {/* Loading Marks */}
-        {selectedCourse && isLoadingMarks && (
-          <div className="mm-state" role="status">
-            <span className="mm-spinner" />
-            <p>Loading your marks…</p>
-          </div>
-        )}
-
-        {/* Marks Error */}
-        {selectedCourse && !isLoadingMarks && marksStatus === 'error' && (
-          <div className="mm-state mm-state--error" role="alert">
-            <FiAlertTriangle size={32} />
-            <h3>Failed to Load Marks</h3>
-            <p>{marksError}</p>
-          </div>
-        )}
-
-        {/* No Marks */}
-        {selectedCourse && !isLoadingMarks && marksStatus === 'success' && tableRows.length === 0 && (
-          <div className="mm-state">
-            <FiInbox size={40} />
-            <h3>No Marks Recorded</h3>
-            <p>No marks have been recorded for this course yet.</p>
-          </div>
-        )}
-
-        {/* Marks Display */}
-        {selectedCourse && !isLoadingMarks && marksStatus === 'success' && tableRows.length > 0 && (
-          <>
-            {/* Summary Stats */}
-            {averageScore && (
-              <div className="mm-summary">
-                <div className="mm-summary-card">
-                  <FiBook size={20} />
-                  <div>
-                    <strong>{selectedCourseName}</strong>
-                    <span>Course Name</span>
-                  </div>
-                </div>
-                <div className="mm-summary-card">
-                  <FiTrendingUp size={20} />
-                  <div>
-                    <strong>{averageScore}%</strong>
-                    <span>Average Score</span>
-                  </div>
-                </div>
-                <div className="mm-summary-card">
-                  <FiCheckCircle size={20} />
-                  <div>
-                    <strong>{tableRows.length}</strong>
-                    <span>Components Graded</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Marks Table */}
-            <div className="mm-marks-card">
-              <h2 className="mm-card-title">Marks Breakdown</h2>
-              <div className="mm-table-wrapper">
-                <table className="mm-table">
-                  <thead>
-                    <tr>
-                      <th>Component</th>
-                      <th>Score</th>
-                      <th>Max</th>
-                      <th className="mm-th-right">Percentage</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableRows.map((row, idx) => (
-                      <tr key={idx}>
-                        <td data-label="Component">
-                          <strong>{row.component}</strong>
-                        </td>
-                        <td data-label="Score">{row.score}</td>
-                        <td data-label="Max">{row.max}</td>
-                        <td data-label="Percentage" className="mm-td-right">
-                          {row.percentage !== null ? (
-                            <div className="mm-score-cell">
-                              <span className={`mm-pct-badge ${getPercentageColor(row.percentageNum)}`}>
-                                {row.percentage}%
-                              </span>
-                              <div className="mm-progress-bar">
-                                <div
-                                  className={`mm-progress-fill ${getPercentageColor(row.percentageNum)}`}
-                                  style={{ width: `${Math.min(row.percentageNum, 100)}%` }}
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="mm-pct-badge mm-pct-na">N/A</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        {/* Summary Stats */}
+        <div className="mr-summary">
+          <div className="mr-summary-card">
+            <FiAward size={20} />
+            <div>
+              <strong>#{rank}</strong>
+              <span>Your Rank</span>
             </div>
-          </>
+          </div>
+          <div className="mr-summary-card">
+            <FiTrendingUp size={20} />
+            <div>
+              <strong>{overallTotal?.toFixed(2) ?? '—'}</strong>
+              <span>Total Score</span>
+            </div>
+          </div>
+          <div className="mr-summary-card">
+            <FiBookOpen size={20} />
+            <div>
+              <strong>{courseArray.length}</strong>
+              <span>Courses Graded</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Course Breakdown */}
+        {hasCourseBreakdown && (
+          <div className="mr-breakdown-card">
+            <h2 className="mr-card-title">
+              <FiBookOpen size={20} style={{ marginRight: '0.5rem' }} />
+              Course Breakdown
+            </h2>
+            <div className="mr-breakdown-list">
+              {courseArray.map((course) => {
+                const percentage = course.total || 0;
+                const barWidth = (percentage / maxCourseScore) * 100;
+                const colorClass = percentage >= 80 ? 'mr-pct-high' : percentage >= 60 ? 'mr-pct-mid' : percentage >= 40 ? 'mr-pct-low' : 'mr-pct-fail';
+                
+                return (
+                  <div key={course.courseId} className="mr-course-row">
+                    <div className="mr-course-header">
+                      <span className="mr-course-name">{course.courseName}</span>
+                      <span className={`mr-course-pct ${colorClass}`}>
+                        {percentage.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="mr-progress-bar">
+                      <div
+                        className={`mr-progress-fill ${colorClass}`}
+                        style={{ width: `${Math.min(barWidth, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
+
+        {/* Motivational Message */}
+        <div className="mr-motivation">
+          <div className="mr-motivation-icon" aria-hidden="true">
+            <FiTrendingUp size={24} />
+          </div>
+          <p className="mr-motivation-text">{motivation.text}</p>
+          <p className="mr-motivation-sub">{motivation.sub}</p>
+          <div className="mr-motivation-verse">
+            <span className="mr-verse-mark">&ldquo;</span>
+            <p>በትጋት ያለው ሁሉ ይበልጣል፤ ሰነፉ ግን ያሳፍራል</p>
+            <span className="mr-verse-author">– ምሳሌ 10:4</span>
+          </div>
+        </div>
       </main>
     </section>
   );
 };
 
-export default MyMarks;
+export default MyRank;
