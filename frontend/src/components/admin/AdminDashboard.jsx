@@ -151,10 +151,7 @@ const AdminDashboard = () => {
       <main className="admin-dashboard-content">
         <header className="admin-dashboard-header">
           <div className="admin-dashboard-header-left">
-            <div className="admin-dashboard-badge">
-              <span className="admin-dashboard-badge-dot" />
-              Administration
-            </div>
+            
 
             <h1 className="admin-dashboard-title">
               Admin Dashboard
@@ -164,22 +161,9 @@ const AdminDashboard = () => {
               መስቀለ ብርሃን ስንበት ትምህርት ቤት
             </p>
 
-            <p className="admin-dashboard-description">
-              Welcome back. Manage your school community,
-              classes, teachers, students, and courses from one place.
-            </p>
+          
           </div>
 
-          <div className="admin-dashboard-header-decoration">
-            <div className="admin-dashboard-decoration-icon">
-              <FiActivity size={25} />
-            </div>
-
-            <div>
-              <span>School Management</span>
-              <strong>Overview</strong>
-            </div>
-          </div>
         </header>
 
         {hasError && (
