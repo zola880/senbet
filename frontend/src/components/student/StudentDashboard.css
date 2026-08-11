@@ -1,21 +1,24 @@
 /* ==========================================================================
-   STUDENT DASHBOARD — School theme (maroon / gold / parchment) with L.png
+   STUDENT DASHBOARD — Illuminated manuscript theme (maroon / gold / parchment)
+   Signature element: the rotating scripture ribbon (.std-verse-ribbon)
    Scoped with `.std-` to prevent global style leakage.
    ========================================================================== */
 
 .std-page {
-  --std-bg: #f3f0ea;
-  --std-surface: #fffdf8;
-  --std-border: #e6ddcf;
-  --std-border-strong: #d8cbb6;
-  --std-maroon: #6d1a28;
-  --std-maroon-deep: #52101c;
-  --std-maroon-soft: #8c2f3d;
-  --std-gold: #d2a12c;
-  --std-gold-soft: #f6e7c6;
-  --std-ink: #33262a;
-  --std-ink-soft: #7a6c6d;
-  --std-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
+  --std-bg: #f6efe1;
+  --std-surface: #fffbf3;
+  --std-border: #e6d7b3;
+  --std-border-strong: #d8c393;
+  --std-maroon: #6e1626;
+  --std-maroon-deep: #430d18;
+  --std-maroon-soft: #8e2c3c;
+  --std-gold: #c89b3c;
+  --std-gold-bright: #e9c874;
+  --std-gold-soft: #f6e7be;
+  --std-forest: #2f5d4e;
+  --std-ink: #2b1810;
+  --std-ink-soft: #7c6a5c;
+  --std-shadow: 0 1px 2px rgba(67, 13, 24, 0.08), 0 16px 30px -20px rgba(67, 13, 24, 0.4);
 
   position: relative;
   isolation: isolate;
@@ -27,14 +30,23 @@
   overflow-x: clip;
 }
 
-/* Background & Overlay */
+/* Background, texture & overlay */
 .std-bg {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: -3;
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
+}
+
+.std-pattern {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%236e1626' stroke-width='1.4'%3E%3Cpath d='M36 12v48M12 36h48M22 22l28 28M50 22 22 50'/%3E%3Ccircle cx='36' cy='36' r='9'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
 }
 
 .std-overlay {
@@ -42,8 +54,8 @@
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
-    linear-gradient(170deg, rgba(247, 244, 238, 0.94) 0%, rgba(243, 240, 234, 0.88) 45%, rgba(238, 231, 220, 0.93) 100%);
+    radial-gradient(1100px 320px at 50% 0%, rgba(110, 22, 38, 0.07), transparent 70%),
+    linear-gradient(170deg, rgba(249, 244, 232, 0.95) 0%, rgba(246, 239, 225, 0.9) 45%, rgba(240, 229, 205, 0.94) 100%);
 }
 
 /* Content Layout */
@@ -55,7 +67,7 @@
   padding: 2rem 0;
   display: grid;
   justify-items: center;
-  gap: 2.5rem;
+  gap: 1.9rem;
 }
 
 /* Header */
@@ -96,9 +108,16 @@
   display: block;
   width: 88px;
   height: 3px;
-  margin-top: 0.55rem;
+  margin: 0.55rem auto 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--std-gold), rgba(210, 161, 44, 0.35));
+  background: linear-gradient(90deg, var(--std-gold), rgba(200, 155, 60, 0.25));
+  background-size: 200% 100%;
+  animation: std-gold-sweep 3.4s ease-in-out infinite;
+}
+
+@keyframes std-gold-sweep {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
 }
 
 .std-subtitle-am {
@@ -113,6 +132,121 @@
   font-size: 1rem;
   color: var(--std-ink-soft);
   font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   Verse ribbon — signature element. An illuminated scroll that quietly
+   cycles through scripture on a timer.
+   -------------------------------------------------------------------------- */
+
+.std-verse-ribbon {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1.1rem 1.5rem;
+  border-radius: 16px;
+  background: linear-gradient(120deg, var(--std-maroon-deep), var(--std-maroon) 60%, var(--std-maroon-soft));
+  box-shadow: 0 18px 34px -20px rgba(67, 13, 24, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  min-height: 4.5rem;
+}
+
+.std-verse-ribbon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(233, 200, 116, 0.07) 0px,
+    rgba(233, 200, 116, 0.07) 1px,
+    transparent 1px,
+    transparent 14px
+  );
+  pointer-events: none;
+}
+
+.std-verse-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid rgba(233, 200, 116, 0.55);
+  color: var(--std-gold-bright);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  animation: std-mark-glow 3.6s ease-in-out infinite;
+}
+
+@keyframes std-mark-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(233, 200, 116, 0.25); }
+  50% { box-shadow: 0 0 0 8px rgba(233, 200, 116, 0); }
+}
+
+.std-verse-copy {
+  position: relative;
+  min-width: 0;
+  text-align: left;
+  display: grid;
+  gap: 0.15rem;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: std-verse-in 0.5s ease forwards;
+}
+
+.std-verse-copy.is-visible {
+  animation: std-verse-in 0.5s ease forwards;
+}
+
+@keyframes std-verse-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.std-verse-text {
+  margin: 0;
+  color: #fbf3e2;
+  font-family: 'Noto Serif Ethiopic', 'Playfair Display', Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.std-verse-source {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--std-gold-bright);
+}
+
+.std-verse-dots {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.std-verse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.std-verse-dot.is-active {
+  background: var(--std-gold-bright);
+  transform: scale(1.35);
 }
 
 /* Alert */
@@ -180,7 +314,7 @@
 .std-stat-card:hover:not(:disabled) {
   transform: translateY(-4px);
   border-top-color: var(--std-gold);
-  box-shadow: 0 2px 4px rgba(64, 20, 30, 0.08), 0 22px 34px -20px rgba(64, 20, 30, 0.4);
+  box-shadow: 0 2px 4px rgba(67, 13, 24, 0.08), 0 24px 36px -20px rgba(67, 13, 24, 0.42);
 }
 
 .std-stat-card:disabled {
@@ -210,10 +344,11 @@
   display: flex;
   align-items: center;
   min-height: 36px;
-  font-size: 1.75rem;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.85rem;
   line-height: 1;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   color: var(--std-ink);
   font-variant-numeric: tabular-nums;
 }
@@ -266,10 +401,11 @@
 
 .std-quick-title {
   margin: 0;
+  font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
   font-size: 1.35rem;
   font-weight: 700;
   color: var(--std-maroon);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .std-quick-badge {
@@ -310,7 +446,7 @@
 .std-quick-item:hover {
   background: #fff;
   border-color: var(--std-border);
-  box-shadow: 0 4px 12px -4px rgba(64, 20, 30, 0.1);
+  box-shadow: 0 4px 12px -4px rgba(67, 13, 24, 0.1);
 }
 
 .std-quick-icon {
@@ -353,12 +489,7 @@
 /* Skeletons */
 .std-skeleton {
   display: block;
-  background: linear-gradient(
-    90deg,
-    #ece5d8 25%,
-    #f8f3e9 50%,
-    #ece5d8 75%
-  );
+  background: linear-gradient(90deg, #ece1c6 25%, #f8f0dc 50%, #ece1c6 75%);
   background-size: 250% 100%;
   animation: std-shimmer 1.5s ease infinite;
   border-radius: 6px;
@@ -384,8 +515,18 @@
   }
 }
 
+@media (max-width: 720px) {
+  .std-verse-ribbon {
+    grid-template-columns: auto 1fr;
+  }
+
+  .std-verse-dots {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
-  .std-content { padding: 1rem 0; gap: 2rem; }
+  .std-content { padding: 1rem 0; gap: 1.6rem; }
   .std-stat-card { padding: 1.25rem 1.5rem; }
   .std-stat-value { font-size: 1.5rem; min-height: 28px; }
   .std-quick-actions { padding: 1.5rem 1.25rem; border-radius: 16px; }
@@ -394,11 +535,19 @@
 
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
-  .std-stat-card, .std-stat-action, .std-quick-item, .std-quick-arrow, .std-skeleton {
+  .std-stat-card,
+  .std-stat-action,
+  .std-quick-item,
+  .std-quick-arrow,
+  .std-skeleton,
+  .std-title::after,
+  .std-verse-mark,
+  .std-verse-copy {
     transition: none;
     animation: none;
   }
   .std-stat-card:hover:not(:disabled) { transform: none; }
   .std-stat-card:hover:not(:disabled) .std-stat-action { transform: none; }
   .std-quick-item:hover .std-quick-arrow { transform: none; }
+  .std-verse-copy { opacity: 1; transform: none; }
 }
