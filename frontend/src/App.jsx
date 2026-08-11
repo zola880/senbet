@@ -9,6 +9,7 @@ const Login = lazy(() => import('./pages/Login'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const TeacherPage = lazy(() => import('./pages/TeacherPage'));
 const StudentPage = lazy(() => import('./pages/StudentPage'));
+const DevelopmentPage = lazy(() => import('./pages/DevelopmentPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 /**
@@ -61,6 +62,16 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['student']}>
               <StudentPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Development manager route */}
+        <Route
+          path="/development/*"
+          element={
+            <ProtectedRoute allowedRoles={['development']}>
+              <DevelopmentPage />
             </ProtectedRoute>
           }
         />

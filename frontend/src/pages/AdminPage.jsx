@@ -12,6 +12,7 @@ import FullRanking from '../components/admin/FullRanking';
 import AdminAttendance from '../components/admin/AdminAttendance';
 import ChurchClothRegistry from '../components/admin/ChurchClothRegistry';
 import PracticeScheduler from '../components/admin/PracticeScheduler';
+import DevelopmentReports from '../components/admin/DevelopmentReports';
 
 // Detail pages
 import CourseDetail from '../components/admin/CourseDetail';
@@ -52,6 +53,9 @@ const AdminPage = () => (
         <Route path="attendance" element={<AdminAttendance />} />
         <Route path="practices" element={<PracticeScheduler />} />
         <Route path="church-cloth" element={<ChurchClothRegistry />} />
+
+        {/* Development (ልማት ክፍል) */}
+        <Route path="development" element={<DevelopmentReports />} />
 
         {/* Fallback for unknown admin routes */}
         <Route path="*" element={<AdminDashboard />} />
