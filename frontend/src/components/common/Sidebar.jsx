@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiHome, FiUsers, FiBook, FiGrid, FiClipboard, FiAward,
   FiCalendar, FiLogOut, FiCheckSquare, FiFolder, FiBell,
-  FiMenu, FiX, FiChevronRight,
+  FiMenu, FiX, FiChevronRight, FiBarChart2,
 } from 'react-icons/fi';
 
 import AuthContext from '../../context/AuthContext';
@@ -24,6 +24,7 @@ const NAV_LINKS = {
     { to: '/admin/attendance', icon: FiCheckSquare, label: 'Attendance' },
     { to: '/admin/church-cloth', icon: FiCheckSquare, label: 'Church Cloth' },
     { to: '/admin/practices', icon: FiCalendar, label: 'Practice Days' },
+    { to: '/admin/development', icon: FiBarChart2, label: 'Department Reports' },
   ],
   teacher: [
     { to: '/teacher', icon: FiHome, label: 'Dashboard' },
@@ -41,6 +42,9 @@ const NAV_LINKS = {
     { to: '/student/materials', icon: FiFolder, label: 'My Courses' },
     { to: '/student/notifications', icon: FiBell, label: 'Notifications' },
     { to: '/student/practices', icon: FiCalendar, label: 'Practice Days' },
+  ],
+  development: [
+    { to: '/development', icon: FiHome, label: 'ልማት Home' },
   ],
 };
 

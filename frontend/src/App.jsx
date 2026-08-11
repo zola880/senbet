@@ -9,7 +9,7 @@ const Login = lazy(() => import('./pages/Login'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const TeacherPage = lazy(() => import('./pages/TeacherPage'));
 const StudentPage = lazy(() => import('./pages/StudentPage'));
-const DevelopmentPage = lazy(() => import('./pages/DevelopmentPage'));
+const DepartmentPage = lazy(() => import('./pages/DepartmentPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 /**
@@ -66,12 +66,12 @@ function App() {
           }
         />
 
-        {/* Development manager route */}
+        {/* Department manager route (URL stays /development to match the role name) */}
         <Route
           path="/development/*"
           element={
             <ProtectedRoute allowedRoles={['development']}>
-              <DevelopmentPage />
+              <DepartmentPage />
             </ProtectedRoute>
           }
         />

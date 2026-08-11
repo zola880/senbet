@@ -1,18 +1,17 @@
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from '../components/common/Sidebar';
-import DevelopmentHome from '../components/development/DevelopmentHome';
+import DevelopmentHome from '../components/departments/DevelopmentHome';
 
-const DevelopmentPage = () => (
+const DepartmentPage = () => (
   <div className="app-layout">
     <Sidebar role="development" />
     <main className="main-content">
       <Routes>
         <Route index element={<DevelopmentHome />} />
-        <Route path="entries" element={<DevelopmentHome />} />
         <Route path="*" element={<DevelopmentHome />} />
       </Routes>
     </main>
   </div>
 );
 
-export default DevelopmentPage;
+export default DepartmentPage;
