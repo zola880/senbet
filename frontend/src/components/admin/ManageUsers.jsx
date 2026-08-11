@@ -4,6 +4,7 @@ import {
   FiAlertTriangle,
   FiCheckCircle,
   FiEdit2,
+  FiFilter,
   FiInbox,
   FiPlus,
   FiRefreshCw,
@@ -60,26 +61,41 @@ const useUsersAndClasses = () => {
 };
 
 /* --------------------------------------------------------------------------
+   Department configuration
+   -------------------------------------------------------------------------- */
+const DEPARTMENTS = [
+  { key: 'none', label: 'General Admin', color: '#7a6c6d' },
+  { key: 'development', label: 'Development (ልማት)', color: '#2e7d32' },
+  // Future departments can be added here:
+  // { key: 'finance', label: 'Finance', color: '#1976d2' },
+  // { key: 'library', label: 'Library', color: '#7b1fa2' },
+];
+
+/* --------------------------------------------------------------------------
    Modal Component
    -------------------------------------------------------------------------- */
 const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, defaultRole }) => {
   const [formData, setFormData] = useState({
     fullName: '', email: '', password: '', role: defaultRole,
-    class: '', rollNumber: '', qualifications: '',
+    class: '', rollNumber: '', qualifications: '', department: 'none',
   });
   const inputRef = useRef(null);
   const isEditing = Boolean(initialData);
 
   useEffect(() => {
     if (isOpen) {
+      // Determine department based on role
+      const dept = initialData?.role === 'development' ? 'development' : 'none';
+      
       setFormData({
         fullName: initialData?.fullName || '',
         email: initialData?.email || '',
         password: '',
-        role: initialData?.role || defaultRole,
+        role: initialData?.role === 'development' ? 'admin' : (initialData?.role || defaultRole),
         class: initialData?.class?._id || initialData?.class || '',
         rollNumber: initialData?.rollNumber || '',
         qualifications: initialData?.qualifications || '',
+        department: dept,
       });
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -97,6 +113,15 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
   const handleSubmit = (e) => {
     e.preventDefault();
     const payload = { ...formData };
+    
+    // If admin with department='development', set role to 'development'
+    if (payload.role === 'admin' && payload.department === 'development') {
+      payload.role = 'development';
+    }
+    
+    // Remove department field before sending (backend doesn't need it)
+    delete payload.department;
+    
     if (isEditing && !payload.password) delete payload.password;
     onSubmit(payload);
   };
@@ -140,9 +165,20 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
               <option value="admin">Admin</option>
               <option value="teacher">Teacher</option>
               <option value="student">Student</option>
-              <option value="development">Development (ልማት)</option>
             </select>
           </div>
+
+          {formData.role === 'admin' && (
+            <div className="mu-form-group">
+              <label htmlFor="mu-department" className="mu-label">Department</label>
+              <select id="mu-department" name="department" className="mu-select" value={formData.department} onChange={handleChange}>
+                {DEPARTMENTS.map((dept) => (
+                  <option key={dept.key} value={dept.key}>{dept.label}</option>
+                ))}
+              </select>
+              <small className="mu-hint">Assign this admin to manage a specific department</small>
+            </div>
+          )}
 
           {formData.role === 'student' && (
             <>
@@ -188,7 +224,6 @@ const TABS = [
   { key: 'admin', label: 'Admins' },
   { key: 'teacher', label: 'Teachers' },
   { key: 'student', label: 'Students' },
-  { key: 'development', label: 'Development (ልማት)' },
 ];
 
 const ManageUsers = () => {
@@ -197,6 +232,7 @@ const ManageUsers = () => {
   
   const [activeTab, setActiveTab] = useState('admin');
   const [searchQuery, setSearchQuery] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -208,7 +244,21 @@ const ManageUsers = () => {
   const hasUsers = users.length > 0;
 
   const filteredUsers = users.filter((u) => {
-    if (u.role !== activeTab) return false;
+    // Role filter
+    if (activeTab === 'admin') {
+      // Include both 'admin' and 'development' roles in the admin tab
+      if (u.role !== 'admin' && u.role !== 'development') return false;
+    } else {
+      if (u.role !== activeTab) return false;
+    }
+    
+    // Department filter (only for admin tab)
+    if (activeTab === 'admin' && departmentFilter !== 'all') {
+      if (departmentFilter === 'none' && u.role !== 'admin') return false;
+      if (departmentFilter === 'development' && u.role !== 'development') return false;
+    }
+    
+    // Search filter
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -276,6 +326,14 @@ const ManageUsers = () => {
     tabRefs.current[nextTab.key]?.focus();
   };
 
+  const getDepartmentBadge = (user) => {
+    if (user.role === 'development') {
+      const dept = DEPARTMENTS.find(d => d.key === 'development');
+      return <span className="mu-dept-badge" style={{ background: dept.color + '20', color: dept.color }}>{dept.label}</span>;
+    }
+    return <span className="mu-dept-badge mu-dept-badge--general">General</span>;
+  };
+
   return (
     <section className="mu-page">
       <div className="mu-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
@@ -293,7 +351,7 @@ const ManageUsers = () => {
         <header className="mu-header">
           <div>
             <h1 className="mu-title">Manage Users</h1>
-            <p className="mu-subtitle">Create, edit, and organize admins, teachers, students, and development staff.</p>
+            <p className="mu-subtitle">Create, edit, and organize admins, teachers, and students.</p>
           </div>
         </header>
 
@@ -307,7 +365,7 @@ const ManageUsers = () => {
               aria-selected={activeTab === tab.key}
               tabIndex={activeTab === tab.key ? 0 : -1}
               className={`mu-tab ${activeTab === tab.key ? 'mu-tab--active' : ''}`}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => { setActiveTab(tab.key); setDepartmentFilter('all'); }}
               onKeyDown={(e) => handleTabKeyDown(e, index)}
             >
               {tab.label}
@@ -321,14 +379,32 @@ const ManageUsers = () => {
             <input
               type="search"
               className="mu-search-input"
-              placeholder={`Search ${activeTab === 'development' ? 'development staff' : `${activeTab}s`}...`}
+              placeholder={`Search ${activeTab}s...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Search users"
             />
           </div>
+          
+          {activeTab === 'admin' && (
+            <div className="mu-filter-wrap">
+              <FiFilter size={14} className="mu-filter-icon" />
+              <select
+                className="mu-filter-select"
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+                aria-label="Filter by department"
+              >
+                <option value="all">All Departments</option>
+                {DEPARTMENTS.map((dept) => (
+                  <option key={dept.key} value={dept.key}>{dept.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
           <button className="mu-btn mu-btn--primary" onClick={openNewModal}>
-            <FiPlus size={18} /> Add {activeTab === 'development' ? 'Development Staff' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            <FiPlus size={18} /> Add {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
           </button>
         </div>
 
@@ -347,8 +423,8 @@ const ManageUsers = () => {
         ) : filteredUsers.length === 0 ? (
           <div className="mu-state">
             <FiInbox size={40} />
-            <h3>No {activeTab === 'development' ? 'development staff' : `${activeTab}s`} found</h3>
-            <p>{searchQuery ? 'Try adjusting your search query.' : `Click "Add" to create a new ${activeTab === 'development' ? 'development staff member' : activeTab}.`}</p>
+            <h3>No {activeTab}s found</h3>
+            <p>{searchQuery || departmentFilter !== 'all' ? 'Try adjusting your filters.' : `Click "Add" to create a new ${activeTab}.`}</p>
           </div>
         ) : (
           <div className="mu-table-wrapper">
@@ -357,6 +433,7 @@ const ManageUsers = () => {
                 <tr>
                   <th>Name</th>
                   <th>Email</th>
+                  {activeTab === 'admin' && <th>Department</th>}
                   {activeTab === 'student' && <th>Class</th>}
                   {activeTab === 'student' && <th>Roll No</th>}
                   {activeTab === 'teacher' && <th>Qualifications</th>}
@@ -379,6 +456,7 @@ const ManageUsers = () => {
                       </div>
                     </td>
                     <td data-label="Email">{u.email}</td>
+                    {activeTab === 'admin' && <td data-label="Department">{getDepartmentBadge(u)}</td>}
                     {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
                     {activeTab === 'student' && <td data-label="Roll No">{u.rollNumber || '—'}</td>}
                     {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
@@ -407,7 +485,7 @@ const ManageUsers = () => {
         initialData={editingUser}
         classes={classes}
         isSaving={isSaving}
-        defaultRole={activeTab}
+        defaultRole={activeTab === 'admin' ? 'admin' : activeTab}
       />
     </section>
   );

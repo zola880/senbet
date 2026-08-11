@@ -186,3 +186,59 @@
 @media (prefers-reduced-motion: reduce) {
   .mu-btn, .mu-tab, .mu-icon-btn, .mu-modal, .mu-modal-backdrop, .mu-spinner, .mu-toast { transition: none; animation: none; }
 }
+/* Department badges */
+.mu-dept-badge {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mu-dept-badge--general {
+  background: #f3f0ea;
+  color: #7a6c6d;
+}
+
+/* Department filter dropdown */
+.mu-filter-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mu-filter-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--mu-ink-soft);
+  pointer-events: none;
+}
+
+.mu-filter-select {
+  padding: 0.7rem 1rem 0.7rem 2.4rem;
+  border: 1px solid var(--mu-border-strong);
+  border-radius: 999px;
+  background: var(--mu-surface);
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--mu-ink);
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  min-width: 160px;
+}
+
+.mu-filter-select:focus {
+  outline: none;
+  border-color: var(--mu-maroon);
+  box-shadow: 0 0 0 3px rgba(109, 26, 40, 0.12);
+}
+
+/* Hint text in modal */
+.mu-hint {
+  font-size: 0.75rem;
+  color: var(--mu-ink-soft);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
