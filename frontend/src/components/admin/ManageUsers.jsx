@@ -9,7 +9,6 @@ import {
   FiRefreshCw,
   FiSearch,
   FiTrash2,
-  FiUser,
   FiX,
 } from 'react-icons/fi';
 
@@ -141,6 +140,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
               <option value="admin">Admin</option>
               <option value="teacher">Teacher</option>
               <option value="student">Student</option>
+              <option value="development">Development (ልማት)</option>
             </select>
           </div>
 
@@ -188,6 +188,7 @@ const TABS = [
   { key: 'admin', label: 'Admins' },
   { key: 'teacher', label: 'Teachers' },
   { key: 'student', label: 'Students' },
+  { key: 'development', label: 'Development (ልማት)' },
 ];
 
 const ManageUsers = () => {
@@ -292,7 +293,7 @@ const ManageUsers = () => {
         <header className="mu-header">
           <div>
             <h1 className="mu-title">Manage Users</h1>
-            <p className="mu-subtitle">Create, edit, and organize admins, teachers, and students.</p>
+            <p className="mu-subtitle">Create, edit, and organize admins, teachers, students, and development staff.</p>
           </div>
         </header>
 
@@ -320,14 +321,14 @@ const ManageUsers = () => {
             <input
               type="search"
               className="mu-search-input"
-              placeholder={`Search ${activeTab}s...`}
+              placeholder={`Search ${activeTab === 'development' ? 'development staff' : `${activeTab}s`}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Search users"
             />
           </div>
           <button className="mu-btn mu-btn--primary" onClick={openNewModal}>
-            <FiPlus size={18} /> Add {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            <FiPlus size={18} /> Add {activeTab === 'development' ? 'Development Staff' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
           </button>
         </div>
 
@@ -346,8 +347,8 @@ const ManageUsers = () => {
         ) : filteredUsers.length === 0 ? (
           <div className="mu-state">
             <FiInbox size={40} />
-            <h3>No {activeTab}s found</h3>
-            <p>{searchQuery ? 'Try adjusting your search query.' : `Click "Add" to create a new ${activeTab}.`}</p>
+            <h3>No {activeTab === 'development' ? 'development staff' : `${activeTab}s`} found</h3>
+            <p>{searchQuery ? 'Try adjusting your search query.' : `Click "Add" to create a new ${activeTab === 'development' ? 'development staff member' : activeTab}.`}</p>
           </div>
         ) : (
           <div className="mu-table-wrapper">
@@ -359,7 +360,7 @@ const ManageUsers = () => {
                   {activeTab === 'student' && <th>Class</th>}
                   {activeTab === 'student' && <th>Roll No</th>}
                   {activeTab === 'teacher' && <th>Qualifications</th>}
-                  {activeTab !== 'student' && <th className="mu-th-actions">Actions</th>}
+                  <th className="mu-th-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -381,18 +382,16 @@ const ManageUsers = () => {
                     {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
                     {activeTab === 'student' && <td data-label="Roll No">{u.rollNumber || '—'}</td>}
                     {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
-                    {activeTab !== 'student' && (
-                      <td data-label="Actions" className="mu-td-actions">
-                        <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
-                          <button className="mu-icon-btn" onClick={() => openEditModal(u)} title="Edit" aria-label={`Edit ${u.fullName}`}>
-                            <FiEdit2 size={16} />
-                          </button>
-                          <button className="mu-icon-btn mu-icon-btn--danger" onClick={() => handleDelete(u._id, u.fullName)} title="Delete" aria-label={`Delete ${u.fullName}`}>
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    )}
+                    <td data-label="Actions" className="mu-td-actions">
+                      <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
+                        <button className="mu-icon-btn" onClick={() => openEditModal(u)} title="Edit" aria-label={`Edit ${u.fullName}`}>
+                          <FiEdit2 size={16} />
+                        </button>
+                        <button className="mu-icon-btn mu-icon-btn--danger" onClick={() => handleDelete(u._id, u.fullName)} title="Delete" aria-label={`Delete ${u.fullName}`}>
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
