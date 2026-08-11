@@ -71,8 +71,8 @@ const Login = () => {
               <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <h1 className="login-title">የተማሪ ሥርዓት</h1>
-          <p className="login-subtitle">Church School Management System</p>
+          <h1 className="login-title">መስቀለ ብርሃን ሰንበት ትምህርት ቤት</h1>
+          
         </header>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
