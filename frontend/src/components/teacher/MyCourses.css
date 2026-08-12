@@ -1,28 +1,35 @@
 /* ==========================================================================
-   MY COURSES — School theme (maroon / gold / parchment) with L.png backdrop
+   MY COURSES — Illuminated manuscript theme (maroon / gold / parchment)
+   Shares its token system with the teacher dashboard so the two screens
+   read as one place. Signature element: the illuminated drop-cap on
+   "My Courses" — a nod to the illuminated initials of manuscript folios.
    All selectors are scoped with `.mc-` so global styles cannot override them.
    ========================================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&display=swap');
+
 .mc-page {
-  --mc-bg: #f3f0ea;
-  --mc-surface: #fffdf8;
-  --mc-border: #e6ddcf;
-  --mc-border-strong: #d8cbb6;
-  --mc-maroon: #6d1a28;
-  --mc-maroon-deep: #52101c;
-  --mc-maroon-soft: #8c2f3d;
-  --mc-gold: #d2a12c;
-  --mc-gold-soft: #f6e7c6;
-  --mc-ink: #33262a;
-  --mc-ink-soft: #7a6c6d;
-  --mc-shadow: 0 1px 2px rgba(64, 20, 30, 0.08),
-    0 14px 28px -20px rgba(64, 20, 30, 0.35);
+  --mc-parchment: #f4e9d0;
+  --mc-surface: #fffaf0;
+  --mc-border: #e3d3a0;
+  --mc-border-strong: #cdb06a;
+  --mc-maroon: #6b1626;
+  --mc-maroon-deep: #3c0d18;
+  --mc-maroon-soft: #8f2c3e;
+  --mc-gold: #b8923a;
+  --mc-gold-bright: #e6c469;
+  --mc-gold-pale: #f7ecc8;
+  --mc-forest: #2f5d46;
+  --mc-ink: #2a1810;
+  --mc-ink-soft: #7a6650;
+  --mc-shadow: 0 1px 2px rgba(60, 13, 24, 0.08), 0 16px 30px -20px rgba(60, 13, 24, 0.4);
+  --mc-font-display: 'Cormorant Garamond', 'Noto Serif Ethiopic', Georgia, serif;
 
   position: relative;
   isolation: isolate;
   min-height: 100vh;
   padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
-  background-color: var(--mc-bg);
+  background-color: var(--mc-parchment);
   color: var(--mc-ink);
   font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui,
     -apple-system, sans-serif;
@@ -30,16 +37,25 @@
 }
 
 /* --------------------------------------------------------------------------
-   Background image + readability wash
+   Background image, texture & readability wash
    -------------------------------------------------------------------------- */
 
 .mc-bg {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: -3;
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
+}
+
+.mc-pattern {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%236b1626' stroke-width='1.4'%3E%3Cpath d='M36 12v48M12 36h48M22 22l28 28M50 22 22 50'/%3E%3Ccircle cx='36' cy='36' r='9'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
 }
 
 .mc-overlay {
@@ -47,14 +63,42 @@
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
+    radial-gradient(1100px 320px at 50% 0%, rgba(107, 22, 38, 0.07), transparent 70%),
     linear-gradient(
       170deg,
-      rgba(247, 244, 238, 0.94) 0%,
-      rgba(243, 240, 234, 0.88) 45%,
-      rgba(238, 231, 220, 0.93) 100%
+      rgba(249, 244, 232, 0.95) 0%,
+      rgba(246, 239, 225, 0.9) 45%,
+      rgba(240, 229, 205, 0.94) 100%
     );
 }
+
+/* --------------------------------------------------------------------------
+   Content frame
+   -------------------------------------------------------------------------- */
+
+.mc-content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.5rem clamp(0.25rem, 2vw, 1rem);
+  display: grid;
+  gap: 1.75rem;
+}
+
+.mc-corner-svg {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  color: var(--mc-gold);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2;
+}
+.mc-corner--tl { top: -1.25rem; left: -0.75rem; }
+.mc-corner--tr { top: -1.25rem; right: -0.75rem; transform: scaleX(-1); }
+.mc-corner--bl { bottom: -1.25rem; left: -0.75rem; transform: scaleY(-1); }
+.mc-corner--br { bottom: -1.25rem; right: -0.75rem; transform: scale(-1, -1); }
 
 /* --------------------------------------------------------------------------
    Header
@@ -64,33 +108,104 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
-  max-width: 1200px;
-  margin: 0 auto 2rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  animation: mc-rise 0.6s ease both;
+}
+
+.mc-header-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.mc-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--mc-gold);
+  background: linear-gradient(180deg, var(--mc-gold-pale), var(--mc-surface));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), var(--mc-shadow);
+  color: var(--mc-maroon);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .mc-title {
   margin: 0;
-  font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia,
-    'Times New Roman', serif;
+  display: flex;
+  align-items: center;
+  font-family: var(--mc-font-display);
   font-size: clamp(1.9rem, 3.2vw, 2.5rem);
   font-weight: 700;
   color: var(--mc-maroon);
   letter-spacing: 0.01em;
+  line-height: 1;
 }
 
-.mc-title::after {
+/* Illuminated drop-cap — this page's signature detail, echoing the
+   decorated initials found at the start of a manuscript chapter. A single
+   gentle sheen sweeps across it once on load, then it stays quiet. */
+.mc-title-initial {
+  position: relative;
+  overflow: hidden;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  margin-right: 0.12em;
+  border-radius: 9px;
+  border: 1px solid var(--mc-gold);
+  background: linear-gradient(160deg, var(--mc-gold-pale), var(--mc-surface));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), var(--mc-shadow);
+  font-size: 1.15em;
+  color: var(--mc-maroon-deep);
+}
+
+.mc-title-initial::after {
   content: '';
-  display: block;
-  width: 88px;
-  height: 3px;
-  margin-top: 0.55rem;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--mc-gold), rgba(210, 161, 44, 0.35));
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.7) 48%,
+    transparent 66%
+  );
+  transform: translateX(-130%);
+  animation: mc-sheen 1.5s ease 0.5s 1;
+}
+
+@keyframes mc-sheen {
+  to { transform: translateX(130%); }
+}
+
+/* Colophon-style divider, matching the dashboard's section dividers */
+.mc-title-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.1rem 0 0.1rem;
+}
+
+.mc-title-divider-line {
+  width: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--mc-gold), transparent);
+}
+
+.mc-title-divider-mark {
+  color: var(--mc-gold-bright);
+  font-size: 0.75rem;
+  filter: drop-shadow(0 0 3px rgba(230, 196, 105, 0.55));
 }
 
 .mc-subtitle {
-  margin: 0.65rem 0 0;
+  margin: 0;
   color: var(--mc-ink-soft);
   font-size: 0.95rem;
 }
@@ -118,21 +233,26 @@
 }
 
 .mc-count-badge--gold {
-  background: var(--mc-gold-soft);
-  border-color: rgba(210, 161, 44, 0.35);
+  background: var(--mc-gold-pale);
+  border-color: rgba(184, 146, 58, 0.4);
 }
 
 /* --------------------------------------------------------------------------
-   Toolbar (search + refresh)
+   Toolbar (search + refresh) — framed as its own panel so the page reads
+   as furnished rather than a search box floating in whitespace
    -------------------------------------------------------------------------- */
 
 .mc-toolbar {
-  max-width: 1200px;
-  margin: 0 auto 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.9rem;
   flex-wrap: wrap;
+  padding: 0.8rem 1.1rem;
+  background: var(--mc-surface);
+  border: 1px solid var(--mc-border);
+  border-radius: 14px;
+  box-shadow: var(--mc-shadow);
+  animation: mc-rise 0.6s ease both 0.1s;
 }
 
 .mc-search {
@@ -152,10 +272,10 @@
 
 .mc-search-input {
   width: 100%;
-  padding: 0.7rem 2.6rem;
+  padding: 0.65rem 2.6rem;
   border-radius: 999px;
   border: 1px solid var(--mc-border-strong);
-  background: var(--mc-surface);
+  background: var(--mc-parchment);
   font: inherit;
   font-size: 0.92rem;
   color: var(--mc-ink);
@@ -169,7 +289,7 @@
 .mc-search-input:focus {
   outline: none;
   border-color: var(--mc-maroon);
-  box-shadow: 0 0 0 3px rgba(109, 26, 40, 0.12);
+  box-shadow: 0 0 0 3px rgba(107, 22, 38, 0.12);
 }
 
 /* Hide native search cancel button (we render our own) */
@@ -189,14 +309,19 @@
   place-items: center;
   border: none;
   border-radius: 50%;
-  background: rgba(109, 26, 40, 0.08);
+  background: rgba(107, 22, 38, 0.08);
   color: var(--mc-maroon);
   cursor: pointer;
   transition: background 0.2s ease;
 }
 
 .mc-search-clear:hover {
-  background: rgba(109, 26, 40, 0.16);
+  background: rgba(107, 22, 38, 0.16);
+}
+
+.mc-search-clear:focus-visible {
+  outline: 2px solid var(--mc-gold-bright);
+  outline-offset: 2px;
 }
 
 .mc-result-note {
@@ -211,17 +336,21 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--mc-surface);
+  background: var(--mc-parchment);
   border: 1px solid var(--mc-border);
   color: var(--mc-maroon);
   cursor: pointer;
-  box-shadow: var(--mc-shadow);
   transition: background 0.2s ease;
   margin-left: auto;
 }
 
 .mc-icon-btn:hover:not(:disabled) {
-  background: var(--mc-gold-soft);
+  background: var(--mc-gold-pale);
+}
+
+.mc-icon-btn:focus-visible {
+  outline: 2px solid var(--mc-gold-bright);
+  outline-offset: 2px;
 }
 
 .mc-icon-btn:disabled {
@@ -238,8 +367,6 @@
    -------------------------------------------------------------------------- */
 
 .mc-banner {
-  max-width: 1200px;
-  margin: 0 auto 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -257,11 +384,10 @@
    -------------------------------------------------------------------------- */
 
 .mc-grid {
-  max-width: 1200px;
-  margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1.35rem;
+  gap: 1.5rem 1.35rem;
+  animation: mc-rise 0.6s ease both 0.2s;
 }
 
 .mc-card {
@@ -273,22 +399,54 @@
   border: 1px solid var(--mc-border);
   border-top: 4px solid var(--mc-maroon);
   border-radius: 14px;
-  padding: 1.35rem 1.35rem 1.05rem;
+  padding: 1.5rem 1.35rem 1.05rem;
   box-shadow: var(--mc-shadow);
   transition: transform 0.22s ease, box-shadow 0.22s ease,
     border-color 0.22s ease;
 }
 
+/* Ge'ez numeral folio marker — the course's position in the list, set in
+   the manuscript's own numeral system, sitting on the card's top edge
+   like a page number on a folio. */
+.mc-card-ordinal {
+  position: absolute;
+  top: -11px;
+  left: 18px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(160deg, var(--mc-gold-pale), var(--mc-surface));
+  border: 1px solid var(--mc-border-strong);
+  color: var(--mc-maroon);
+  font-family: 'Noto Serif Ethiopic', var(--mc-font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 6px -1px rgba(60, 13, 24, 0.25);
+}
+
+/* A single gold-leaf mark at the corner, mirroring the dashboard's cards */
+.mc-card::before {
+  content: '✦';
+  position: absolute;
+  top: 0.7rem;
+  right: 0.85rem;
+  color: var(--mc-gold);
+  opacity: 0.45;
+  font-size: 0.68rem;
+}
+
 .mc-card:hover {
   transform: translateY(-4px);
   border-top-color: var(--mc-gold);
-  box-shadow: 0 2px 4px rgba(64, 20, 30, 0.08),
-    0 22px 34px -20px rgba(64, 20, 30, 0.4);
+  box-shadow: 0 2px 4px rgba(60, 13, 24, 0.08),
+    0 22px 34px -20px rgba(60, 13, 24, 0.4);
 }
 
 /* Accessible focus ring when the stretched button is focused */
 .mc-card:focus-within {
-  outline: 3px solid rgba(210, 161, 44, 0.55);
+  outline: 2px solid var(--mc-gold-bright);
   outline-offset: 3px;
 }
 
@@ -306,9 +464,9 @@
   display: grid;
   place-items: center;
   background: linear-gradient(140deg, var(--mc-maroon-soft), var(--mc-maroon-deep));
-  color: var(--mc-gold-soft);
+  color: var(--mc-gold-pale);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 6px 14px -8px rgba(82, 16, 28, 0.7);
+    0 6px 14px -8px rgba(60, 13, 24, 0.7);
   flex-shrink: 0;
 }
 
@@ -319,9 +477,9 @@
   max-width: 62%;
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
-  background: var(--mc-gold-soft);
+  background: var(--mc-gold-pale);
   color: var(--mc-maroon);
-  border: 1px solid rgba(210, 161, 44, 0.35);
+  border: 1px solid rgba(184, 146, 58, 0.4);
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
@@ -331,10 +489,11 @@
 
 .mc-card-title {
   margin: 0;
-  font-size: 1.15rem;
+  font-family: var(--mc-font-display);
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--mc-ink);
-  line-height: 1.35;
+  line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -391,6 +550,11 @@
   background: var(--mc-maroon-deep);
 }
 
+.mc-card-btn:focus-visible {
+  outline: 2px solid var(--mc-gold-bright);
+  outline-offset: 2px;
+}
+
 .mc-card-btn svg {
   transition: transform 0.2s ease;
 }
@@ -417,7 +581,7 @@
 
 .mc-skeleton-card [class^='mc-sk'],
 .mc-skeleton-card [class*=' mc-sk'] {
-  background: linear-gradient(90deg, #ece5d8 25%, #f8f3e9 50%, #ece5d8 75%);
+  background: linear-gradient(90deg, #ece1c6 25%, #f8f0dc 50%, #ece1c6 75%);
   background-size: 250% 100%;
   animation: mc-shimmer 1.3s ease infinite;
   border-radius: 6px;
@@ -475,12 +639,8 @@
 }
 
 @keyframes mc-shimmer {
-  from {
-    background-position: 200% 0;
-  }
-  to {
-    background-position: -200% 0;
-  }
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
 
 /* --------------------------------------------------------------------------
@@ -488,8 +648,6 @@
    -------------------------------------------------------------------------- */
 
 .mc-state {
-  max-width: 1200px;
-  margin: 0 auto;
   background: var(--mc-surface);
   border: 1px dashed var(--mc-border-strong);
   border-radius: 16px;
@@ -497,15 +655,29 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   text-align: center;
   color: var(--mc-ink-soft);
+  animation: mc-rise 0.6s ease both 0.1s;
+}
+
+.mc-state-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 0.5rem;
+  border-radius: 50%;
+  background: var(--mc-gold-pale);
+  border: 1px solid rgba(184, 146, 58, 0.35);
+  color: var(--mc-maroon);
 }
 
 .mc-state h3 {
   margin: 0.5rem 0 0;
+  font-family: var(--mc-font-display);
   color: var(--mc-maroon);
-  font-size: 1.15rem;
+  font-size: 1.25rem;
 }
 
 .mc-state p {
@@ -518,12 +690,14 @@
   color: #8a4a4a;
 }
 
-.mc-state--error h3 {
-  color: #8a2430;
+.mc-state--error .mc-state-icon {
+  background: #fbe3e1;
+  border-color: #e3b7b7;
+  color: #b3403f;
 }
 
-.mc-state--error svg {
-  color: #b3403f;
+.mc-state--error h3 {
+  color: #8a2430;
 }
 
 .mc-state-btn {
@@ -545,8 +719,21 @@
 }
 
 .mc-state-btn:focus-visible {
-  outline: 3px solid rgba(210, 161, 44, 0.55);
+  outline: 2px solid var(--mc-gold-bright);
   outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Page-load reveal
+   -------------------------------------------------------------------------- */
+
+@keyframes mc-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mc-rotate {
+  to { transform: rotate(360deg); }
 }
 
 /* --------------------------------------------------------------------------
@@ -558,11 +745,14 @@
     padding: 1.5rem 1rem 2.5rem;
   }
 
+  .mc-content {
+    gap: 1.35rem;
+  }
+
   .mc-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
-    margin-bottom: 1.5rem;
   }
 
   .mc-header-badges {
@@ -584,7 +774,11 @@
 
   .mc-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 1.1rem;
+  }
+
+  .mc-corner-svg {
+    display: none;
   }
 }
 
@@ -597,6 +791,11 @@
   .mc-card-btn,
   .mc-card-btn svg,
   .mc-icon-btn svg,
+  .mc-title-initial::after,
+  .mc-header,
+  .mc-toolbar,
+  .mc-grid,
+  .mc-state,
   .mc-skeleton-card [class^='mc-sk'],
   .mc-skeleton-card [class*=' mc-sk'] {
     transition: none;
@@ -605,11 +804,5 @@
 
   .mc-card:hover {
     transform: none;
-  }
-}
-
-@keyframes mc-rotate {
-  to {
-    transform: rotate(360deg);
   }
 }

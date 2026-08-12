@@ -30,6 +30,18 @@ const normalizeAssignments = (payload) =>
 const isCancelError = (err) =>
   err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError';
 
+// Real Ge'ez numerals (1-99) — used as the course ordinal on each card,
+// matching the system used on the teacher dashboard.
+const GEEZ_ONES = ['', '፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰', '፱'];
+const GEEZ_TENS = ['', '፲', '፳', '፴', '፵', '፶', '፷', '፸', '፹', '፺'];
+const toGeez = (n) => {
+  if (!Number.isInteger(n) || n <= 0) return String(n);
+  if (n > 99) return String(n);
+  const tens = Math.floor(n / 10);
+  const ones = n % 10;
+  return `${GEEZ_TENS[tens]}${GEEZ_ONES[ones]}`;
+};
+
 /* --------------------------------------------------------------------------
    Data hook: fetch + cancel + retry
    -------------------------------------------------------------------------- */
@@ -79,6 +91,27 @@ const useTeacherAssignments = (teacherId) => {
 };
 
 /* --------------------------------------------------------------------------
+   Corner ornament — same manuscript-page flourish used on the dashboard,
+   framing the content so the two screens read as one system.
+   -------------------------------------------------------------------------- */
+const CornerOrnament = ({ className = '' }) => (
+  <svg
+    className={`mc-corner-svg ${className}`}
+    viewBox="0 0 60 60"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path d="M2 22 V2 H22" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M2 30 V10" stroke="currentColor" strokeWidth="1" opacity="0.45" />
+    <path d="M30 2 H10" stroke="currentColor" strokeWidth="1" opacity="0.45" />
+    <g transform="translate(2,2)">
+      <path d="M0 -5 V5 M-5 0 H5" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="0" cy="0" r="1.6" fill="currentColor" />
+    </g>
+  </svg>
+);
+
+/* --------------------------------------------------------------------------
    Presentational sub-components
    -------------------------------------------------------------------------- */
 const SkeletonCard = () => (
@@ -101,7 +134,9 @@ const StatePanel = ({ variant, icon, title, message, actionLabel, onAction }) =>
     className={`mc-state ${variant === 'error' ? 'mc-state--error' : ''}`}
     role={variant === 'error' ? 'alert' : 'status'}
   >
-    {icon}
+    <span className="mc-state-icon" aria-hidden="true">
+      {icon}
+    </span>
     {title && <h3>{title}</h3>}
     {message && <p>{message}</p>}
     {actionLabel && onAction && (
@@ -112,13 +147,17 @@ const StatePanel = ({ variant, icon, title, message, actionLabel, onAction }) =>
   </div>
 );
 
-const CourseCard = ({ assignment, onManage }) => {
+const CourseCard = ({ assignment, ordinal, onManage }) => {
   const courseName = assignment?.course?.name || 'Unnamed Course';
   const className = assignment?.class?.name || 'General Class';
   const courseCode = assignment?.course?.code;
 
   return (
     <article className="mc-card">
+      <span className="mc-card-ordinal" aria-hidden="true">
+        {toGeez(ordinal)}
+      </span>
+
       <div className="mc-card-head">
         <span className="mc-card-icon" aria-hidden="true">
           <FiBook size={20} />
@@ -189,122 +228,140 @@ const MyCourses = () => {
         style={{ backgroundImage: `url(${bgImage})` }}
         aria-hidden="true"
       />
+      <div className="mc-pattern" aria-hidden="true" />
       <div className="mc-overlay" aria-hidden="true" />
 
-      <header className="mc-header">
-        <div>
-          <h1 className="mc-title">My Courses</h1>
-          <p className="mc-subtitle">
-            Courses and classes assigned to you for this term.
-          </p>
-        </div>
+      <div className="mc-content">
+        <CornerOrnament className="mc-corner--tl" />
+        <CornerOrnament className="mc-corner--tr" />
+        <CornerOrnament className="mc-corner--bl" />
+        <CornerOrnament className="mc-corner--br" />
 
-        {status === 'success' && hasAssignments && (
-          <div className="mc-header-badges">
-            <span className="mc-count-badge">
-              <FiBookOpen size={16} aria-hidden="true" />
-              {assignments.length} {assignments.length === 1 ? 'Course' : 'Courses'}
-            </span>
-            <span className="mc-count-badge mc-count-badge--gold">
-              <FiGrid size={16} aria-hidden="true" />
-              {uniqueClassCount} {uniqueClassCount === 1 ? 'Class' : 'Classes'}
-            </span>
+        <header className="mc-header">
+          <div className="mc-header-copy">
+            <span className="mc-eyebrow">Teaching</span>
+            <h1 className="mc-title">
+              <span className="mc-title-initial" aria-hidden="true">M</span>
+              y Courses
+            </h1>
+            <div className="mc-title-divider" aria-hidden="true">
+              <span className="mc-title-divider-line" />
+              <span className="mc-title-divider-mark">✦</span>
+              <span className="mc-title-divider-line" />
+            </div>
+            <p className="mc-subtitle">
+              Courses and classes assigned to you for this term.
+            </p>
           </div>
-        )}
-      </header>
 
-      {showSkeletons ? (
-        <div className="mc-grid" aria-busy="true" aria-label="Loading courses">
-          {Array.from({ length: 6 }, (_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-      ) : status === 'error' && !hasAssignments ? (
-        <StatePanel
-          variant="error"
-          icon={<FiAlertTriangle size={30} aria-hidden="true" />}
-          title="Something went wrong"
-          message={error}
-          actionLabel="Try again"
-          onAction={reload}
-        />
-      ) : !hasAssignments ? (
-        <StatePanel
-          icon={<FiInbox size={32} aria-hidden="true" />}
-          title="No courses assigned yet"
-          message="You have no teaching assignments at the moment."
-        />
-      ) : (
-        <>
-          {status === 'error' && (
-            <div className="mc-banner" role="alert">
-              <FiAlertTriangle size={16} aria-hidden="true" />
-              Refresh failed — showing the last loaded data.
+          {status === 'success' && hasAssignments && (
+            <div className="mc-header-badges">
+              <span className="mc-count-badge">
+                <FiBookOpen size={16} aria-hidden="true" />
+                {assignments.length} {assignments.length === 1 ? 'Course' : 'Courses'}
+              </span>
+              <span className="mc-count-badge mc-count-badge--gold">
+                <FiGrid size={16} aria-hidden="true" />
+                {uniqueClassCount} {uniqueClassCount === 1 ? 'Class' : 'Classes'}
+              </span>
             </div>
           )}
+        </header>
 
-          <div className="mc-toolbar">
-            <div className="mc-search">
-              <FiSearch className="mc-search-icon" size={16} aria-hidden="true" />
-              <input
-                type="search"
-                className="mc-search-input"
-                placeholder="Search by course or class…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label="Search courses"
-              />
-              {query && (
-                <button
-                  type="button"
-                  className="mc-search-clear"
-                  onClick={() => setQuery('')}
-                  aria-label="Clear search"
-                >
-                  <FiX size={14} />
-                </button>
-              )}
-            </div>
-
-            {query.trim() && (
-              <span className="mc-result-note">
-                Showing {filteredAssignments.length} of {assignments.length}
-              </span>
+        {showSkeletons ? (
+          <div className="mc-grid" aria-busy="true" aria-label="Loading courses">
+            {Array.from({ length: 6 }, (_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : status === 'error' && !hasAssignments ? (
+          <StatePanel
+            variant="error"
+            icon={<FiAlertTriangle size={26} aria-hidden="true" />}
+            title="Something went wrong"
+            message={error}
+            actionLabel="Try again"
+            onAction={reload}
+          />
+        ) : !hasAssignments ? (
+          <StatePanel
+            icon={<FiInbox size={28} aria-hidden="true" />}
+            title="No courses assigned yet"
+            message="You have no teaching assignments at the moment."
+          />
+        ) : (
+          <>
+            {status === 'error' && (
+              <div className="mc-banner" role="alert">
+                <FiAlertTriangle size={16} aria-hidden="true" />
+                Refresh failed — showing the last loaded data.
+              </div>
             )}
 
-            <button
-              type="button"
-              className={`mc-icon-btn ${isLoading ? 'is-spinning' : ''}`}
-              onClick={reload}
-              disabled={isLoading}
-              aria-label="Refresh courses"
-              title="Refresh"
-            >
-              <FiRefreshCw size={17} />
-            </button>
-          </div>
-
-          {filteredAssignments.length === 0 ? (
-            <StatePanel
-              icon={<FiSearch size={30} aria-hidden="true" />}
-              title="No matches found"
-              message={`No courses match “${query}”.`}
-              actionLabel="Clear search"
-              onAction={() => setQuery('')}
-            />
-          ) : (
-            <div className="mc-grid">
-              {filteredAssignments.map((assignment) => (
-                <CourseCard
-                  key={assignment._id}
-                  assignment={assignment}
-                  onManage={handleManage}
+            <div className="mc-toolbar">
+              <div className="mc-search">
+                <FiSearch className="mc-search-icon" size={16} aria-hidden="true" />
+                <input
+                  type="search"
+                  className="mc-search-input"
+                  placeholder="Search by course or class…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  aria-label="Search courses"
                 />
-              ))}
+                {query && (
+                  <button
+                    type="button"
+                    className="mc-search-clear"
+                    onClick={() => setQuery('')}
+                    aria-label="Clear search"
+                  >
+                    <FiX size={14} />
+                  </button>
+                )}
+              </div>
+
+              {query.trim() && (
+                <span className="mc-result-note">
+                  Showing {filteredAssignments.length} of {assignments.length}
+                </span>
+              )}
+
+              <button
+                type="button"
+                className={`mc-icon-btn ${isLoading ? 'is-spinning' : ''}`}
+                onClick={reload}
+                disabled={isLoading}
+                aria-label="Refresh courses"
+                title="Refresh"
+              >
+                <FiRefreshCw size={17} />
+              </button>
             </div>
-          )}
-        </>
-      )}
+
+            {filteredAssignments.length === 0 ? (
+              <StatePanel
+                icon={<FiSearch size={26} aria-hidden="true" />}
+                title="No matches found"
+                message={`No courses match “${query}”.`}
+                actionLabel="Clear search"
+                onAction={() => setQuery('')}
+              />
+            ) : (
+              <div className="mc-grid">
+                {filteredAssignments.map((assignment, idx) => (
+                  <CourseCard
+                    key={assignment._id}
+                    assignment={assignment}
+                    ordinal={idx + 1}
+                    onManage={handleManage}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </section>
   );
 };
