@@ -56,6 +56,10 @@ const computeRanking = (students, courses, config, scores) => {
         // If no score for this component, it contributes 0
       });
 
+      // Ensure the courseDetails entry exists before writing courseTotal
+      if (!student.courseDetails[courseId]) {
+        student.courseDetails[courseId] = {};
+      }
       // Store course total (out of 100)
       student.courseDetails[courseId].courseTotal = courseWeightedTotal;
       overallSum += courseWeightedTotal;
