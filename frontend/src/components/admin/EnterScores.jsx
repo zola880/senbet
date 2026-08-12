@@ -15,7 +15,6 @@ import './EnterScores.css';
    -------------------------------------------------------------------------- */
 const useInitialData = () => {
   const [classes, setClasses] = useState([]);
-  const [courses, setCourses] = useState([]);
   const [totalStudents, setTotalStudents] = useState(0);
   const [status, setStatus] = useState('loading');
   const abortRef = useRef(null);
@@ -28,13 +27,11 @@ const useInitialData = () => {
 
     setStatus('loading');
     try {
-      const [classesRes, coursesRes, studentsRes] = await Promise.all([
+      const [classesRes, studentsRes] = await Promise.all([
         api.get('/api/v1/classes', { signal }),
-        api.get('/api/v1/courses', { signal }),
         api.get('/api/v1/users?role=student', { signal }),
       ]);
       setClasses(Array.isArray(classesRes.data?.data) ? classesRes.data.data : []);
-      setCourses(Array.isArray(coursesRes.data?.data) ? coursesRes.data.data : []);
       setTotalStudents(Array.isArray(studentsRes.data?.data) ? studentsRes.data.data.length : 0);
       setStatus('success');
     } catch (err) {
@@ -45,22 +42,23 @@ const useInitialData = () => {
   }, []);
 
   useEffect(() => { reload(); return () => abortRef.current?.abort(); }, [reload]);
-  return { classes, courses, totalStudents, status, reload };
+  return { classes, totalStudents, status, reload };
 };
 
 /* --------------------------------------------------------------------------
-   Data Hook: Selection Data (Students & Config)
+   Data Hook: Selection Data (Students, Config & Class-specific Courses)
    -------------------------------------------------------------------------- */
 const useSelectionData = (selectedClass, selectedCourse) => {
   const [students, setStudents] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [config, setConfig] = useState(null);
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
 
   useEffect(() => {
-    if (!selectedClass || !selectedCourse) {
-      setStudents([]); setConfig(null); setStatus('idle'); setError(null);
+    if (!selectedClass) {
+      setStudents([]); setCourses([]); setConfig(null); setStatus('idle'); setError(null);
       return;
     }
     abortRef.current?.abort();
@@ -74,10 +72,21 @@ const useSelectionData = (selectedClass, selectedCourse) => {
       api.get(`/api/v1/assessment-configs/${selectedClass}`, { signal }).catch(err => {
         if (err.response?.status === 404) return null;
         throw err;
-      })
-    ]).then(([studentsRes, configRes]) => {
+      }),
+      // Fetch only courses assigned to this class via teacher assignments
+      api.get(`/api/v1/assignments?class=${selectedClass}`, { signal }),
+    ]).then(([studentsRes, configRes, assignmentsRes]) => {
       if (signal.aborted) return;
       setStudents(Array.isArray(studentsRes.data?.data) ? studentsRes.data.data : []);
+
+      // Derive unique courses from assignments for this class
+      const assignments = Array.isArray(assignmentsRes.data?.data) ? assignmentsRes.data.data : [];
+      const seen = new Set();
+      const classCourses = assignments
+        .map(a => a.course)
+        .filter(c => c && !seen.has(c._id) && seen.add(c._id));
+      setCourses(classCourses);
+
       if (configRes?.data?.data) {
         setConfig(configRes.data.data);
       } else {
@@ -93,16 +102,16 @@ const useSelectionData = (selectedClass, selectedCourse) => {
     });
 
     return () => controller.abort();
-  }, [selectedClass, selectedCourse]);
+  }, [selectedClass]);
 
-  return { students, config, status, error };
+  return { students, courses, config, status, error };
 };
 
 /* --------------------------------------------------------------------------
    Main Component
    -------------------------------------------------------------------------- */
 const EnterScores = () => {
-  const { classes, courses, totalStudents, status: initStatus, reload: reloadInit } = useInitialData();
+  const { classes, totalStudents, status: initStatus, reload: reloadInit } = useInitialData();
   
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('');
@@ -110,15 +119,17 @@ const EnterScores = () => {
   const [submittingComponents, setSubmittingComponents] = useState({});
   const [toast, setToast] = useState({ type: '', message: '' });
 
-  const { students, config, status: selStatus, error: selError } = useSelectionData(selectedClass, selectedCourse);
+  const { students, courses, config, status: selStatus, error: selError } = useSelectionData(selectedClass, selectedCourse);
 
   const hasSelection = selectedClass && selectedCourse;
   const isLoadingSelection = selStatus === 'loading';
   const hasStudents = students.length > 0;
   const hasConfig = Boolean(config);
 
-  // Clear scores when selection changes
-  useEffect(() => { setScores({}); }, [selectedClass, selectedCourse]);
+  // Clear course selection and scores when class changes
+  useEffect(() => { setSelectedCourse(''); setScores({}); }, [selectedClass]);
+  // Clear scores when course changes
+  useEffect(() => { setScores({}); }, [selectedCourse]);
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -224,8 +235,22 @@ const EnterScores = () => {
             <div className="es-select-body">
               <label htmlFor="es-course" className="es-label">Select Course</label>
               <div className="es-select-wrapper">
-                <select id="es-course" className="es-select" value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)} disabled={initStatus === 'loading'}>
-                  <option value="">Choose a course</option>
+                <select
+                  id="es-course"
+                  className="es-select"
+                  value={selectedCourse}
+                  onChange={(e) => setSelectedCourse(e.target.value)}
+                  disabled={!selectedClass || selStatus === 'loading'}
+                >
+                  <option value="">
+                    {!selectedClass
+                      ? 'Select a class first'
+                      : selStatus === 'loading'
+                      ? 'Loading courses…'
+                      : courses.length === 0
+                      ? 'No courses assigned to this class'
+                      : 'Choose a course'}
+                  </option>
                   {courses.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
                 </select>
                 <FiChevronDown className="es-select-icon-arrow" />
@@ -260,7 +285,7 @@ const EnterScores = () => {
               </div>
               <div className="es-stat-card">
                 <div className="es-stat-icon es-stat-courses"><FiBookOpen size={20} /></div>
-                <div><h3>{courses.length}</h3><p>Total Courses</p></div>
+                <div><h3>{courses.length}</h3><p>{selectedClass ? 'Courses in Class' : 'Courses Assigned'}</p></div>
               </div>
               <div className="es-stat-card">
                 <div className="es-stat-icon es-stat-students"><FiUser size={20} /></div>

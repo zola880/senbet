@@ -64,6 +64,15 @@ const computeRanking = (students, courses, config, scores) => {
     student.overallTotal = overallSum;
   }
 
+  // Normalise overallTotal: divide by the number of courses so the final
+  // score stays within [0, 100] regardless of how many courses a class has.
+  // (Each courseWeightedTotal is already out of 100 because component
+  //  weightages must sum to 100, so dividing by courseCount gives an average.)
+  const courseCount = courses.length || 1; // guard against division by zero
+  Object.values(studentMap).forEach((s) => {
+    s.overallTotal = s.overallTotal / courseCount;
+  });
+
   // Convert to array and sort descending by overallTotal
   const rankingArray = Object.values(studentMap).map((s) => ({
     ...s,

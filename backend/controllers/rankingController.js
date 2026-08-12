@@ -36,9 +36,12 @@ const getClassRanking = async (req, res, next) => {
       .populate('course', 'name')
       .lean();
 
-    // Unique courses - this logic is preserved
-    const courseIds = [...new Set(assignments.map(a => a.course._id.toString()))];
-    const courses = assignments
+    // Guard: filter out assignments where the course was deleted (populate returns null)
+    const validAssignments = assignments.filter(a => a.course != null);
+
+    // Unique courses - derived from valid assignments only
+    const courseIds = [...new Set(validAssignments.map(a => a.course._id.toString()))];
+    const courses = validAssignments
       .map(a => a.course)
       .filter((v, i, a) => a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
@@ -96,8 +99,11 @@ const getStudentRanking = async (req, res, next) => {
       .populate('course', 'name')
       .lean();
 
-    const courseIds = [...new Set(assignments.map(a => a.course._id.toString()))];
-    const courses = assignments
+    // Guard: filter out assignments where the course was deleted (populate returns null)
+    const validAssignments = assignments.filter(a => a.course != null);
+
+    const courseIds = [...new Set(validAssignments.map(a => a.course._id.toString()))];
+    const courses = validAssignments
       .map(a => a.course)
       .filter((v, i, a) => a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 

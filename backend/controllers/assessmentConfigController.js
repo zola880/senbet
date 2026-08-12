@@ -16,14 +16,18 @@ const upsertConfig = async (req, res, next) => {
       });
     }
 
-    let config = await AssessmentConfig.findOne({ class: classId, academicYear });
+    // Query only by class — the schema enforces unique: true on class,
+    // so querying by class+academicYear would miss an existing config when
+    // the year changes and crash with a duplicate key error on create.
+    let config = await AssessmentConfig.findOne({ class: classId });
     if (config) {
+      config.academicYear = academicYear || config.academicYear;
       config.components = components;
       config.passMark = passMark || config.passMark;
       config.rankingPeriod = rankingPeriod || config.rankingPeriod;
       await config.save();
     } else {
-      config = await AssessmentConfig.create(req.body);
+      config = await AssessmentConfig.create({ class: classId, academicYear, components, passMark, rankingPeriod });
     }
 
     res.status(200).json({ success: true, data: config });
