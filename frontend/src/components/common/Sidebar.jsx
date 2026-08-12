@@ -1,50 +1,110 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-  FiHome, FiUsers, FiBook, FiGrid, FiClipboard, FiAward,
-  FiCalendar, FiLogOut, FiCheckSquare, FiFolder, FiBell,
+  FiHome, FiUsers, FiBook, FiGrid, FiEdit, FiClipboard,
+  FiCalendar, FiLogOut, FiFolder, FiBell,
   FiMenu, FiX, FiChevronRight, FiBarChart2,
 } from 'react-icons/fi';
+import {
+  RiTrophyLine,
+  RiTShirtLine,
+  RiCalendarCheckLine,
+} from 'react-icons/ri';
 
 import AuthContext from '../../context/AuthContext';
 import crestImage from '../../assets/L.png';
 import './Sidebar.css';
 
 /* --------------------------------------------------------------------------
-   Nav configuration — hoisted so it isn't rebuilt on every render
+   Grouped nav configuration — hoisted so it isn't rebuilt on every render
    -------------------------------------------------------------------------- */
-const NAV_LINKS = {
+const NAV_SECTIONS = {
   admin: [
-    { to: '/admin', icon: FiHome, label: 'Dashboard' },
-    { to: '/admin/users', icon: FiUsers, label: 'Users' },
-    { to: '/admin/classes', icon: FiGrid, label: 'Classes' },
-    { to: '/admin/courses', icon: FiBook, label: 'Courses' },
-    { to: '/admin/scores', icon: FiClipboard, label: 'Enter Scores' },
-    { to: '/admin/ranking', icon: FiAward, label: 'Ranking' },
-    { to: '/admin/attendance', icon: FiCheckSquare, label: 'Attendance' },
-    { to: '/admin/church-cloth', icon: FiCheckSquare, label: 'Church Cloth' },
-    { to: '/admin/practices', icon: FiCalendar, label: 'Practice Days' },
-    { to: '/admin/development', icon: FiBarChart2, label: 'Department Reports' },
+    {
+      title: 'Main',
+      links: [
+        { to: '/admin', icon: FiHome, label: 'Dashboard' },
+      ],
+    },
+    {
+      title: 'School Management',
+      links: [
+        { to: '/admin/users', icon: FiUsers, label: 'Users' },
+        { to: '/admin/classes', icon: FiGrid, label: 'Classes' },
+        { to: '/admin/courses', icon: FiBook, label: 'Courses' },
+      ],
+    },
+    {
+      title: 'Academics',
+      links: [
+        { to: '/admin/scores', icon: FiEdit, label: 'Score Entry' },
+        { to: '/admin/ranking', icon: RiTrophyLine, label: 'Ranking' },
+      ],
+    },
+    {
+      title: 'School Activities',
+      links: [
+        { to: '/admin/attendance', icon: RiCalendarCheckLine, label: 'Attendance' },
+        { to: '/admin/church-cloth', icon: RiTShirtLine, label: 'Church Cloth' },
+        { to: '/admin/practices', icon: FiCalendar, label: 'Practice Days' },
+        { to: '/admin/development', icon: FiBarChart2, label: 'Department Reports' },
+      ],
+    },
   ],
   teacher: [
-    { to: '/teacher', icon: FiHome, label: 'Dashboard' },
-    { to: '/teacher/courses', icon: FiBook, label: 'My Courses' },
-    { to: '/teacher/enter-marks', icon: FiClipboard, label: 'Enter Marks' },
-    { to: '/teacher/students', icon: FiUsers, label: 'Student List' },
-    { to: '/teacher/attendance', icon: FiCheckSquare, label: 'Take Attendance' },
-    { to: '/teacher/practices', icon: FiCalendar, label: 'Practice Days' },
+    {
+      title: 'Main',
+      links: [
+        { to: '/teacher', icon: FiHome, label: 'Dashboard' },
+      ],
+    },
+    {
+      title: 'Teaching',
+      links: [
+        { to: '/teacher/courses', icon: FiBook, label: 'My Courses' },
+        { to: '/teacher/enter-marks', icon: FiEdit, label: 'Enter Marks' },
+        { to: '/teacher/students', icon: FiUsers, label: 'Student List' },
+      ],
+    },
+    {
+      title: 'School Activities',
+      links: [
+        { to: '/teacher/attendance', icon: RiCalendarCheckLine, label: 'Take Attendance' },
+        { to: '/teacher/practices', icon: FiCalendar, label: 'Practice Days' },
+      ],
+    },
   ],
   student: [
-    { to: '/student', icon: FiHome, label: 'Dashboard' },
-    { to: '/student/marks', icon: FiClipboard, label: 'My Marks' },
-    { to: '/student/rank', icon: FiAward, label: 'My Rank' },
-    { to: '/student/attendance', icon: FiCheckSquare, label: 'My Attendance' },
-    { to: '/student/materials', icon: FiFolder, label: 'My Courses' },
-    { to: '/student/notifications', icon: FiBell, label: 'Notifications' },
-    { to: '/student/practices', icon: FiCalendar, label: 'Practice Days' },
+    {
+      title: 'Main',
+      links: [
+        { to: '/student', icon: FiHome, label: 'Dashboard' },
+      ],
+    },
+    {
+      title: 'Academics',
+      links: [
+        { to: '/student/marks', icon: FiClipboard, label: 'My Marks' },
+        { to: '/student/rank', icon: RiTrophyLine, label: 'My Rank' },
+        { to: '/student/materials', icon: FiFolder, label: 'My Courses' },
+      ],
+    },
+    {
+      title: 'School Life',
+      links: [
+        { to: '/student/attendance', icon: RiCalendarCheckLine, label: 'My Attendance' },
+        { to: '/student/notifications', icon: FiBell, label: 'Notifications' },
+        { to: '/student/practices', icon: FiCalendar, label: 'Practice Days' },
+      ],
+    },
   ],
   development: [
-    { to: '/development', icon: FiHome, label: 'ልማት Home' },
+    {
+      title: 'Main',
+      links: [
+        { to: '/development', icon: FiHome, label: 'ልማት Home' },
+      ],
+    },
   ],
 };
 
@@ -67,7 +127,7 @@ const Sidebar = ({ role }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const closeButtonRef = useRef(null);
 
-  const links = useMemo(() => NAV_LINKS[role] ?? [], [role]);
+  const sections = useMemo(() => NAV_SECTIONS[role] ?? [], [role]);
   const roleLabel = role ? role.toUpperCase() : '';
 
   const closeSidebar = useCallback(() => setIsOpen(false), []);
@@ -150,7 +210,7 @@ const Sidebar = ({ role }) => {
           <div className="sidebar-brand">
             <img src={crestImage} alt="" className="sidebar-crest" aria-hidden="true" />
             <h3 className="sidebar-title">
-              መስቀለብርሃን ሰንበት<br />ትምህርት ቤት
+              መስቀለብርሃን ንበት<br />ትምህርት ቤት
             </h3>
           </div>
           {roleLabel && <span className="sidebar-role-badge">{roleLabel}</span>}
@@ -166,21 +226,29 @@ const Sidebar = ({ role }) => {
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
-          {links.map((link) => {
-            const Icon = link.icon;
-            return (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.to === `/${role}`}
-                className={({ isActive }) => (isActive ? 'active' : '')}
-              >
-                <Icon size={19} aria-hidden="true" />
-                <span>{link.label}</span>
-                <FiChevronRight className="sidebar-nav-chevron" size={15} aria-hidden="true" />
-              </NavLink>
-            );
-          })}
+          {sections.map((section) => (
+            <div className="sidebar-section" key={section.title}>
+              <span className="sidebar-section-title">{section.title}</span>
+
+              {section.links.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.to === `/${role}`}
+                    className={({ isActive }) => (isActive ? 'active' : '')}
+                  >
+                    <span className="sidebar-link-icon" aria-hidden="true">
+                      <Icon size={18} />
+                    </span>
+                    <span className="sidebar-link-label">{link.label}</span>
+                    <FiChevronRight className="sidebar-nav-chevron" size={15} aria-hidden="true" />
+                  </NavLink>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="sidebar-footer">

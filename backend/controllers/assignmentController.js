@@ -126,9 +126,34 @@ const deleteAssignment = async (req, res, next) => {
   }
 };
 
+// @desc    Get single assignment by ID
+// @route   GET /api/v1/assignments/:id
+// @access  Private
+const getAssignment = async (req, res, next) => {
+  try {
+    const assignment = await TeacherAssignment.findById(req.params.id)
+      .populate('teacher', 'fullName email')
+      .populate('course', 'name code description')
+      .populate('class', 'name')
+      .lean();
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found',
+      });
+    }
+
+    res.status(200).json({ success: true, data: assignment });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createAssignment,
   getAssignments,
+  getAssignment, // Add the new method
   getTeacherAssignments,
   updateAssignment,
   deleteAssignment,

@@ -1,10 +1,227 @@
 /* ========== STUDENT ATTENDANCE REPORT (Admin) ========== */
-/* Global utilities: .form-grid, .btn, .spinner, .stats-grid, .stat-card,
-   .stat-icon, .stat-info, .table-container, table, th, td,
-   .attendance-badge (from global.css).
-   Component-specific styles below. */
 
-/* Report page title area */
+/* Error banner */
+.sar-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.sar-error-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.sar-error-close:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+/* Form grid */
+.sar-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sar-form-grid select,
+.sar-form-grid input[type="date"] {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fdfcf8;
+  font-size: 0.95rem;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.sar-form-grid select:focus,
+.sar-form-grid input[type="date"]:focus {
+  border-color: #d4a017;
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
+  outline: none;
+}
+
+.sar-form-grid select:disabled,
+.sar-form-grid input[type="date"]:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.sar-form-grid label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+/* Button */
+.sar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.sar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sar-btn-primary {
+  background: #d4a017;
+  color: white;
+}
+
+.sar-btn-primary:hover:not(:disabled) {
+  background: #b8900e;
+}
+
+.sar-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Stats grid */
+.sar-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sar-stat-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sar-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.sar-stat-icon.sar-present { background: #10b981; }
+.sar-stat-icon.sar-absent { background: #ef4444; }
+.sar-stat-icon.sar-late { background: #f59e0b; }
+.sar-stat-icon.sar-total { background: #6366f1; }
+
+.sar-stat-info h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.sar-stat-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Table */
+.sar-table-container {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sar-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sar-table th {
+  background: #f9fafb;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sar-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+}
+
+.sar-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sar-attendance-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.sar-attendance-badge.sar-present {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.sar-attendance-badge.sar-absent {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.sar-attendance-badge.sar-late {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.sar-attendance-badge.sar-unknown {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Legacy classes for backward compatibility */
 .attendance-report-header {
   display: flex;
   align-items: flex-end;
@@ -14,7 +231,6 @@
   margin-bottom: 1.5rem;
 }
 
-/* Filter bar (class + student selects + date range) */
 .attendance-report-filters {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -26,35 +242,33 @@
 .attendance-report-filters input[type="date"] {
   width: 100%;
   padding: 0.7rem 1rem;
-  border: 1px solid var(--border);
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   background: #fdfcf8;
   font-size: 0.95rem;
-  color: var(--text);
-  transition: var(--transition);
+  color: #374151;
+  transition: all 0.2s ease;
 }
 
 .attendance-report-filters select:focus,
 .attendance-report-filters input[type="date"]:focus {
-  border-color: var(--secondary);
+  border-color: #d4a017;
   box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
   outline: none;
 }
 
-/* Percentage text inside the attendance table */
 .attendance-pct {
   font-weight: 600;
   font-size: 0.9rem;
 }
 
-.attendance-pct.good   { color: var(--accent); }
+.attendance-pct.good   { color: #10b981; }
 .attendance-pct.warn   { color: #f59e0b; }
-.attendance-pct.danger { color: var(--danger); }
+.attendance-pct.danger { color: #ef4444; }
 
-/* Summary bar printed below the table */
 .attendance-report-note {
   font-size: 0.85rem;
-  color: var(--text-light);
+  color: #6b7280;
   margin-top: 1rem;
   font-style: italic;
 }
@@ -65,6 +279,9 @@
     align-items: stretch;
   }
   .attendance-report-filters {
+    grid-template-columns: 1fr;
+  }
+  .sar-stats-grid {
     grid-template-columns: 1fr;
   }
 }

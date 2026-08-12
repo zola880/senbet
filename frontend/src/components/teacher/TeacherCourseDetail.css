@@ -549,3 +549,24 @@
     animation: none;
   }
 }
+/* Assignment-specific styles */
+.tcd-badge--blue {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.tcd-assignment-info {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tcd-assignment-badge {
+  display: inline-block;
+  background: rgba(59, 130, 246, 0.1);
+  color: #1e40af;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}

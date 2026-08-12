@@ -111,7 +111,7 @@ const getStudentAttendance = async (req, res, next) => {
       );
       return {
         date: a.date,
-        class: a.class.name,
+        class: a.class ? a.class.name : 'Unknown Class', // Guard against null class
         status: record ? record.status : 'unknown',
       };
     });

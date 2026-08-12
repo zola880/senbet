@@ -89,15 +89,19 @@ const getTeacherDashboard = async (req, res, next) => {
 // @access  Private/Student
 const getStudentDashboard = async (req, res, next) => {
   try {
-    // OPTIMIZATION: Run both queries in parallel
-    // OPTIMIZATION: Added .lean() to both queries
+    // Guard against null class - if student has no class, they see no class-specific practices
+    const classCondition = req.user.class 
+      ? { class: req.user.class, assignedStudents: { $size: 0 } }
+      : { class: { $exists: false } }; // Match nothing if no class assigned
+
+    // OPTIMIZATION: Run all queries in parallel
+    // OPTIMIZATION: Added .lean() to all queries
     // OPTIMIZATION: Limited populate to only needed fields
-    // OPTIMIZATION: Added .select() to fetch only dashboard-relevant fields
-    const [practices, user] = await Promise.all([
+    const [practices, user, courses] = await Promise.all([
       PracticeSession.find({
         $or: [
           { assignedStudents: req.user.id },
-          { class: req.user.class, assignedStudents: { $size: 0 } },
+          classCondition,
         ],
       })
         .select('title practiceType startDate startTime recurring dayOfWeek supervisor')
@@ -109,6 +113,23 @@ const getStudentDashboard = async (req, res, next) => {
         .select('fullName email role rollNumber class')
         .populate('class', 'name')
         .lean(),
+      // Get courses for this student's class via teacher assignments
+      req.user.class 
+        ? TeacherAssignment.find({ class: req.user.class })
+            .populate('course', 'name code')
+            .select('course')
+            .lean()
+            .then(assignments => {
+              // Extract unique courses
+              const courseMap = new Map();
+              assignments.forEach(a => {
+                if (a.course) {
+                  courseMap.set(a.course._id.toString(), a.course);
+                }
+              });
+              return Array.from(courseMap.values());
+            })
+        : Promise.resolve([]),
     ]);
 
     res.status(200).json({
@@ -116,6 +137,7 @@ const getStudentDashboard = async (req, res, next) => {
       data: {
         user,
         upcomingPractices: practices,
+        courses, // Now includes student's courses for correct count
       },
     });
   } catch (error) {

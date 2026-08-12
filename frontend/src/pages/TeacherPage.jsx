@@ -7,6 +7,7 @@ import TeacherDashboard from '../components/teacher/TeacherDashboard';
 import EnterMarks from '../components/teacher/EnterMarks';
 import StudentList from '../components/teacher/StudentList';
 import TeacherCourseDetail from '../components/teacher/TeacherCourseDetail';
+import TeacherPractices from '../components/teacher/TeacherPractices';
 
 // Common pages
 import TakeAttendance from '../components/common/TakeAttendance';
@@ -14,7 +15,6 @@ import CoursesPage from '../components/common/CoursesPage';
 
 // Reused pages
 import StudentDetail from '../components/admin/StudentDetail';
-import PracticeCalendar from '../components/student/PracticeCalendar';
 
 /**
  * Teacher layout with sidebar + routed content.
@@ -31,6 +31,7 @@ const TeacherPage = () => (
         {/* Courses */}
         <Route path="courses" element={<CoursesPage />} />
         <Route path="courses/:id" element={<TeacherCourseDetail />} />
+        <Route path="courses/assignment/:assignmentId" element={<TeacherCourseDetail />} />
 
         {/* Academic */}
         <Route path="enter-marks" element={<EnterMarks />} />
@@ -41,7 +42,7 @@ const TeacherPage = () => (
 
         {/* Attendance & Schedule */}
         <Route path="attendance" element={<TakeAttendance />} />
-        <Route path="practices" element={<PracticeCalendar />} />
+        <Route path="practices" element={<TeacherPractices />} />
 
         {/* Fallback for unknown teacher routes */}
         <Route path="*" element={<TeacherDashboard />} />

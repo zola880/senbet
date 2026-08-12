@@ -59,12 +59,13 @@ const TABS = [
 ];
 
 const TeacherCourseDetail = () => {
-  const { id } = useParams();
+  const { id, assignmentId } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const fileInputRef = useRef(null);
 
   const [course, setCourse] = useState(null);
+  const [assignment, setAssignment] = useState(null);
   const [materials, setMaterials] = useState([]);
   const [activeTab, setActiveTab] = useState('material');
   
@@ -76,8 +77,12 @@ const TeacherCourseDetail = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [courseError, setCourseError] = useState(null);
 
+  // Determine if we're using assignment-based or course-based routing
+  const isAssignmentBased = Boolean(assignmentId);
+  const resourceId = assignmentId || id;
+
   useEffect(() => {
-    if (!id) return;
+    if (!resourceId) return;
     let isMounted = true;
 
     const loadData = async () => {
@@ -86,19 +91,56 @@ const TeacherCourseDetail = () => {
       setCourseError(null);
 
       try {
-        const courseRes = await api.get(`/api/v1/courses/${id}`);
-        if (isMounted) setCourse(courseRes.data?.data || null);
+        if (isAssignmentBased) {
+          // Load assignment and course data
+          const assignmentRes = await api.get(`/api/v1/assignments/${assignmentId}`);
+          const assignmentData = assignmentRes.data?.data;
+          
+          if (isMounted) {
+            setAssignment(assignmentData);
+            setCourse(assignmentData?.course || null);
+          }
+        } else {
+          // Load course data directly (legacy route)
+          const courseRes = await api.get(`/api/v1/courses/${id}`);
+          if (isMounted) {
+            setCourse(courseRes.data?.data || null);
+            setAssignment(null);
+          }
+        }
       } catch (err) {
-        if (isMounted) setCourseError('Unable to load course details.');
+        if (isMounted) {
+          setCourseError(
+            isAssignmentBased 
+              ? 'Unable to load assignment details.' 
+              : 'Unable to load course details.'
+          );
+        }
       } finally {
         if (isMounted) setIsFetchingCourse(false);
       }
 
       try {
-        const matRes = await api.get(`/api/v1/courses/${id}/materials`);
+        const materialsEndpoint = isAssignmentBased
+          ? `/api/v1/assignments/${assignmentId}/materials`
+          : `/api/v1/courses/${id}/materials`;
+          
+        const matRes = await api.get(materialsEndpoint);
         if (isMounted) setMaterials(matRes.data?.data || []);
       } catch (err) {
         console.error('Failed to load materials:', err);
+        // If assignment-specific materials endpoint doesn't exist, fall back to course materials
+        if (isAssignmentBased && err.response?.status === 404) {
+          try {
+            const courseId = assignment?.course?._id || course?._id;
+            if (courseId) {
+              const fallbackRes = await api.get(`/api/v1/courses/${courseId}/materials`);
+              if (isMounted) setMaterials(fallbackRes.data?.data || []);
+            }
+          } catch (fallbackErr) {
+            console.error('Fallback materials load failed:', fallbackErr);
+          }
+        }
       } finally {
         if (isMounted) setIsFetchingMaterials(false);
       }
@@ -106,7 +148,7 @@ const TeacherCourseDetail = () => {
 
     loadData();
     return () => { isMounted = false; };
-  }, [id]);
+  }, [resourceId, isAssignmentBased, assignmentId, id, assignment?.course?._id, course?._id]);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -123,7 +165,11 @@ const TeacherCourseDetail = () => {
 
     setIsUploading(true);
     try {
-      await api.post(`/api/v1/courses/${id}/materials`, fd, {
+      const uploadEndpoint = isAssignmentBased
+        ? `/api/v1/assignments/${assignmentId}/materials`
+        : `/api/v1/courses/${id}/materials`;
+        
+      await api.post(uploadEndpoint, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
@@ -133,7 +179,10 @@ const TeacherCourseDetail = () => {
       if (fileInputRef.current) fileInputRef.current.value = '';
       
       // Refresh list
-      const matRes = await api.get(`/api/v1/courses/${id}/materials`);
+      const materialsEndpoint = isAssignmentBased
+        ? `/api/v1/assignments/${assignmentId}/materials`
+        : `/api/v1/courses/${id}/materials`;
+      const matRes = await api.get(materialsEndpoint);
       setMaterials(matRes.data?.data || []);
     } catch (err) {
       alert(err.response?.data?.message || 'Upload failed. Please try again.');
@@ -145,7 +194,11 @@ const TeacherCourseDetail = () => {
   const handleDelete = async (materialId) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     try {
-      await api.delete(`/api/v1/courses/${id}/materials/${materialId}`);
+      const deleteEndpoint = isAssignmentBased
+        ? `/api/v1/assignments/${assignmentId}/materials/${materialId}`
+        : `/api/v1/courses/${id}/materials/${materialId}`;
+        
+      await api.delete(deleteEndpoint);
       setMaterials((prev) => prev.filter((m) => m._id !== materialId));
     } catch (err) {
       alert('Failed to delete item.');
@@ -186,11 +239,23 @@ const TeacherCourseDetail = () => {
             <h1 className="tcd-title">{course.name}</h1>
             <div className="tcd-meta">
               {course.code && <span className="tcd-badge">Code: {course.code}</span>}
+              {isAssignmentBased && assignment?.class && (
+                <span className="tcd-badge tcd-badge--blue">
+                  Class: {assignment.class.name}
+                </span>
+              )}
               <span className="tcd-badge tcd-badge--gold">
                 <ActiveTabIcon size={14} /> {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}s
               </span>
             </div>
             {course.description && <p className="tcd-desc">{course.description}</p>}
+            {isAssignmentBased && (
+              <div className="tcd-assignment-info">
+                <span className="tcd-assignment-badge">
+                  Assignment-specific materials for {assignment?.class?.name || 'this class'}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </header>

@@ -22,7 +22,7 @@ import './MyCourses.css';
 const MANAGE_ROUTE_BASE = '/teacher/courses';
 
 const buildManageRoute = (assignment) =>
-  `${MANAGE_ROUTE_BASE}/${assignment?.course?._id || assignment?._id}`;
+  `${MANAGE_ROUTE_BASE}/assignment/${assignment?._id}`;
 
 const normalizeAssignments = (payload) =>
   Array.isArray(payload) ? payload.filter((item) => item && item._id) : [];

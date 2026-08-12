@@ -12,24 +12,85 @@ const PracticeScheduler = () => {
   const [endTime, setEndTime] = useState('10:00');
   const [classId, setClassId] = useState('');
   const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.get('/api/v1/practices').then(r=>setPractices(r.data.data));
-    api.get('/api/v1/classes').then(r=>setClasses(r.data.data));
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [practicesRes, classesRes] = await Promise.all([
+        api.get('/api/v1/practices'),
+        api.get('/api/v1/classes')
+      ]);
+      setPractices(Array.isArray(practicesRes.data?.data) ? practicesRes.data.data : []);
+      setClasses(Array.isArray(classesRes.data?.data) ? classesRes.data.data : []);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setError('Failed to load practices and classes. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    await api.post('/api/v1/practices', {
-      title, practiceType, recurring,
-      dayOfWeek: recurring ? dayOfWeek : null,
-      startTime, endTime,
-      class: classId || null,
-    });
-    setTitle(''); setPracticeType('');
-    const res = await api.get('/api/v1/practices');
-    setPractices(res.data.data);
+    try {
+      await api.post('/api/v1/practices', {
+        title, practiceType, recurring,
+        dayOfWeek: recurring ? dayOfWeek : null,
+        startTime, endTime,
+        class: classId || null,
+      });
+      setTitle(''); 
+      setPracticeType('');
+      await loadData(); // Reload data
+    } catch (err) {
+      console.error('Failed to create practice:', err);
+      setError('Failed to create practice. Please try again.');
+    }
   };
+
+  const formatSchedule = (practice) => {
+    const timeRange = `${practice.startTime || '—'}-${practice.endTime || '—'}`;
+    if (practice.recurring) {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return `Every ${days[practice.dayOfWeek] || 'Unknown'} ${timeRange}`;
+    }
+    const dateStr = practice.startDate 
+      ? new Date(practice.startDate).toLocaleDateString() 
+      : 'Date not set';
+    return `${dateStr} ${timeRange}`;
+  };
+
+  if (loading) {
+    return (
+      <div>
+        <h2 className="page-title">Practice Day Scheduler</h2>
+        <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+          Loading practices and classes...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <h2 className="page-title">Practice Day Scheduler</h2>
+        <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+          <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>
+          <button className="btn btn-primary" onClick={loadData}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -54,10 +115,24 @@ const PracticeScheduler = () => {
         <button className="btn btn-primary">Schedule</button>
       </form>
       <div className="table-container">
-        <table>
-          <thead><tr><th>Title</th><th>Type</th><th>Schedule</th></tr></thead>
-          <tbody>{practices.map(p=><tr key={p._id}><td>{p.title}</td><td>{p.practiceType}</td><td>{p.recurring ? `Every ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][p.dayOfWeek]}` : new Date(p.startDate).toLocaleDateString()} {p.startTime}-{p.endTime}</td></tr>)}</tbody>
-        </table>
+        {practices.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+            No practices scheduled yet.
+          </div>
+        ) : (
+          <table>
+            <thead><tr><th>Title</th><th>Type</th><th>Schedule</th></tr></thead>
+            <tbody>
+              {practices.map(p => (
+                <tr key={p._id}>
+                  <td>{p.title || '—'}</td>
+                  <td>{p.practiceType || '—'}</td>
+                  <td>{formatSchedule(p)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
