@@ -12,7 +12,6 @@ import {
   FiArrowRight,
   FiBook,
   FiCalendar,
-  FiCheckCircle,
   FiInbox,
   FiRefreshCw,
 } from 'react-icons/fi';
@@ -78,6 +77,50 @@ const useTeacherDashboardData = () => {
 const numberFormatter = new Intl.NumberFormat();
 const formatNumber = (value) => numberFormatter.format(Number(value) || 0);
 
+// Real Ge'ez numerals (1-99). Used as structural markers throughout the
+// dashboard instead of generic dots/icons — the numbering system belongs
+// to the same script as the rest of the page's content.
+const GEEZ_ONES = ['', '፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰', '፱'];
+const GEEZ_TENS = ['', '፲', '፳', '፴', '፵', '፶', '፷', '፸', '፹', '፺'];
+const toGeez = (n) => {
+  if (!Number.isInteger(n) || n <= 0) return String(n);
+  if (n > 99) return String(n);
+  const tens = Math.floor(n / 10);
+  const ones = n % 10;
+  return `${GEEZ_TENS[tens]}${GEEZ_ONES[ones]}`;
+};
+
+/* --------------------------------------------------------------------------
+   Corner ornament — a quiet manuscript-page flourish, placed at each
+   corner of the illuminated frame around the dashboard content.
+   -------------------------------------------------------------------------- */
+const CornerOrnament = ({ className = '' }) => (
+  <svg
+    className={`td-corner-svg ${className}`}
+    viewBox="0 0 60 60"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path d="M2 22 V2 H22" stroke="currentColor" strokeWidth="1.4" />
+    <path
+      d="M2 30 V10"
+      stroke="currentColor"
+      strokeWidth="1"
+      opacity="0.45"
+    />
+    <path
+      d="M30 2 H10"
+      stroke="currentColor"
+      strokeWidth="1"
+      opacity="0.45"
+    />
+    <g transform="translate(2,2)">
+      <path d="M0 -5 V5 M-5 0 H5" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="0" cy="0" r="1.6" fill="currentColor" />
+    </g>
+  </svg>
+);
+
 /* --------------------------------------------------------------------------
    Scripture verses — rotate on a timer inside the illuminated ribbon.
    Add / edit verses here; the ribbon adapts to however many you provide.
@@ -109,7 +152,8 @@ const VERSE_INTERVAL_MS = 7000;
 
 /* --------------------------------------------------------------------------
    Illuminated verse ribbon — the dashboard's signature element.
-   Fades between scripture verses; pauses politely on hover/focus.
+   Fades between scripture verses; pauses politely on hover/focus; the
+   cross mark flickers like candlelight rather than a mechanical pulse.
    -------------------------------------------------------------------------- */
 const VerseRibbon = () => {
   const [index, setIndex] = useState(0);
@@ -152,13 +196,10 @@ const VerseRibbon = () => {
         <span className="td-verse-source">{verse.source}</span>
       </div>
 
-      <div className="td-verse-dots" aria-hidden="true">
-        {VERSES.map((v, i) => (
-          <span
-            key={v.source}
-            className={`td-verse-dot ${i === index ? 'is-active' : ''}`}
-          />
-        ))}
+      <div className="td-verse-counter" aria-hidden="true">
+        <span className="td-verse-counter-current">{toGeez(index + 1)}</span>
+        <span className="td-verse-counter-sep">⁄</span>
+        <span className="td-verse-counter-total">{toGeez(VERSES.length)}</span>
       </div>
     </div>
   );
@@ -252,11 +293,21 @@ const TeacherDashboard = () => {
       <div className="td-overlay" aria-hidden="true" />
 
       <main className="td-content">
+        <CornerOrnament className="td-corner--tl" />
+        <CornerOrnament className="td-corner--tr" />
+        <CornerOrnament className="td-corner--bl" />
+        <CornerOrnament className="td-corner--br" />
+
         <header className="td-header">
           <span className="td-eyebrow">Teacher Portal</span>
           <h1 className="td-title">
             የ ቤሮ ደብረ ምህረት ቅድስት ስላሴ ወ ቅዱስ ላሊበላ
           </h1>
+          <div className="td-title-divider" aria-hidden="true">
+            <span className="td-title-divider-line" />
+            <span className="td-title-divider-mark">✦</span>
+            <span className="td-title-divider-line" />
+          </div>
           <p className="td-subtitle-am">መስቀለ ብርሃን ስንበት ትምህርት ቤት</p>
           <p className="td-subtitle-en">{welcomeMessage}</p>
         </header>
@@ -351,10 +402,10 @@ const TeacherDashboard = () => {
               </ul>
             ) : data.assignments.length > 0 ? (
               <ul className="td-assignments-list">
-                {data.assignments.map((assignment) => (
+                {data.assignments.map((assignment, idx) => (
                   <li key={assignment._id} className="td-assignment-item">
-                    <span className="td-assignment-icon" aria-hidden="true">
-                      <FiCheckCircle size={18} strokeWidth={2} />
+                    <span className="td-assignment-badge" aria-hidden="true">
+                      {toGeez(idx + 1)}
                     </span>
                     <span className="td-assignment-details">
                       <span className="td-assignment-course">
