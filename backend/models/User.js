@@ -11,28 +11,30 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: function() {
-        // Email is required for admin and teacher, but optional for student
         return this.role !== 'student';
       },
       unique: true,
+      sparse: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address'],
     },
     studentId: {
       type: String,
       unique: true,
-      sparse: true, // Only enforced for non-null values
+      sparse: true,
       match: [/^SS-\d{4}$/, 'Student ID must be in format SS-XXXX (e.g., SS-0001)'],
     },
     pinHash: {
       type: String,
-      select: false, // Don't include pinHash in queries by default
+      select: false,
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function() {
+        return this.role !== 'student';
+      },
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false, // don't return password by default
+      select: false,
     },
     role: {
       type: String,
@@ -44,18 +46,12 @@ const userSchema = new mongoose.Schema(
       enum: ['active', 'inactive', 'suspended'],
       default: 'active',
     },
-    // Student-specific fields
     class: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Class',
       default: null,
     },
-    rollNumber: {
-      type: String,
-      default: null,
-    },
-    phone: String, // Parent/Guardian phone
-    // Teacher-specific fields (optional)
+    phone: String,
     qualifications: String,
     profileImage: String,
   },
@@ -64,19 +60,16 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Index for faster student login lookup
 userSchema.index({ studentId: 1 });
+userSchema.index({ email: 1 });
 
-// Hash PIN before saving if modified
 userSchema.pre('save', async function (next) {
-  // Hash password if modified
-  if (this.isModified('password')) {
+  if (this.isModified('password') && this.password) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }
   
-  // Hash PIN if modified (for students)
-  if (this.isModified('pinHash')) {
+  if (this.isModified('pinHash') && this.pinHash) {
     const salt = await bcrypt.genSalt(10);
     this.pinHash = await bcrypt.hash(this.pinHash, salt);
   }
@@ -84,22 +77,19 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Compare entered password with hashed password
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Compare entered PIN with hashed PIN
 userSchema.methods.matchPin = async function (enteredPin) {
+  if (!this.pinHash) return false;
   return await bcrypt.compare(enteredPin, this.pinHash);
 };
 
-// Helper to check if user is a student
 userSchema.methods.isStudent = function () {
   return this.role === 'student';
 };
 
-// Helper to check if user account is active
 userSchema.methods.isActive = function () {
   return this.accountStatus === 'active';
 };

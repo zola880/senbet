@@ -3,36 +3,29 @@ const User = require('../models/User');
 const { jwtSecret, jwtExpire } = require('../config/env');
 const crypto = require('crypto');
 
-// Generate JWT
 const generateToken = (id) => {
   return jwt.sign({ id }, jwtSecret, {
     expiresIn: jwtExpire,
   });
 };
 
-// Generate unique student ID (SS-XXXX format)
 const generateStudentId = async () => {
-  // Try to get the highest existing student ID
   const latestUser = await User.findOne({ studentId: { $ne: null } })
     .sort({ studentId: -1 })
     .select('studentId')
     .lean();
   
   if (latestUser && latestUser.studentId) {
-    // Extract number from SS-XXXX
     const lastNumber = parseInt(latestUser.studentId.split('-')[1], 10);
     const newNumber = lastNumber + 1;
     return `SS-${String(newNumber).padStart(4, '0')}`;
   } else {
-    // Start from SS-0001
     return 'SS-0001';
   }
 };
 
-// Generate secure 6-digit PIN
 const generatePin = () => {
-  // Use crypto for cryptographically secure random number
-  const buffer = crypto.randomBytes(3); // 3 bytes = 24 bits, enough for 6 digits
+  const buffer = crypto.randomBytes(3);
   const num = buffer.readUIntBE(0, 3) % 1000000;
   return String(num).padStart(6, '0');
 };
@@ -48,13 +41,10 @@ const register = async (req, res, next) => {
       password,
       role,
       class: classId,
-      rollNumber,
       qualifications,
       phone,
     } = req.body;
 
-    // OPTIMIZATION: Added .select('_id') and .lean() for existence check
-    // We only need to know if user exists, don't need full document
     const existingUser = await User.findOne({ email })
       .select('_id')
       .lean();
@@ -72,12 +62,10 @@ const register = async (req, res, next) => {
       password,
       role,
       class: classId || null,
-      rollNumber,
       qualifications,
       phone,
     });
 
-    // Remove password from output
     user.password = undefined;
 
     res.status(201).json({
@@ -90,7 +78,7 @@ const register = async (req, res, next) => {
   }
 };
 
-// @desc    Register a new student (Admin only) with auto-generated Student ID and PIN
+// @desc    Register a new student (Admin only) with auto-generated Student ID
 // @route   POST /api/v1/auth/register/student
 // @access  Private/Admin
 const registerStudent = async (req, res, next) => {
@@ -98,29 +86,20 @@ const registerStudent = async (req, res, next) => {
     const {
       fullName,
       class: classId,
-      rollNumber,
       phone,
     } = req.body;
 
-    // Generate unique student ID
     const studentId = await generateStudentId();
-    
-    // Generate secure 6-digit PIN
-    const pin = generatePin();
 
-    // Create user with student ID and PIN hash
     const user = await User.create({
       fullName,
       studentId,
-      pinHash: pin, // Will be hashed by pre-save middleware
       role: 'student',
       class: classId || null,
-      rollNumber: rollNumber || null,
       phone: phone || null,
       accountStatus: 'active',
     });
 
-    // Remove sensitive data from output
     user.password = undefined;
     user.pinHash = undefined;
 
@@ -130,10 +109,8 @@ const registerStudent = async (req, res, next) => {
         studentId: user.studentId,
         fullName: user.fullName,
         class: user.class,
-        rollNumber: user.rollNumber,
         phone: user.phone,
         role: user.role,
-        createdPin: pin, // Show PIN to admin only
       },
       token: generateToken(user._id),
     });
@@ -156,14 +133,18 @@ const generateStudentPin = async (req, res, next) => {
       });
     }
 
-    // Generate new secure 6-digit PIN
+    if (user.role !== 'student') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is not a student',
+      });
+    }
+
     const newPin = generatePin();
     
-    // Update the user's PIN hash
     user.pinHash = newPin;
     await user.save();
 
-    // Remove sensitive data from output
     user.password = undefined;
     user.pinHash = undefined;
 
@@ -194,8 +175,6 @@ const login = async (req, res, next) => {
       });
     }
 
-    // NO .lean() here - we MUST keep full Mongoose document to call user.matchPassword()
-    // This is a Mongoose instance method that doesn't exist on plain objects
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({
@@ -204,7 +183,6 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Check account status
     if (user.accountStatus !== 'active') {
       return res.status(403).json({
         success: false,
@@ -220,7 +198,6 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Remove password
     user.password = undefined;
 
     res.status(200).json({
@@ -247,7 +224,6 @@ const studentLogin = async (req, res, next) => {
       });
     }
 
-    // Find user by studentId and include pinHash
     const user = await User.findOne({ studentId }).select('+pinHash');
     
     if (!user) {
@@ -257,7 +233,6 @@ const studentLogin = async (req, res, next) => {
       });
     }
 
-    // Check role - must be a student
     if (user.role !== 'student') {
       return res.status(403).json({
         success: false,
@@ -265,7 +240,6 @@ const studentLogin = async (req, res, next) => {
       });
     }
 
-    // Check account status
     if (user.accountStatus !== 'active') {
       return res.status(403).json({
         success: false,
@@ -273,7 +247,13 @@ const studentLogin = async (req, res, next) => {
       });
     }
 
-    // Verify PIN
+    if (!user.pinHash) {
+      return res.status(401).json({
+        success: false,
+        message: 'PIN not set. Please contact administrator.',
+      });
+    }
+
     const isMatch = await user.matchPin(pin);
     if (!isMatch) {
       return res.status(401).json({
@@ -282,7 +262,6 @@ const studentLogin = async (req, res, next) => {
       });
     }
 
-    // Remove sensitive data
     user.password = undefined;
     user.pinHash = undefined;
 
@@ -301,8 +280,6 @@ const studentLogin = async (req, res, next) => {
 // @access  Private
 const getMe = async (req, res, next) => {
   try {
-    // OPTIMIZATION: Added .lean() for plain object (faster serialization)
-    // OPTIMIZATION: Limited populate to only 'name' field (frontend only shows class name)
     const user = await User.findById(req.user.id)
       .populate('class', 'name')
       .lean();

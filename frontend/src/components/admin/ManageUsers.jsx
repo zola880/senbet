@@ -67,16 +67,10 @@ const useUsersAndClasses = () => {
 const DEPARTMENTS = [
   { key: 'none', label: 'General Admin', color: '#7a6c6d' },
   { key: 'development', label: 'Development (ልማት)', color: '#2e7d32' },
-  // Future departments can be added here:
-  // { key: 'finance', label: 'Finance', color: '#1976d2' },
-  // { key: 'library', label: 'Library', color: '#7b1fa2' },
 ];
 
 /* --------------------------------------------------------------------------
-   Locale-aware sorting. Students are registered with Amharic names, so they
-   need to be ordered by the Ge'ez ("am") collation rather than raw code
-   point / Latin order — otherwise the list looks shuffled to an admin
-   scanning for a name. Falls back gracefully if a runtime lacks "am" data.
+   Locale-aware sorting
    -------------------------------------------------------------------------- */
 const getCollator = (locale) => {
   try {
@@ -92,14 +86,13 @@ const getCollator = (locale) => {
 const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, defaultRole }) => {
   const [formData, setFormData] = useState({
     fullName: '', email: '', password: '', role: defaultRole,
-    class: '', rollNumber: '', qualifications: '', department: 'none',
+    class: '', qualifications: '', department: 'none',
   });
   const inputRef = useRef(null);
   const isEditing = Boolean(initialData);
 
   useEffect(() => {
     if (isOpen) {
-      // Determine department based on role
       const dept = initialData?.role === 'development' ? 'development' : 'none';
       
       setFormData({
@@ -108,7 +101,6 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
         password: '',
         role: initialData?.role === 'development' ? 'admin' : (initialData?.role || defaultRole),
         class: initialData?.class?._id || initialData?.class || '',
-        rollNumber: initialData?.rollNumber || '',
         qualifications: initialData?.qualifications || '',
         department: dept,
       });
@@ -129,12 +121,10 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
     e.preventDefault();
     const payload = { ...formData };
     
-    // If admin with department='development', set role to 'development'
     if (payload.role === 'admin' && payload.department === 'development') {
       payload.role = 'development';
     }
     
-    // Remove department field before sending (backend doesn't need it)
     delete payload.department;
     
     if (isEditing && !payload.password) delete payload.password;
@@ -183,8 +173,8 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
               <div className="mu-info-box">
                 <FiLock size={16} />
                 <div>
-                  <strong>Student ID and PIN will be auto-generated</strong>
-                  <p>After creating the student, you'll receive a unique Student ID (format: SS-XXXX) and a secure 6-digit PIN to provide to the student/parent.</p>
+                  <strong>Student ID will be auto-generated</strong>
+                  <p>After creating the student, a unique Student ID (format: SS-XXXX) will be assigned. You'll need to generate a 6-digit PIN from the actions column afterward — the PIN will be shown only once.</p>
                 </div>
               </div>
             </div>
@@ -194,7 +184,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
             <div className="mu-form-group">
               <label className="mu-label">Student ID</label>
               <input type="text" className="mu-input" value={initialData?.studentId || '—'} disabled />
-              <small className="mu-hint">Student ID cannot be changed. Use the PIN reset button to generate a new PIN.</small>
+              <small className="mu-hint">Student ID cannot be changed. Use the PIN button in the actions column to generate or reset the PIN.</small>
             </div>
           )}
 
@@ -220,21 +210,15 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
           )}
 
           {formData.role === 'student' && (
-            <>
-              <div className="mu-form-group">
-                <label htmlFor="mu-class" className="mu-label">Class</label>
-                <select id="mu-class" name="class" className="mu-select" value={formData.class} onChange={handleChange}>
-                  <option value="">Select Class</option>
-                  {classes.map((c) => (
-                    <option key={c._id} value={c._id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mu-form-group">
-                <label htmlFor="mu-rollNumber" className="mu-label">Roll Number</label>
-                <input id="mu-rollNumber" name="rollNumber" type="text" className="mu-input" placeholder="e.g., 101" value={formData.rollNumber} onChange={handleChange} />
-              </div>
-            </>
+            <div className="mu-form-group">
+              <label htmlFor="mu-class" className="mu-label">Class</label>
+              <select id="mu-class" name="class" className="mu-select" value={formData.class} onChange={handleChange} required>
+                <option value="">Select Class</option>
+                {classes.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
           )}
 
           {formData.role === 'teacher' && (
@@ -278,18 +262,12 @@ const ManageUsers = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
 
-  // Deferring the query keeps the input feeling instant even while a large
-  // roster is being re-filtered and re-sorted in the background.
   const deferredQuery = useDeferredValue(searchQuery);
-
   const tabRefs = useRef({});
 
   const isLoading = status === 'loading';
   const hasUsers = users.length > 0;
 
-  // Students are registered in Amharic, so they're ordered with the Ge'ez
-  // collator; other roles (mostly Latin-script names/emails) use the
-  // default collator. Recomputed only when the active tab changes.
   const collator = useMemo(
     () => getCollator(activeTab === 'student' ? 'am' : undefined),
     [activeTab]
@@ -299,43 +277,34 @@ const ManageUsers = () => {
     const q = deferredQuery.trim().toLowerCase();
 
     const matches = users.filter((u) => {
-      // Role filter
       if (activeTab === 'admin') {
-        // Include both 'admin' and 'development' roles in the admin tab
         if (u.role !== 'admin' && u.role !== 'development') return false;
       } else {
         if (u.role !== activeTab) return false;
       }
 
-      // Department filter (admin tab only)
       if (activeTab === 'admin' && departmentFilter !== 'all') {
         if (departmentFilter === 'none' && u.role !== 'admin') return false;
         if (departmentFilter === 'development' && u.role !== 'development') return false;
       }
 
-      // Class filter (student tab only)
       if (activeTab === 'student' && classFilter !== 'all') {
         const studentClassId = u.class?._id || u.class;
         if (studentClassId !== classFilter) return false;
       }
 
-      // Search filter
       if (!q) return true;
       return (
         u.fullName?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
         u.studentId?.toLowerCase().includes(q) ||
-        u.class?.name?.toLowerCase().includes(q) ||
-        u.rollNumber?.toLowerCase().includes(q)
+        u.class?.name?.toLowerCase().includes(q)
       );
     });
 
     return matches.sort((a, b) => collator.compare(a.fullName || '', b.fullName || ''));
   }, [users, activeTab, departmentFilter, classFilter, deferredQuery, collator]);
 
-  // For the student tab, group the already-sorted list by first letter so
-  // a long roster reads like an alphabetized register instead of one long
-  // scroll — the grouping simply follows the Amharic sort order above.
   const groupedStudents = useMemo(() => {
     if (activeTab !== 'student') return null;
     const groups = [];
@@ -371,22 +340,18 @@ const ManageUsers = () => {
         await api.put(`/api/v1/users/${editingUser._id}`, payload);
         showToast('success', 'User updated successfully.');
       } else {
-        // Use the student registration endpoint for students
         if (payload.role === 'student') {
           const response = await api.post('/api/v1/auth/register/student', payload);
-          const { studentId, createdPin } = response.data.data;
+          const { studentId } = response.data.data;
           
-          // Show success with generated credentials
-          showToast('success', `Student created successfully! Student ID: ${studentId}`);
+          showToast('success', `Student created! ID: ${studentId}`);
           
-          // Show the credentials to the admin in an alert
           setTimeout(() => {
             alert(
               `Student Created Successfully!\n\n` +
               `Name: ${payload.fullName}\n` +
-              `Student ID: ${studentId}\n` +
-              `PIN: ${createdPin}\n\n` +
-              `Please provide these credentials to the student/parent.`
+              `Student ID: ${studentId}\n\n` +
+              `Next: Click the lock (PIN) button on this student's row to generate their 6-digit login PIN.`
             );
           }, 100);
         } else {
@@ -403,22 +368,33 @@ const ManageUsers = () => {
     }
   };
 
-  const handleGeneratePin = async (studentId) => {
-    if (!window.confirm('Are you sure you want to generate a new PIN for this student? The old PIN will be invalidated.')) return;
+  const handleGeneratePin = async (studentId, studentName, hasPin) => {
+    const actionWord = hasPin ? 'Reset' : 'Generate';
+    const warning = hasPin
+      ? 'The old PIN will be invalidated immediately.'
+      : 'The PIN will be shown only once. Copy it and give it to the student/parent.';
+
+    if (!window.confirm(`${actionWord} PIN for ${studentName}?\n\n${warning}`)) return;
     
     try {
       const response = await api.post(`/api/v1/auth/generate-pin/${studentId}`);
       const newPin = response.data.data.createdPin;
       
-      showToast('success', `New PIN generated: ${newPin}`);
+      showToast('success', `New PIN generated for ${studentName}`);
       
-      // Show the PIN to the admin via a prompt so they can provide it to the student/parent
       setTimeout(() => {
-        // Note: In production, you might want a better UI for this
-        alert(`New PIN for ${editingUser?.fullName || ''}: ${newPin}\n\nPlease provide this to the student/parent.`);
+        alert(
+          `${hasPin ? 'New' : 'Generated'} PIN for ${studentName}:\n\n` +
+          `${newPin}\n\n` +
+          `⚠️ IMPORTANT: This PIN cannot be retrieved again.\n` +
+          `Please copy it now and provide it to the student/parent.`
+        );
       }, 100);
+
+      // Reload so hasPin status updates in the table
+      reload();
     } catch (err) {
-      showToast('error', err.response?.data?.message || 'Failed to generate new PIN.');
+      showToast('error', err.response?.data?.message || 'Failed to generate PIN.');
     }
   };
 
@@ -465,7 +441,7 @@ const ManageUsers = () => {
     return <span className="mu-dept-badge mu-dept-badge--general">General</span>;
   };
 
-  const studentColumnCount = 5; // Name, Email, Class, Roll No, Actions
+  const studentColumnCount = 4;
 
   const renderUserRow = (u) => (
     <tr
@@ -488,16 +464,15 @@ const ManageUsers = () => {
       )}
       {activeTab === 'admin' && <td data-label="Department">{getDepartmentBadge(u)}</td>}
       {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
-      {activeTab === 'student' && <td data-label="Roll No">{u.rollNumber || '—'}</td>}
       {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
       <td data-label="Actions" className="mu-td-actions">
         <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
           {activeTab === 'student' && u.role === 'student' && (
             <button
-              className="mu-icon-btn mu-icon-btn--pin"
-              onClick={(e) => { e.stopPropagation(); setEditingUser(u); handleGeneratePin(u._id); }}
-              title="Reset PIN"
-              aria-label={`Reset PIN for ${u.fullName}`}
+              className={`mu-icon-btn mu-icon-btn--pin ${!u.hasPin ? 'mu-icon-btn--pin-empty' : ''}`}
+              onClick={(e) => { e.stopPropagation(); handleGeneratePin(u._id, u.fullName, u.hasPin); }}
+              title={u.hasPin ? "Reset PIN" : "Generate PIN"}
+              aria-label={`${u.hasPin ? 'Reset' : 'Generate'} PIN for ${u.fullName}`}
             >
               <FiLock size={16} />
             </button>
@@ -642,7 +617,6 @@ const ManageUsers = () => {
                   <th>{activeTab === 'student' ? 'Student ID' : 'Email'}</th>
                   {activeTab === 'admin' && <th>Department</th>}
                   {activeTab === 'student' && <th>Class</th>}
-                  {activeTab === 'student' && <th>Roll No</th>}
                   {activeTab === 'teacher' && <th>Qualifications</th>}
                   <th className="mu-th-actions">Actions</th>
                 </tr>
