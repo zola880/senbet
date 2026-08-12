@@ -355,3 +355,73 @@
     transform: none;
   }
 }
+/* Login Tabs */
+.login-tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  background: var(--login-bg);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--login-ink-soft);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.login-tab:hover {
+  background: rgba(109, 26, 40, 0.05);
+  color: var(--login-maroon);
+}
+
+.login-tab--active {
+  background: linear-gradient(135deg, var(--login-maroon), var(--login-maroon-deep));
+  color: white;
+  box-shadow: 0 2px 8px rgba(109, 26, 40, 0.3);
+}
+
+/* Login Hint */
+.login-hint {
+  font-size: 0.75rem;
+  color: var(--login-ink-soft);
+  margin-top: 0.25rem;
+}
+
+.login-label-icon {
+  color: var(--login-maroon);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .login-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .login-title {
+    font-size: 1.5rem;
+  }
+
+  .login-toast {
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
+    top: 1rem;
+  }
+
+  .login-tabs {
+    flex-direction: column;
+  }
+}

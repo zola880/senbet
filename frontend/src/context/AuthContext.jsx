@@ -33,13 +33,21 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
+  const studentLogin = async (studentId, pin) => {
+    const res = await api.post('/api/v1/auth/student/login', { studentId, pin });
+    localStorage.setItem('token', res.data.token);
+    setToken(res.data.token);
+    setUser(res.data.data);
+    return res.data;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
   };
 
-  const value = useMemo(() => ({ user, token, login, logout, loading }), [user, token, loading]);
+  const value = useMemo(() => ({ user, token, login, studentLogin, logout, loading }), [user, token, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

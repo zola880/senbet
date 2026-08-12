@@ -728,3 +728,12 @@
     transform: none;
   }
 }
+/* PIN Reset Button */
+.mu-icon-btn--pin {
+  color: #f59e0b;
+}
+
+.mu-icon-btn--pin:hover {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}

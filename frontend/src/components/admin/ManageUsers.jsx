@@ -6,6 +6,7 @@ import {
   FiEdit2,
   FiFilter,
   FiInbox,
+  FiLock,
   FiPlus,
   FiRefreshCw,
   FiSearch,
@@ -357,6 +358,25 @@ const ManageUsers = () => {
     }
   };
 
+  const handleGeneratePin = async (studentId) => {
+    if (!window.confirm('Are you sure you want to generate a new PIN for this student? The old PIN will be invalidated.')) return;
+    
+    try {
+      const response = await api.post(`/api/v1/auth/generate-pin/${studentId}`);
+      const newPin = response.data.data.createdPin;
+      
+      showToast('success', `New PIN generated: ${newPin}`);
+      
+      // Show the PIN to the admin via a prompt so they can provide it to the student/parent
+      setTimeout(() => {
+        // Note: In production, you might want a better UI for this
+        alert(`New PIN for ${editingUser?.fullName || ''}: ${newPin}\n\nPlease provide this to the student/parent.`);
+      }, 100);
+    } catch (err) {
+      showToast('error', err.response?.data?.message || 'Failed to generate new PIN.');
+    }
+  };
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
     try {
@@ -423,6 +443,16 @@ const ManageUsers = () => {
       {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
       <td data-label="Actions" className="mu-td-actions">
         <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
+          {activeTab === 'student' && u.role === 'student' && (
+            <button
+              className="mu-icon-btn mu-icon-btn--pin"
+              onClick={(e) => { e.stopPropagation(); setEditingUser(u); handleGeneratePin(u._id); }}
+              title="Reset PIN"
+              aria-label={`Reset PIN for ${u.fullName}`}
+            >
+              <FiLock size={16} />
+            </button>
+          )}
           <button className="mu-icon-btn" onClick={() => openEditModal(u)} title="Edit" aria-label={`Edit ${u.fullName}`}>
             <FiEdit2 size={16} />
           </button>
