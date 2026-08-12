@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { FiAlertTriangle, FiCheckCircle, FiLock, FiMail, FiX, FiUser } from 'react-icons/fi';
 
 import AuthContext from '../context/AuthContext';
+import api from '../services/api';
 import bgImage from '../assets/L.png';
 import './Login.css';
 
@@ -15,7 +16,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
   
-  const { user, token, login, logout, loading } = useContext(AuthContext);
+  const { user, login, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -55,17 +56,20 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Make a direct API call for student login
-      const api = (await import('../services/api')).default;
       const response = await api.post('/api/v1/auth/student/login', {
         studentId: studentId.trim(),
         pin: pin.trim(),
       });
 
-      // Store token and user in AuthContext
-      localStorage.setItem('token', response.data.token);
-      // The AuthContext will fetch the user on next render
+      const { token, data: userData } = response.data;
 
+      // Store token in localStorage
+      localStorage.setItem('token', token);
+      
+      // Manually trigger a re-fetch of user data by calling login with dummy values
+      // This will update the AuthContext state
+      await login(userData.email || 'student@temp.com', 'dummy');
+      
       showToast('success', 'Login successful! Redirecting...');
       
       const from = location.state?.from || '/student';
@@ -104,13 +108,12 @@ const Login = () => {
         <header className="login-header">
           <div className="login-logo" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 2v20M2 12h20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M12 2v20M2 12h20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" transform="rotate(45 12 12)"/>
             </svg>
           </div>
           <h1 className="login-title">መስቀለ ብርሃን ሰንበት ትምህርት ቤት</h1>
-          <p className="login-subtitle"> Church Sunday School Management System</p>
+          <p className="login-subtitle">Church Sunday School Management System</p>
         </header>
 
         {/* Login Type Tabs */}
@@ -185,10 +188,12 @@ const Login = () => {
                   className="login-input"
                   placeholder="e.g., SS-0001"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
+                  onChange={(e) => setStudentId(e.target.value.toUpperCase())}
                   required
                   autoComplete="off"
                   disabled={isLoading}
+                  pattern="SS-\d{4}"
+                  title="Format: SS-XXXX (e.g., SS-0001)"
                 />
                 <small className="login-hint">Format: SS-XXXX (e.g., SS-0001)</small>
               </div>
@@ -204,11 +209,13 @@ const Login = () => {
                   className="login-input"
                   placeholder="Enter your 6-digit PIN"
                   value={pin}
-                  onChange={(e) => setPin(e.target.value)}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   required
                   autoComplete="off"
                   disabled={isLoading}
-                  maxLength={6}
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  title="6-digit PIN"
                 />
                 <small className="login-hint">Your 6-digit PIN</small>
               </div>
