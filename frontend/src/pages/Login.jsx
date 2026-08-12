@@ -16,7 +16,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
   
-  const { user, login, loading } = useContext(AuthContext);
+  const { user, setUser, setToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,11 +37,17 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const data = await login(email, password);
+      const response = await api.post('/api/v1/auth/login', { email, password });
+      const { token, data: userData } = response.data;
+
+      // Store token and update context
+      localStorage.setItem('token', token);
+      setToken(token);
+      setUser(userData);
+
       showToast('success', 'Login successful! Redirecting...');
       
-      // Check if there's a saved location to redirect back to
-      const from = location.state?.from || `/${data.data.role}`;
+      const from = location.state?.from || `/${userData.role}`;
       setTimeout(() => navigate(from, { replace: true }), 800);
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
@@ -63,13 +69,11 @@ const Login = () => {
 
       const { token, data: userData } = response.data;
 
-      // Store token in localStorage
+      // Store token and update context
       localStorage.setItem('token', token);
-      
-      // Manually trigger a re-fetch of user data by calling login with dummy values
-      // This will update the AuthContext state
-      await login(userData.email || 'student@temp.com', 'dummy');
-      
+      setToken(token);
+      setUser(userData);
+
       showToast('success', 'Login successful! Redirecting...');
       
       const from = location.state?.from || '/student';
