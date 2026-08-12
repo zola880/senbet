@@ -17,11 +17,9 @@ const generateStudentId = async () => {
   
   if (latestUser && latestUser.studentId) {
     const lastNumber = parseInt(latestUser.studentId.split('-')[1], 10);
-    const newNumber = lastNumber + 1;
-    return `SS-${String(newNumber).padStart(4, '0')}`;
-  } else {
-    return 'SS-0001';
+    return `SS-${String(lastNumber + 1).padStart(4, '0')}`;
   }
+  return 'SS-0001';
 };
 
 const generatePin = () => {
@@ -30,9 +28,11 @@ const generatePin = () => {
   return String(num).padStart(6, '0');
 };
 
-// @desc    Register a new user (Admin only)
-// @route   POST /api/v1/auth/register
-// @access  Private/Admin
+// SAFE check: treat missing accountStatus as active (for old users)
+const isAccountActive = (user) => {
+  return !user.accountStatus || user.accountStatus === 'active';
+};
+
 const register = async (req, res, next) => {
   try {
     const {
@@ -78,9 +78,6 @@ const register = async (req, res, next) => {
   }
 };
 
-// @desc    Register a new student (Admin only) with auto-generated Student ID
-// @route   POST /api/v1/auth/register/student
-// @access  Private/Admin
 const registerStudent = async (req, res, next) => {
   try {
     const {
@@ -113,7 +110,7 @@ const registerStudent = async (req, res, next) => {
         class: user.class,
         phone: user.phone,
         role: user.role,
-        createdPin: newPin, // Return the PIN so admin can provide it
+        createdPin: newPin,
       },
       token: generateToken(user._id),
     });
@@ -122,9 +119,6 @@ const registerStudent = async (req, res, next) => {
   }
 };
 
-// @desc    Generate PIN for existing student (Admin only)
-// @route   POST /api/v1/auth/generate-pin/:id
-// @access  Private/Admin
 const generateStudentPin = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
@@ -164,9 +158,6 @@ const generateStudentPin = async (req, res, next) => {
   }
 };
 
-// @desc    Login user with email + password (Admin/Teacher)
-// @route   POST /api/v1/auth/login
-// @access  Public
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -186,7 +177,6 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Prevent students from logging in via email/password
     if (user.role === 'student') {
       return res.status(403).json({
         success: false,
@@ -194,7 +184,8 @@ const login = async (req, res, next) => {
       });
     }
 
-    if (user.accountStatus !== 'active') {
+    // FIXED: Use safe check that works for old users
+    if (!isAccountActive(user)) {
       return res.status(403).json({
         success: false,
         message: 'Account is not active',
@@ -221,9 +212,6 @@ const login = async (req, res, next) => {
   }
 };
 
-// @desc    Login student with Student ID + PIN
-// @route   POST /api/v1/auth/student/login
-// @access  Public
 const studentLogin = async (req, res, next) => {
   try {
     const { studentId, pin } = req.body;
@@ -251,7 +239,8 @@ const studentLogin = async (req, res, next) => {
       });
     }
 
-    if (user.accountStatus !== 'active') {
+    // FIXED: Use safe check that works for old users
+    if (!isAccountActive(user)) {
       return res.status(403).json({
         success: false,
         message: 'Account is not active',
@@ -286,9 +275,6 @@ const studentLogin = async (req, res, next) => {
   }
 };
 
-// @desc    Get current logged-in user
-// @route   GET /api/v1/auth/me
-// @access  Private
 const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id)

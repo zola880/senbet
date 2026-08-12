@@ -1,44 +1,45 @@
-import { createContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (token) {
-        try {
-          const res = await api.get('/api/v1/auth/me');
-          setUser(res.data.data);
-        } catch (err) {
-          localStorage.removeItem('token');
-          setToken(null);
-          setUser(null);
-        }
+      if (!token) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        const response = await api.get('/api/v1/auth/me');
+        setUser(response.data.data);
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchUser();
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await api.post('/api/v1/auth/login', { email, password });
-    localStorage.setItem('token', res.data.token);
-    setToken(res.data.token);
-    setUser(res.data.data);
-    return res.data;
-  };
-
-  const studentLogin = async (studentId, pin) => {
-    const res = await api.post('/api/v1/auth/student/login', { studentId, pin });
-    localStorage.setItem('token', res.data.token);
-    setToken(res.data.token);
-    setUser(res.data.data);
-    return res.data;
+    const response = await api.post('/api/v1/auth/login', { email, password });
+    const { token: newToken, data: userData } = response.data;
+    
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    setUser(userData);
+    
+    return response.data;
   };
 
   const logout = () => {
@@ -47,7 +48,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const value = useMemo(() => ({ user, token, login, studentLogin, logout, loading }), [user, token, loading]);
+  const value = {
+    user,
+    setUser,
+    token,
+    setToken,
+    loading,
+    login,
+    logout,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

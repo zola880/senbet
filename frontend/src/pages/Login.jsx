@@ -12,7 +12,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [studentId, setStudentId] = useState('');
   const [pin, setPin] = useState('');
-  const [activeTab, setActiveTab] = useState('admin'); // 'admin' or 'student'
+  const [activeTab, setActiveTab] = useState('admin');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
   
@@ -20,7 +20,6 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user) {
       navigate(`/${user.role}`, { replace: true });
@@ -38,11 +37,10 @@ const Login = () => {
 
     try {
       const response = await api.post('/api/v1/auth/login', { email, password });
-      const { token, data: userData } = response.data;
+      const { token: newToken, data: userData } = response.data;
 
-      // Store token and update context
-      localStorage.setItem('token', token);
-      setToken(token);
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
       setUser(userData);
 
       showToast('success', 'Login successful! Redirecting...');
@@ -52,7 +50,6 @@ const Login = () => {
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
       showToast('error', message);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -67,11 +64,10 @@ const Login = () => {
         pin: pin.trim(),
       });
 
-      const { token, data: userData } = response.data;
+      const { token: newToken, data: userData } = response.data;
 
-      // Store token and update context
-      localStorage.setItem('token', token);
-      setToken(token);
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
       setUser(userData);
 
       showToast('success', 'Login successful! Redirecting...');
@@ -81,18 +77,15 @@ const Login = () => {
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed. Please check your Student ID and PIN.';
       showToast('error', message);
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <section className="login-page">
-      {/* Background */}
       <div className="login-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
       <div className="login-overlay" aria-hidden="true" />
 
-      {/* Toast Notification */}
       {toast.message && (
         <div className={`login-toast login-toast--${toast.type}`} role="alert">
           {toast.type === 'success' ? <FiCheckCircle size={18} /> : <FiAlertTriangle size={18} />}
@@ -107,7 +100,6 @@ const Login = () => {
         </div>
       )}
 
-      {/* Login Card */}
       <div className="login-card">
         <header className="login-header">
           <div className="login-logo" aria-hidden="true">
@@ -120,7 +112,6 @@ const Login = () => {
           <p className="login-subtitle">Church Sunday School Management System</p>
         </header>
 
-        {/* Login Type Tabs */}
         <div className="login-tabs" role="tablist" aria-label="Login type">
           <button
             className={`login-tab ${activeTab === 'admin' ? 'login-tab--active' : ''}`}
