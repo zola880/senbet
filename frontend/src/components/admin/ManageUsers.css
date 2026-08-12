@@ -409,6 +409,7 @@
   /* Show only specific cells in mobile layout */
   .mu-table td[data-label="Name"],
   .mu-table td[data-label="Email"],
+  .mu-table td[data-label="Student ID"],
   .mu-table td[data-label="Department"],
   .mu-table td[data-label="Class"],
   .mu-table td[data-label="Roll No"],
@@ -445,7 +446,8 @@
   }
 
   /* Email cell: compact, below name */
-  .mu-table td[data-label="Email"] {
+  .mu-table td[data-label="Email"],
+  .mu-table td[data-label="Student ID"] {
     font-size: 0.82rem;
     color: var(--mu-ink-soft);
     margin-bottom: 0.65rem;
@@ -523,6 +525,10 @@
 
   .mu-table td[data-label="Actions"] .mu-icon-btn:first-child::before {
     content: 'Edit';
+  }
+
+  .mu-table td[data-label="Actions"] .mu-icon-btn.mu-icon-btn--pin::before {
+    content: 'PIN';
   }
 
   .mu-table td[data-label="Actions"] .mu-icon-btn:last-child::before {
@@ -667,6 +673,11 @@
     padding-left: calc(40px + 0.75rem);
   }
 
+  .mu-table td[data-label="Student ID"] {
+    font-size: 0.78rem;
+    padding-left: calc(40px + 0.75rem);
+  }
+
   .mu-table td[data-label="Class"],
   .mu-table td[data-label="Roll No"],
   .mu-table td[data-label="Qualifications"] {
@@ -736,4 +747,37 @@
 .mu-icon-btn--pin:hover {
   background: rgba(245, 158, 11, 0.1);
   color: #d97706;
+}
+
+/* Info Box for Student ID/PIN Auto-generation Message */
+.mu-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  color: var(--mu-ink);
+}
+
+.mu-info-box svg {
+  flex-shrink: 0;
+  color: #f59e0b;
+  margin-top: 0.15rem;
+}
+
+.mu-info-box strong {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--mu-maroon);
+  margin-bottom: 0.35rem;
+}
+
+.mu-info-box p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--mu-ink-soft);
 }

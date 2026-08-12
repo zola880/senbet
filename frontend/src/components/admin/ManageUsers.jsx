@@ -162,17 +162,41 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
             <input id="mu-fullName" ref={inputRef} name="fullName" type="text" className="mu-input" placeholder="e.g., ዮሐንስ ተስፋዬ / John Doe" value={formData.fullName} onChange={handleChange} required />
           </div>
           
-          <div className="mu-form-group">
-            <label htmlFor="mu-email" className="mu-label">Email <span className="mu-required">*</span></label>
-            <input id="mu-email" name="email" type="email" className="mu-input" placeholder="user@example.com" value={formData.email} onChange={handleChange} required />
-          </div>
+          {formData.role !== 'student' && (
+            <>
+              <div className="mu-form-group">
+                <label htmlFor="mu-email" className="mu-label">Email <span className="mu-required">*</span></label>
+                <input id="mu-email" name="email" type="email" className="mu-input" placeholder="user@example.com" value={formData.email} onChange={handleChange} required />
+              </div>
 
-          <div className="mu-form-group">
-            <label htmlFor="mu-password" className="mu-label">
-              Password {isEditing && <span className="mu-optional">(leave blank to keep current)</span>}
-            </label>
-            <input id="mu-password" name="password" type="password" className="mu-input" placeholder="••••••••" value={formData.password} onChange={handleChange} required={!isEditing} />
-          </div>
+              <div className="mu-form-group">
+                <label htmlFor="mu-password" className="mu-label">
+                  Password {isEditing && <span className="mu-optional">(leave blank to keep current)</span>}
+                </label>
+                <input id="mu-password" name="password" type="password" className="mu-input" placeholder="••••••••" value={formData.password} onChange={handleChange} required={!isEditing} />
+              </div>
+            </>
+          )}
+
+          {formData.role === 'student' && !isEditing && (
+            <div className="mu-form-group">
+              <div className="mu-info-box">
+                <FiLock size={16} />
+                <div>
+                  <strong>Student ID and PIN will be auto-generated</strong>
+                  <p>After creating the student, you'll receive a unique Student ID (format: SS-XXXX) and a secure 6-digit PIN to provide to the student/parent.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {formData.role === 'student' && isEditing && (
+            <div className="mu-form-group">
+              <label className="mu-label">Student ID</label>
+              <input type="text" className="mu-input" value={initialData?.studentId || '—'} disabled />
+              <small className="mu-hint">Student ID cannot be changed. Use the PIN reset button to generate a new PIN.</small>
+            </div>
+          )}
 
           <div className="mu-form-group">
             <label htmlFor="mu-role" className="mu-label">Role</label>
@@ -300,6 +324,7 @@ const ManageUsers = () => {
       return (
         u.fullName?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
+        u.studentId?.toLowerCase().includes(q) ||
         u.class?.name?.toLowerCase().includes(q) ||
         u.rollNumber?.toLowerCase().includes(q)
       );
@@ -346,8 +371,28 @@ const ManageUsers = () => {
         await api.put(`/api/v1/users/${editingUser._id}`, payload);
         showToast('success', 'User updated successfully.');
       } else {
-        await api.post('/api/v1/auth/register', payload);
-        showToast('success', 'User created successfully.');
+        // Use the student registration endpoint for students
+        if (payload.role === 'student') {
+          const response = await api.post('/api/v1/auth/register/student', payload);
+          const { studentId, createdPin } = response.data.data;
+          
+          // Show success with generated credentials
+          showToast('success', `Student created successfully! Student ID: ${studentId}`);
+          
+          // Show the credentials to the admin in an alert
+          setTimeout(() => {
+            alert(
+              `Student Created Successfully!\n\n` +
+              `Name: ${payload.fullName}\n` +
+              `Student ID: ${studentId}\n` +
+              `PIN: ${createdPin}\n\n` +
+              `Please provide these credentials to the student/parent.`
+            );
+          }, 100);
+        } else {
+          await api.post('/api/v1/auth/register', payload);
+          showToast('success', 'User created successfully.');
+        }
       }
       closeModal();
       reload();
@@ -436,7 +481,11 @@ const ManageUsers = () => {
           <span className="mu-user-name">{u.fullName}</span>
         </div>
       </td>
-      <td data-label="Email">{u.email}</td>
+      {activeTab === 'student' ? (
+        <td data-label="Student ID">{u.studentId || '—'}</td>
+      ) : (
+        <td data-label="Email">{u.email}</td>
+      )}
       {activeTab === 'admin' && <td data-label="Department">{getDepartmentBadge(u)}</td>}
       {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
       {activeTab === 'student' && <td data-label="Roll No">{u.rollNumber || '—'}</td>}
@@ -590,7 +639,7 @@ const ManageUsers = () => {
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Email</th>
+                  <th>{activeTab === 'student' ? 'Student ID' : 'Email'}</th>
                   {activeTab === 'admin' && <th>Department</th>}
                   {activeTab === 'student' && <th>Class</th>}
                   {activeTab === 'student' && <th>Roll No</th>}
