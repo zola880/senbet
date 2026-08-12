@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiAlertTriangle,
@@ -70,6 +70,20 @@ const DEPARTMENTS = [
   // { key: 'finance', label: 'Finance', color: '#1976d2' },
   // { key: 'library', label: 'Library', color: '#7b1fa2' },
 ];
+
+/* --------------------------------------------------------------------------
+   Locale-aware sorting. Students are registered with Amharic names, so they
+   need to be ordered by the Ge'ez ("am") collation rather than raw code
+   point / Latin order — otherwise the list looks shuffled to an admin
+   scanning for a name. Falls back gracefully if a runtime lacks "am" data.
+   -------------------------------------------------------------------------- */
+const getCollator = (locale) => {
+  try {
+    return new Intl.Collator(locale, { sensitivity: 'base', numeric: true });
+  } catch {
+    return new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
+  }
+};
 
 /* --------------------------------------------------------------------------
    Modal Component
@@ -144,7 +158,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
         <form onSubmit={handleSubmit} className="mu-form">
           <div className="mu-form-group">
             <label htmlFor="mu-fullName" className="mu-label">Full Name <span className="mu-required">*</span></label>
-            <input id="mu-fullName" ref={inputRef} name="fullName" type="text" className="mu-input" placeholder="e.g., John Doe" value={formData.fullName} onChange={handleChange} required />
+            <input id="mu-fullName" ref={inputRef} name="fullName" type="text" className="mu-input" placeholder="e.g., ዮሐንስ ተስፋዬ / John Doe" value={formData.fullName} onChange={handleChange} required />
           </div>
           
           <div className="mu-form-group">
@@ -233,41 +247,87 @@ const ManageUsers = () => {
   const [activeTab, setActiveTab] = useState('admin');
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [classFilter, setClassFilter] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
-  
+
+  // Deferring the query keeps the input feeling instant even while a large
+  // roster is being re-filtered and re-sorted in the background.
+  const deferredQuery = useDeferredValue(searchQuery);
+
   const tabRefs = useRef({});
 
   const isLoading = status === 'loading';
   const hasUsers = users.length > 0;
 
-  const filteredUsers = users.filter((u) => {
-    // Role filter
-    if (activeTab === 'admin') {
-      // Include both 'admin' and 'development' roles in the admin tab
-      if (u.role !== 'admin' && u.role !== 'development') return false;
-    } else {
-      if (u.role !== activeTab) return false;
-    }
-    
-    // Department filter (only for admin tab)
-    if (activeTab === 'admin' && departmentFilter !== 'all') {
-      if (departmentFilter === 'none' && u.role !== 'admin') return false;
-      if (departmentFilter === 'development' && u.role !== 'development') return false;
-    }
-    
-    // Search filter
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      u.fullName?.toLowerCase().includes(q) ||
-      u.email?.toLowerCase().includes(q) ||
-      u.class?.name?.toLowerCase().includes(q) ||
-      u.rollNumber?.toLowerCase().includes(q)
-    );
-  });
+  // Students are registered in Amharic, so they're ordered with the Ge'ez
+  // collator; other roles (mostly Latin-script names/emails) use the
+  // default collator. Recomputed only when the active tab changes.
+  const collator = useMemo(
+    () => getCollator(activeTab === 'student' ? 'am' : undefined),
+    [activeTab]
+  );
+
+  const filteredUsers = useMemo(() => {
+    const q = deferredQuery.trim().toLowerCase();
+
+    const matches = users.filter((u) => {
+      // Role filter
+      if (activeTab === 'admin') {
+        // Include both 'admin' and 'development' roles in the admin tab
+        if (u.role !== 'admin' && u.role !== 'development') return false;
+      } else {
+        if (u.role !== activeTab) return false;
+      }
+
+      // Department filter (admin tab only)
+      if (activeTab === 'admin' && departmentFilter !== 'all') {
+        if (departmentFilter === 'none' && u.role !== 'admin') return false;
+        if (departmentFilter === 'development' && u.role !== 'development') return false;
+      }
+
+      // Class filter (student tab only)
+      if (activeTab === 'student' && classFilter !== 'all') {
+        const studentClassId = u.class?._id || u.class;
+        if (studentClassId !== classFilter) return false;
+      }
+
+      // Search filter
+      if (!q) return true;
+      return (
+        u.fullName?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.class?.name?.toLowerCase().includes(q) ||
+        u.rollNumber?.toLowerCase().includes(q)
+      );
+    });
+
+    return matches.sort((a, b) => collator.compare(a.fullName || '', b.fullName || ''));
+  }, [users, activeTab, departmentFilter, classFilter, deferredQuery, collator]);
+
+  // For the student tab, group the already-sorted list by first letter so
+  // a long roster reads like an alphabetized register instead of one long
+  // scroll — the grouping simply follows the Amharic sort order above.
+  const groupedStudents = useMemo(() => {
+    if (activeTab !== 'student') return null;
+    const groups = [];
+    let currentLetter = null;
+    let currentGroup = null;
+
+    filteredUsers.forEach((u) => {
+      const letter = (u.fullName || '').trim().charAt(0) || '—';
+      if (letter !== currentLetter) {
+        currentLetter = letter;
+        currentGroup = { letter, items: [] };
+        groups.push(currentGroup);
+      }
+      currentGroup.items.push(u);
+    });
+
+    return groups;
+  }, [activeTab, filteredUsers]);
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -326,6 +386,12 @@ const ManageUsers = () => {
     tabRefs.current[nextTab.key]?.focus();
   };
 
+  const handleTabClick = (key) => {
+    setActiveTab(key);
+    setDepartmentFilter('all');
+    setClassFilter('all');
+  };
+
   const getDepartmentBadge = (user) => {
     if (user.role === 'development') {
       const dept = DEPARTMENTS.find(d => d.key === 'development');
@@ -333,6 +399,43 @@ const ManageUsers = () => {
     }
     return <span className="mu-dept-badge mu-dept-badge--general">General</span>;
   };
+
+  const studentColumnCount = 5; // Name, Email, Class, Roll No, Actions
+
+  const renderUserRow = (u) => (
+    <tr
+      key={u._id}
+      className={activeTab === 'student' ? 'mu-row--clickable' : ''}
+      onClick={() => handleRowClick(u._id)}
+      tabIndex={activeTab === 'student' ? 0 : undefined}
+      onKeyDown={(e) => { if (activeTab === 'student' && e.key === 'Enter') handleRowClick(u._id); }}
+    >
+      <td data-label="Name">
+        <div className="mu-user-cell">
+          <span className="mu-avatar" aria-hidden="true">{u.fullName?.charAt(0).toUpperCase() || '?'}</span>
+          <span className="mu-user-name">{u.fullName}</span>
+        </div>
+      </td>
+      <td data-label="Email">{u.email}</td>
+      {activeTab === 'admin' && <td data-label="Department">{getDepartmentBadge(u)}</td>}
+      {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
+      {activeTab === 'student' && <td data-label="Roll No">{u.rollNumber || '—'}</td>}
+      {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
+      <td data-label="Actions" className="mu-td-actions">
+        <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
+          <button className="mu-icon-btn" onClick={() => openEditModal(u)} title="Edit" aria-label={`Edit ${u.fullName}`}>
+            <FiEdit2 size={16} />
+          </button>
+          <button className="mu-icon-btn mu-icon-btn--danger" onClick={() => handleDelete(u._id, u.fullName)} title="Delete" aria-label={`Delete ${u.fullName}`}>
+            <FiTrash2 size={16} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+
+  const hasActiveFilters =
+    Boolean(searchQuery) || departmentFilter !== 'all' || classFilter !== 'all';
 
   return (
     <section className="mu-page">
@@ -365,7 +468,7 @@ const ManageUsers = () => {
               aria-selected={activeTab === tab.key}
               tabIndex={activeTab === tab.key ? 0 : -1}
               className={`mu-tab ${activeTab === tab.key ? 'mu-tab--active' : ''}`}
-              onClick={() => { setActiveTab(tab.key); setDepartmentFilter('all'); }}
+              onClick={() => handleTabClick(tab.key)}
               onKeyDown={(e) => handleTabKeyDown(e, index)}
             >
               {tab.label}
@@ -385,7 +488,7 @@ const ManageUsers = () => {
               aria-label="Search users"
             />
           </div>
-          
+
           {activeTab === 'admin' && (
             <div className="mu-filter-wrap">
               <FiFilter size={14} className="mu-filter-icon" />
@@ -402,11 +505,36 @@ const ManageUsers = () => {
               </select>
             </div>
           )}
-          
+
+          {activeTab === 'student' && (
+            <div className="mu-filter-wrap">
+              <FiFilter size={14} className="mu-filter-icon" />
+              <select
+                className="mu-filter-select"
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                aria-label="Filter by class"
+              >
+                <option value="all">All Classes</option>
+                {classes.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <button className="mu-btn mu-btn--primary" onClick={openNewModal}>
             <FiPlus size={18} /> Add {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
           </button>
         </div>
+
+        {status === 'success' && hasUsers && filteredUsers.length > 0 && (
+          <p className="mu-result-summary">
+            {filteredUsers.length} {filteredUsers.length === 1 ? activeTab : `${activeTab}s`}
+            {activeTab === 'student' && ' · sorted ሀ–ፐ'}
+            {hasActiveFilters && ' · filtered'}
+          </p>
+        )}
 
         {isLoading && !hasUsers ? (
           <div className="mu-state" role="status">
@@ -424,7 +552,7 @@ const ManageUsers = () => {
           <div className="mu-state">
             <FiInbox size={40} />
             <h3>No {activeTab}s found</h3>
-            <p>{searchQuery || departmentFilter !== 'all' ? 'Try adjusting your filters.' : `Click "Add" to create a new ${activeTab}.`}</p>
+            <p>{hasActiveFilters ? 'Try adjusting your search, department, or class filters.' : `Click "Add" to create a new ${activeTab}.`}</p>
           </div>
         ) : (
           <div className="mu-table-wrapper">
@@ -441,37 +569,19 @@ const ManageUsers = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((u) => (
-                  <tr
-                    key={u._id}
-                    className={activeTab === 'student' ? 'mu-row--clickable' : ''}
-                    onClick={() => handleRowClick(u._id)}
-                    tabIndex={activeTab === 'student' ? 0 : undefined}
-                    onKeyDown={(e) => { if (activeTab === 'student' && e.key === 'Enter') handleRowClick(u._id); }}
-                  >
-                    <td data-label="Name">
-                      <div className="mu-user-cell">
-                        <span className="mu-avatar" aria-hidden="true">{u.fullName?.charAt(0).toUpperCase() || '?'}</span>
-                        <span className="mu-user-name">{u.fullName}</span>
-                      </div>
-                    </td>
-                    <td data-label="Email">{u.email}</td>
-                    {activeTab === 'admin' && <td data-label="Department">{getDepartmentBadge(u)}</td>}
-                    {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
-                    {activeTab === 'student' && <td data-label="Roll No">{u.rollNumber || '—'}</td>}
-                    {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
-                    <td data-label="Actions" className="mu-td-actions">
-                      <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
-                        <button className="mu-icon-btn" onClick={() => openEditModal(u)} title="Edit" aria-label={`Edit ${u.fullName}`}>
-                          <FiEdit2 size={16} />
-                        </button>
-                        <button className="mu-icon-btn mu-icon-btn--danger" onClick={() => handleDelete(u._id, u.fullName)} title="Delete" aria-label={`Delete ${u.fullName}`}>
-                          <FiTrash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {activeTab === 'student' && groupedStudents
+                  ? groupedStudents.map((group) => (
+                      <Fragment key={group.letter}>
+                        <tr className="mu-group-row" aria-hidden="true">
+                          <td colSpan={studentColumnCount} className="mu-group-header">
+                            <span className="mu-group-letter">{group.letter}</span>
+                            <span className="mu-group-count">{group.items.length}</span>
+                          </td>
+                        </tr>
+                        {group.items.map(renderUserRow)}
+                      </Fragment>
+                    ))
+                  : filteredUsers.map(renderUserRow)}
               </tbody>
             </table>
           </div>

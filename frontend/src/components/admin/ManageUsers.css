@@ -81,6 +81,14 @@
 .mu-btn--ghost { background: transparent; color: var(--mu-ink-soft); border: 1px solid var(--mu-border-strong); }
 .mu-btn--ghost:hover:not(:disabled) { background: var(--mu-bg); color: var(--mu-ink); }
 
+/* Result summary line, shown above the table */
+.mu-result-summary {
+  margin: -0.75rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--mu-ink-soft);
+}
+
 /* Table */
 .mu-table-wrapper { background: var(--mu-surface); border: 1px solid var(--mu-border); border-radius: 16px; overflow: hidden; box-shadow: var(--mu-shadow); }
 .mu-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
@@ -93,6 +101,34 @@
 
 .mu-row--clickable { cursor: pointer; }
 .mu-row--clickable:focus-visible { outline: 3px solid rgba(210, 161, 44, 0.55); outline-offset: -3px; }
+
+/* Amharic letter-group header row, shown above each cluster of students
+   that share a first letter once the list is sorted with the Ge'ez collator */
+.mu-group-row:hover { background: transparent; }
+.mu-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.5rem !important;
+  background: var(--mu-gold-soft);
+  color: var(--mu-maroon);
+  font-family: 'Noto Serif Ethiopic', 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-bottom: 1px solid var(--mu-border);
+  border-top: 1px solid var(--mu-border);
+}
+.mu-group-row:first-child .mu-group-header { border-top: none; }
+.mu-group-letter { line-height: 1; }
+.mu-group-count {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--mu-maroon);
+  background: rgba(255, 255, 255, 0.55);
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+}
 
 .mu-user-cell { display: flex; align-items: center; gap: 0.85rem; }
 .mu-avatar {
@@ -181,7 +217,7 @@
   color: #7a6c6d;
 }
 
-/* Department filter dropdown */
+/* Department / class filter dropdown (shared by admin + student tabs) */
 .mu-filter-wrap {
   position: relative;
   display: flex;
@@ -298,6 +334,10 @@
     width: 100%;
   }
 
+  .mu-result-summary {
+    margin-top: -0.35rem;
+  }
+
   /* Table wrapper: remove desktop styling */
   .mu-table-wrapper {
     background: transparent;
@@ -340,6 +380,25 @@
     transform: scale(0.98);
   }
 
+  /* Letter-group header: a plain divider on mobile, not a card */
+  .mu-table tr.mu-group-row {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 1.1rem 0 0.5rem;
+  }
+
+  .mu-table tr.mu-group-row:first-child {
+    margin-top: 0;
+  }
+
+  .mu-table td.mu-group-header {
+    display: flex;
+    border-radius: 10px;
+    border-top: none;
+  }
+
   /* Hide all table cells by default */
   .mu-table td {
     display: none;
@@ -354,8 +413,13 @@
   .mu-table td[data-label="Class"],
   .mu-table td[data-label="Roll No"],
   .mu-table td[data-label="Qualifications"],
-  .mu-table td[data-label="Actions"] {
+  .mu-table td[data-label="Actions"],
+  .mu-table td.mu-group-header {
     display: block;
+  }
+
+  .mu-table td.mu-group-header {
+    display: flex;
   }
 
   /* Name cell: prominent avatar + name */
