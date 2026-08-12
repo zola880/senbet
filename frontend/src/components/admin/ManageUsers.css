@@ -166,26 +166,6 @@
 @keyframes mu-fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes mu-slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .mu-page { padding: 1.5rem 1rem 2.5rem; }
-  .mu-table-wrapper { background: transparent; border: none; box-shadow: none; overflow: visible; }
-  .mu-table, .mu-table thead, .mu-table tbody, .mu-table th, .mu-table td, .mu-table tr { display: block; }
-  .mu-table thead { display: none; }
-  .mu-table tr { background: var(--mu-surface); border: 1px solid var(--mu-border); border-radius: 12px; margin-bottom: 1rem; padding: 0.5rem 0; box-shadow: var(--mu-shadow); }
-  .mu-table td { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--mu-border); text-align: right; }
-  .mu-table td:last-child { border-bottom: none; }
-  .mu-table td::before { content: attr(data-label); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--mu-ink-soft); text-align: left; margin-right: 1rem; }
-  .mu-user-cell { justify-content: flex-end; text-align: right; }
-  .mu-avatar { order: 2; margin-left: 0.5rem; }
-  .mu-td-actions { justify-content: center; }
-  .mu-actions { justify-content: center; width: 100%; }
-  .mu-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mu-btn, .mu-tab, .mu-icon-btn, .mu-modal, .mu-modal-backdrop, .mu-spinner, .mu-toast { transition: none; animation: none; }
-}
 /* Department badges */
 .mu-dept-badge {
   display: inline-block;
@@ -241,4 +221,446 @@
   color: var(--mu-ink-soft);
   margin-top: 0.25rem;
   font-style: italic;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE — Professional mobile card design (768px and below)
+   Desktop styles above remain completely unchanged.
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Page: tighter padding */
+  .mu-page {
+    padding: 1.25rem 0.85rem 2.5rem;
+  }
+
+  .mu-content {
+    gap: 1.25rem;
+  }
+
+  /* Header: more compact */
+  .mu-title {
+    font-size: 1.6rem;
+  }
+
+  .mu-title::after {
+    width: 68px;
+    height: 2.5px;
+    margin-top: 0.4rem;
+  }
+
+  .mu-subtitle {
+    font-size: 0.88rem;
+    margin-top: 0.5rem;
+  }
+
+  /* Tabs: more compact, scrollable */
+  .mu-tabs {
+    gap: 0.25rem;
+    margin: 0 -0.85rem;
+    padding: 0 0.85rem;
+  }
+
+  .mu-tab {
+    padding: 0.7rem 1rem;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  /* Toolbar: stack vertically on small screens */
+  .mu-toolbar {
+    gap: 0.75rem;
+  }
+
+  .mu-search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .mu-search-input {
+    padding: 0.65rem 1rem 0.65rem 2.4rem;
+    font-size: 0.88rem;
+  }
+
+  .mu-filter-wrap {
+    flex: 1 1 100%;
+  }
+
+  .mu-filter-select {
+    width: 100%;
+    padding: 0.65rem 1rem 0.65rem 2.2rem;
+    font-size: 0.88rem;
+  }
+
+  .mu-btn {
+    padding: 0.65rem 1.2rem;
+    font-size: 0.88rem;
+    width: 100%;
+  }
+
+  /* Table wrapper: remove desktop styling */
+  .mu-table-wrapper {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  /* Hide table structure, convert to cards */
+  .mu-table,
+  .mu-table thead,
+  .mu-table tbody,
+  .mu-table th,
+  .mu-table td,
+  .mu-table tr {
+    display: block;
+  }
+
+  .mu-table thead {
+    display: none;
+  }
+
+  /* User card: compact, touch-friendly, clear hierarchy */
+  .mu-table tr {
+    position: relative;
+    background: var(--mu-surface);
+    border: 1px solid var(--mu-border);
+    border-radius: 14px;
+    margin-bottom: 0.85rem;
+    padding: 1rem;
+    box-shadow: 0 2px 8px -2px rgba(64, 20, 30, 0.12);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .mu-table tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .mu-table tr:active {
+    transform: scale(0.98);
+  }
+
+  /* Hide all table cells by default */
+  .mu-table td {
+    display: none;
+    padding: 0;
+    border: none;
+  }
+
+  /* Show only specific cells in mobile layout */
+  .mu-table td[data-label="Name"],
+  .mu-table td[data-label="Email"],
+  .mu-table td[data-label="Department"],
+  .mu-table td[data-label="Class"],
+  .mu-table td[data-label="Roll No"],
+  .mu-table td[data-label="Qualifications"],
+  .mu-table td[data-label="Actions"] {
+    display: block;
+  }
+
+  /* Name cell: prominent avatar + name */
+  .mu-table td[data-label="Name"] {
+    margin-bottom: 0.75rem;
+  }
+
+  .mu-table td[data-label="Name"] .mu-user-cell {
+    gap: 0.75rem;
+  }
+
+  .mu-table td[data-label="Name"] .mu-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .mu-table td[data-label="Name"] .mu-user-name {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  /* Email cell: compact, below name */
+  .mu-table td[data-label="Email"] {
+    font-size: 0.82rem;
+    color: var(--mu-ink-soft);
+    margin-bottom: 0.65rem;
+    padding-left: calc(44px + 0.75rem); /* Align with name text */
+  }
+
+  /* Department/Class/Roll/Qualifications: badge-style display */
+  .mu-table td[data-label="Department"],
+  .mu-table td[data-label="Class"],
+  .mu-table td[data-label="Roll No"],
+  .mu-table td[data-label="Qualifications"] {
+    display: inline-block;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Create badge-like appearance for metadata */
+  .mu-table td[data-label="Department"]::before,
+  .mu-table td[data-label="Class"]::before,
+  .mu-table td[data-label="Roll No"]::before,
+  .mu-table td[data-label="Qualifications"]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mu-ink-soft);
+    margin-bottom: 0.2rem;
+  }
+
+  .mu-table td[data-label="Department"] {
+    font-size: 0;
+  }
+
+  .mu-table td[data-label="Class"],
+  .mu-table td[data-label="Roll No"],
+  .mu-table td[data-label="Qualifications"] {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--mu-ink);
+    background: var(--mu-bg);
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid var(--mu-border);
+  }
+
+  /* Actions: full-width button row at bottom */
+  .mu-table td[data-label="Actions"] {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--mu-border);
+  }
+
+  .mu-table td[data-label="Actions"] .mu-actions {
+    display: flex;
+    gap: 0.65rem;
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .mu-table td[data-label="Actions"] .mu-icon-btn {
+    flex: 1;
+    width: auto;
+    height: 40px;
+    border-radius: 10px;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .mu-table td[data-label="Actions"] .mu-icon-btn::before {
+    font-size: 0.75rem;
+  }
+
+  .mu-table td[data-label="Actions"] .mu-icon-btn:first-child::before {
+    content: 'Edit';
+  }
+
+  .mu-table td[data-label="Actions"] .mu-icon-btn:last-child::before {
+    content: 'Delete';
+  }
+
+  /* Make icons smaller in buttons */
+  .mu-table td[data-label="Actions"] .mu-icon-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* State messages: more compact */
+  .mu-state {
+    padding: 2.5rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  .mu-state h3 {
+    font-size: 1.1rem;
+  }
+
+  .mu-state p {
+    font-size: 0.88rem;
+  }
+
+  /* Toast: full-width at top */
+  .mu-toast {
+    top: 0.85rem;
+    left: 0.85rem;
+    right: 0.85rem;
+    max-width: none;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  /* Modal: full-screen on mobile */
+  .mu-modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .mu-modal {
+    border-radius: 16px 16px 0 0;
+    max-height: 85vh;
+    max-width: none;
+    width: 100%;
+  }
+
+  .mu-modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .mu-modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .mu-form {
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+
+  .mu-form-group {
+    gap: 0.35rem;
+  }
+
+  .mu-label {
+    font-size: 0.78rem;
+  }
+
+  .mu-input,
+  .mu-select {
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .mu-form-actions {
+    flex-direction: column-reverse;
+    gap: 0.65rem;
+    margin-top: 0.75rem;
+  }
+
+  .mu-form-actions .mu-btn {
+    width: 100%;
+    padding: 0.75rem;
+  }
+}
+
+/* ==========================================================================
+   SMALL MOBILE — Extra compact for very small screens (480px and below)
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .mu-page {
+    padding: 1rem 0.75rem 2rem;
+  }
+
+  .mu-content {
+    gap: 1rem;
+  }
+
+  .mu-title {
+    font-size: 1.4rem;
+  }
+
+  .mu-title::after {
+    width: 56px;
+  }
+
+  .mu-subtitle {
+    font-size: 0.82rem;
+  }
+
+  .mu-tabs {
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .mu-tab {
+    padding: 0.6rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  .mu-table tr {
+    padding: 0.85rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .mu-table td[data-label="Name"] .mu-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem;
+  }
+
+  .mu-table td[data-label="Name"] .mu-user-name {
+    font-size: 0.92rem;
+  }
+
+  .mu-table td[data-label="Email"] {
+    font-size: 0.78rem;
+    padding-left: calc(40px + 0.75rem);
+  }
+
+  .mu-table td[data-label="Class"],
+  .mu-table td[data-label="Roll No"],
+  .mu-table td[data-label="Qualifications"] {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.55rem;
+  }
+
+  .mu-table td[data-label="Actions"] .mu-icon-btn {
+    height: 38px;
+    font-size: 0.78rem;
+  }
+
+  .mu-state {
+    padding: 2rem 1rem;
+  }
+
+  .mu-state h3 {
+    font-size: 1rem;
+  }
+
+  .mu-state p {
+    font-size: 0.82rem;
+  }
+
+  .mu-modal {
+    max-height: 90vh;
+  }
+
+  .mu-form {
+    padding: 1rem;
+    gap: 0.85rem;
+  }
+
+  .mu-input,
+  .mu-select {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.88rem;
+  }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY — Respect user motion preferences
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .mu-btn,
+  .mu-tab,
+  .mu-icon-btn,
+  .mu-modal,
+  .mu-modal-backdrop,
+  .mu-spinner,
+  .mu-toast,
+  .mu-table tr {
+    transition: none;
+    animation: none;
+  }
+
+  .mu-table tr:active {
+    transform: none;
+  }
 }
