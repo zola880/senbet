@@ -40,6 +40,7 @@
 
 /* Header */
 .mc-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+.mc-header-text { display: flex; flex-direction: column; gap: 0.25rem; }
 .mc-title {
   margin: 0; font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
   font-size: clamp(1.9rem, 3.2vw, 2.5rem); font-weight: 700; color: var(--mc-maroon);
@@ -49,6 +50,31 @@
   background: linear-gradient(90deg, var(--mc-gold), rgba(210, 161, 44, 0.35));
 }
 .mc-subtitle { margin: 0.65rem 0 0; color: var(--mc-ink-soft); font-size: 0.95rem; }
+
+/* Class count indicator */
+.mc-class-count {
+  margin: 0.5rem 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--mc-ink-soft);
+  font-weight: 500;
+}
+
+.mc-class-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--mc-maroon);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
 
 /* Buttons */
 .mc-btn {
@@ -254,21 +280,281 @@
 @keyframes mc-fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes mc-slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* Responsive */
+/* ==========================================================================
+   MOBILE RESPONSIVE — Compact, professional mobile design (768px and below)
+   Desktop styles above remain completely unchanged.
+   ========================================================================== */
+
 @media (max-width: 768px) {
-  .mc-page { padding: 1.5rem 1rem 2.5rem; }
-  .mc-header { flex-direction: column; align-items: stretch; gap: 1rem; }
-  .mc-grid { grid-template-columns: 1fr 1fr; }
-  .mc-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; }
+  /* Page: tighter padding */
+  .mc-page {
+    padding: 1.25rem 0.85rem 2.5rem;
+  }
+
+  .mc-content {
+    gap: 1.25rem;
+  }
+
+  /* Make church watermark much more subtle on mobile */
+  .mc-wash {
+    opacity: 0.3;
+  }
+
+  /* Header: stack vertically, full-width button */
+  .mc-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .mc-header-text {
+    gap: 0.15rem;
+  }
+
+  .mc-title {
+    font-size: 1.5rem;
+  }
+
+  .mc-title::after {
+    width: 64px;
+    height: 2.5px;
+    margin-top: 0.4rem;
+  }
+
+  .mc-subtitle {
+    font-size: 0.88rem;
+    margin-top: 0.4rem;
+  }
+
+  .mc-class-count {
+    font-size: 0.78rem;
+    margin-top: 0.35rem;
+  }
+
+  .mc-class-count-badge {
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    padding: 0 0.4rem;
+  }
+
+  /* Button: full width on mobile */
+  .mc-btn {
+    width: 100%;
+    padding: 0.65rem 1.2rem;
+    font-size: 0.88rem;
+  }
+
+  /* Grid: 2 columns on mobile */
+  .mc-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+  }
+
+  /* Cards: more compact, tighter spacing */
+  .mc-card {
+    padding: 0.85rem 0.85rem 0.75rem;
+    border-radius: 12px;
+  }
+
+  .mc-card-top {
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  /* Icon: smaller, closer to title */
+  .mc-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+  }
+
+  .mc-card-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Actions: always visible on mobile, smaller buttons */
+  .mc-card-actions {
+    opacity: 1;
+    gap: 0.35rem;
+  }
+
+  .mc-icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+
+  .mc-icon-btn svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  /* Title: smaller, tighter to icon */
+  .mc-card-title {
+    font-size: 0.92rem;
+    margin: 0 0 0.2rem;
+  }
+
+  /* Description: smaller, fewer lines */
+  .mc-card-desc {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    -webkit-line-clamp: 2;
+    min-height: 2.1em;
+  }
+
+  /* Footer: more compact */
+  .mc-card-footer {
+    margin-top: 0.65rem;
+    padding-top: 0.55rem;
+  }
+
+  .mc-card-open {
+    font-size: 0.68rem;
+    gap: 0.3rem;
+  }
+
+  .mc-card-open svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Toast: full-width at top */
+  .mc-toast {
+    left: 0.85rem;
+    right: 0.85rem;
+    max-width: none;
+    top: 0.85rem;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  /* State messages: more compact */
+  .mc-state {
+    padding: 2.5rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  .mc-state h3 {
+    font-size: 1.1rem;
+  }
+
+  .mc-state p {
+    font-size: 0.88rem;
+  }
+
+  /* Banner: more compact */
+  .mc-banner {
+    padding: 0.65rem 0.95rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+  }
+
+  /* Modal: full-screen on mobile */
+  .mc-modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .mc-modal {
+    border-radius: 16px 16px 0 0;
+    max-height: 85vh;
+    max-width: none;
+    width: 100%;
+  }
+
+  .mc-modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .mc-modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .mc-form {
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+
+  .mc-form-group {
+    gap: 0.35rem;
+  }
+
+  .mc-label {
+    font-size: 0.78rem;
+  }
+
+  .mc-input,
+  .mc-textarea {
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .mc-textarea {
+    min-height: 70px;
+  }
+
+  .mc-form-actions {
+    flex-direction: column-reverse;
+    gap: 0.65rem;
+    margin-top: 0.75rem;
+  }
+
+  .mc-form-actions .mc-btn {
+    width: 100%;
+    padding: 0.75rem;
+  }
 }
+
+/* ==========================================================================
+   SMALL MOBILE — Single column, extra compact (560px and below)
+   ========================================================================== */
 
 @media (max-width: 560px) {
-  .mc-grid { grid-template-columns: 1fr; }
+  .mc-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .mc-card {
+    padding: 0.95rem 0.95rem 0.85rem;
+  }
+
+  .mc-card-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .mc-card-title {
+    font-size: 0.95rem;
+  }
+
+  .mc-card-desc {
+    font-size: 0.78rem;
+  }
 }
 
+/* ==========================================================================
+   ACCESSIBILITY — Respect user motion preferences
+   ========================================================================== */
+
 @media (prefers-reduced-motion: reduce) {
-  .mc-card, .mc-btn, .mc-icon-btn, .mc-modal, .mc-modal-backdrop, .mc-skeleton-card > div, .mc-toast, .mc-card-open svg {
-    transition: none; animation: none;
+  .mc-card,
+  .mc-btn,
+  .mc-icon-btn,
+  .mc-modal,
+  .mc-modal-backdrop,
+  .mc-skeleton-card > div,
+  .mc-toast,
+  .mc-card-open svg {
+    transition: none;
+    animation: none;
   }
-  .mc-card:hover { transform: none; }
+
+  .mc-card:hover {
+    transform: none;
+  }
 }
