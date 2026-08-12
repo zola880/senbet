@@ -17,8 +17,8 @@ router.post('/register/student', protect, authorize('admin'), registerStudent);
 router.post('/generate-pin/:id', protect, authorize('admin'), generateStudentPin);
 
 // Public login routes
-router.post('/login', login);           // Admin/Teacher login with email
-router.post('/student/login', login);   // Student login with Student ID + PIN
+router.post('/login', login);                    // Admin/Teacher login with email + password
+router.post('/student/login', studentLogin);     // Student login with Student ID + PIN
 
 // Protected route
 router.get('/me', protect, getMe);
