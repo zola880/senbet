@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
         return this.role !== 'student';
       },
       unique: true,
-      sparse: true,
+      sparse: true, // Allow multiple null values
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address'],
     },
@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       sparse: true,
-      match: [/^SS-\d{4}$/, 'Student ID must be in format SS-XXXX (e.g., SS-0001)'],
+      match: [/^SS-\d{4}$/, 'Student ID must be in format SS-XXXX'],
     },
     pinHash: {
       type: String,
@@ -51,24 +51,37 @@ const userSchema = new mongoose.Schema(
       ref: 'Class',
       default: null,
     },
-    phone: String,
-    qualifications: String,
-    profileImage: String,
+    phone: {
+      type: String,
+      default: null,
+    },
+    qualifications: {
+      type: String,
+      default: null,
+    },
+    profileImage: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+// Indexes for faster queries
 userSchema.index({ studentId: 1 });
 userSchema.index({ email: 1 });
 
+// Hash password and PIN before saving
 userSchema.pre('save', async function (next) {
+  // Only hash password if it's modified and exists
   if (this.isModified('password') && this.password) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }
   
+  // Only hash PIN if it's modified and exists
   if (this.isModified('pinHash') && this.pinHash) {
     const salt = await bcrypt.genSalt(10);
     this.pinHash = await bcrypt.hash(this.pinHash, salt);
@@ -77,21 +90,15 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+// Compare password
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Compare PIN
 userSchema.methods.matchPin = async function (enteredPin) {
   if (!this.pinHash) return false;
   return await bcrypt.compare(enteredPin, this.pinHash);
-};
-
-userSchema.methods.isStudent = function () {
-  return this.role === 'student';
-};
-
-userSchema.methods.isActive = function () {
-  return this.accountStatus === 'active';
 };
 
 module.exports = mongoose.model('User', userSchema);

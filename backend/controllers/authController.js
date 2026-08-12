@@ -10,27 +10,27 @@ const generateToken = (id) => {
 };
 
 const generateStudentId = async () => {
-  const latestUser = await User.findOne({ studentId: { $ne: null } })
-    .sort({ studentId: -1 })
-    .select('studentId')
-    .lean();
-  
-  if (latestUser && latestUser.studentId) {
-    const lastNumber = parseInt(latestUser.studentId.split('-')[1], 10);
-    return `SS-${String(lastNumber + 1).padStart(4, '0')}`;
+  try {
+    const latestUser = await User.findOne({ studentId: { $ne: null } })
+      .sort({ studentId: -1 })
+      .select('studentId')
+      .lean();
+
+    if (latestUser && latestUser.studentId) {
+      const lastNumber = parseInt(latestUser.studentId.split('-')[1], 10);
+      return `SS-${String(lastNumber + 1).padStart(4, '0')}`;
+    }
+    return 'SS-0001';
+  } catch (error) {
+    console.error('Error generating student ID:', error);
+    throw new Error('Failed to generate Student ID');
   }
-  return 'SS-0001';
 };
 
 const generatePin = () => {
   const buffer = crypto.randomBytes(3);
   const num = buffer.readUIntBE(0, 3) % 1000000;
   return String(num).padStart(6, '0');
-};
-
-// SAFE check: treat missing accountStatus as active (for old users)
-const isAccountActive = (user) => {
-  return !user.accountStatus || user.accountStatus === 'active';
 };
 
 const register = async (req, res, next) => {
@@ -45,6 +45,7 @@ const register = async (req, res, next) => {
       phone,
     } = req.body;
 
+    // Check if user already exists
     const existingUser = await User.findOne({ email })
       .select('_id')
       .lean();
@@ -74,6 +75,7 @@ const register = async (req, res, next) => {
       token: generateToken(user._id),
     });
   } catch (error) {
+    console.error('Register error:', error);
     next(error);
   }
 };
@@ -86,21 +88,43 @@ const registerStudent = async (req, res, next) => {
       phone,
     } = req.body;
 
+    // Validate required fields
+    if (!fullName || !fullName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Full name is required',
+      });
+    }
+
+    if (!classId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Class is required',
+      });
+    }
+
+    // Generate unique student ID
     const studentId = await generateStudentId();
+    
+    // Generate secure 6-digit PIN
     const newPin = generatePin();
 
+    console.log('Creating student:', { fullName, studentId, class: classId });
+
     const user = await User.create({
-      fullName,
+      fullName: fullName.trim(),
       studentId,
       pinHash: newPin,
       role: 'student',
-      class: classId || null,
+      class: classId,
       phone: phone || null,
       accountStatus: 'active',
     });
 
     user.password = undefined;
     user.pinHash = undefined;
+
+    console.log('Student created successfully:', user.studentId);
 
     res.status(201).json({
       success: true,
@@ -115,6 +139,25 @@ const registerStudent = async (req, res, next) => {
       token: generateToken(user._id),
     });
   } catch (error) {
+    console.error('RegisterStudent error:', error);
+    
+    // Handle duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Duplicate Student ID. Please try again.',
+      });
+    }
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', '),
+      });
+    }
+    
     next(error);
   }
 };
@@ -154,6 +197,7 @@ const generateStudentPin = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error('GenerateStudentPin error:', error);
     next(error);
   }
 };
@@ -184,8 +228,7 @@ const login = async (req, res, next) => {
       });
     }
 
-    // FIXED: Use safe check that works for old users
-    if (!isAccountActive(user)) {
+    if (user.accountStatus !== 'active') {
       return res.status(403).json({
         success: false,
         message: 'Account is not active',
@@ -208,6 +251,7 @@ const login = async (req, res, next) => {
       token: generateToken(user._id),
     });
   } catch (error) {
+    console.error('Login error:', error);
     next(error);
   }
 };
@@ -239,8 +283,7 @@ const studentLogin = async (req, res, next) => {
       });
     }
 
-    // FIXED: Use safe check that works for old users
-    if (!isAccountActive(user)) {
+    if (user.accountStatus !== 'active') {
       return res.status(403).json({
         success: false,
         message: 'Account is not active',
@@ -271,6 +314,7 @@ const studentLogin = async (req, res, next) => {
       token: generateToken(user._id),
     });
   } catch (error) {
+    console.error('StudentLogin error:', error);
     next(error);
   }
 };
@@ -286,6 +330,7 @@ const getMe = async (req, res, next) => {
       data: user,
     });
   } catch (error) {
+    console.error('GetMe error:', error);
     next(error);
   }
 };
