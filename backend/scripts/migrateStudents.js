@@ -91,6 +91,9 @@ const migrateStudents = async () => {
         student.studentId = studentId;
         student.pinHash = pinHash;
         student.accountStatus = 'active';
+        // Clear password for students since they use PIN, not password
+        // Keep email for communication but they won't be able to login with it
+        student.password = undefined;
         
         await student.save();
 

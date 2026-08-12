@@ -342,7 +342,7 @@ const ManageUsers = () => {
       } else {
         if (payload.role === 'student') {
           const response = await api.post('/api/v1/auth/register/student', payload);
-          const { studentId } = response.data.data;
+          const { studentId, createdPin } = response.data.data;
           
           showToast('success', `Student created! ID: ${studentId}`);
           
@@ -350,8 +350,9 @@ const ManageUsers = () => {
             alert(
               `Student Created Successfully!\n\n` +
               `Name: ${payload.fullName}\n` +
-              `Student ID: ${studentId}\n\n` +
-              `Next: Click the lock (PIN) button on this student's row to generate their 6-digit login PIN.`
+              `Student ID: ${studentId}\n` +
+              `PIN: ${createdPin}\n\n` +
+              `Please provide these credentials to the student/parent.`
             );
           }, 100);
         } else {

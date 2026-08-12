@@ -90,10 +90,12 @@ const registerStudent = async (req, res, next) => {
     } = req.body;
 
     const studentId = await generateStudentId();
+    const newPin = generatePin();
 
     const user = await User.create({
       fullName,
       studentId,
+      pinHash: newPin,
       role: 'student',
       class: classId || null,
       phone: phone || null,
@@ -111,6 +113,7 @@ const registerStudent = async (req, res, next) => {
         class: user.class,
         phone: user.phone,
         role: user.role,
+        createdPin: newPin, // Return the PIN so admin can provide it
       },
       token: generateToken(user._id),
     });
@@ -180,6 +183,14 @@ const login = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
+      });
+    }
+
+    // Prevent students from logging in via email/password
+    if (user.role === 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Students must use Student ID and PIN to login',
       });
     }
 
