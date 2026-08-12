@@ -7,6 +7,7 @@ import {
   FiFilter,
   FiInbox,
   FiLock,
+  FiPhone,
   FiPlus,
   FiRefreshCw,
   FiSearch,
@@ -86,7 +87,7 @@ const getCollator = (locale) => {
 const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, defaultRole }) => {
   const [formData, setFormData] = useState({
     fullName: '', email: '', password: '', role: defaultRole,
-    class: '', qualifications: '', department: 'none',
+    class: '', qualifications: '', department: 'none', phone: '',
   });
   const inputRef = useRef(null);
   const isEditing = Boolean(initialData);
@@ -103,6 +104,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
         class: initialData?.class?._id || initialData?.class || '',
         qualifications: initialData?.qualifications || '',
         department: dept,
+        phone: initialData?.phone || '',
       });
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -210,15 +212,31 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
           )}
 
           {formData.role === 'student' && (
-            <div className="mu-form-group">
-              <label htmlFor="mu-class" className="mu-label">Class</label>
-              <select id="mu-class" name="class" className="mu-select" value={formData.class} onChange={handleChange} required>
-                <option value="">Select Class</option>
-                {classes.map((c) => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+            <>
+              <div className="mu-form-group">
+                <label htmlFor="mu-class" className="mu-label">Class <span className="mu-required">*</span></label>
+                <select id="mu-class" name="class" className="mu-select" value={formData.class} onChange={handleChange} required>
+                  <option value="">Select Class</option>
+                  {classes.map((c) => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mu-form-group">
+                <label htmlFor="mu-phone" className="mu-label">Parent Phone Number</label>
+                <input
+                  id="mu-phone"
+                  name="phone"
+                  type="tel"
+                  className="mu-input"
+                  placeholder="e.g., +251 912 345 678"
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
+                <small className="mu-hint">Parent or guardian contact number</small>
+              </div>
+            </>
           )}
 
           {formData.role === 'teacher' && (
@@ -298,7 +316,8 @@ const ManageUsers = () => {
         u.fullName?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
         u.studentId?.toLowerCase().includes(q) ||
-        u.class?.name?.toLowerCase().includes(q)
+        u.class?.name?.toLowerCase().includes(q) ||
+        u.phone?.toLowerCase().includes(q)
       );
     });
 
@@ -392,7 +411,6 @@ const ManageUsers = () => {
         );
       }, 100);
 
-      // Reload so hasPin status updates in the table
       reload();
     } catch (err) {
       showToast('error', err.response?.data?.message || 'Failed to generate PIN.');
@@ -442,7 +460,7 @@ const ManageUsers = () => {
     return <span className="mu-dept-badge mu-dept-badge--general">General</span>;
   };
 
-  const studentColumnCount = 4;
+  const studentColumnCount = 5;
 
   const renderUserRow = (u) => (
     <tr
@@ -465,6 +483,7 @@ const ManageUsers = () => {
       )}
       {activeTab === 'admin' && <td data-label="Department">{getDepartmentBadge(u)}</td>}
       {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
+      {activeTab === 'student' && <td data-label="Parent Phone">{u.phone || '—'}</td>}
       {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
       <td data-label="Actions" className="mu-td-actions">
         <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
@@ -618,6 +637,7 @@ const ManageUsers = () => {
                   <th>{activeTab === 'student' ? 'Student ID' : 'Email'}</th>
                   {activeTab === 'admin' && <th>Department</th>}
                   {activeTab === 'student' && <th>Class</th>}
+                  {activeTab === 'student' && <th>Parent Phone</th>}
                   {activeTab === 'teacher' && <th>Qualifications</th>}
                   <th className="mu-th-actions">Actions</th>
                 </tr>
