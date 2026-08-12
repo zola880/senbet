@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   FiArrowLeft, FiBook, FiAward, FiMail, FiEdit2, FiTrash2, FiUsers,
   FiHash, FiTrendingUp, FiX, FiCheckCircle, FiAlertTriangle, FiRefreshCw,
-  FiChevronDown, FiInbox
+  FiChevronDown, FiInbox, FiUser, FiPhone, FiMapPin, FiCalendar, FiHome
 } from 'react-icons/fi';
 import { FaCrown, FaMedal } from 'react-icons/fa';
 
@@ -11,9 +11,19 @@ import api from '../../services/api';
 import bgImage from '../../assets/L.png';
 import './StudentDetail.css';
 
-/* --------------------------------------------------------------------------
-   Data Hook: Fetch Student, Scores, Rank & Classes
-   -------------------------------------------------------------------------- */
+const ADDRESS_OPTIONS = [
+  { value: '', label: 'Select address' },
+  { value: 'ላይ ቤሮ', label: 'ላይ ቤሮ' },
+  { value: 'ታች ቤሮ', label: 'ታች ቤሮ' },
+  { value: 'ጠቼ', label: 'ጠቼ' },
+];
+
+const SEX_OPTIONS = [
+  { value: '', label: 'Select sex' },
+  { value: 'Male', label: 'Male' },
+  { value: 'Female', label: 'Female' },
+];
+
 const useStudentDetail = (id) => {
   const [student, setStudent] = useState(null);
   const [scores, setScores] = useState([]);
@@ -29,10 +39,8 @@ const useStudentDetail = (id) => {
     const controller = new AbortController();
     abortRef.current = controller;
     const signal = controller.signal;
-
     setStatus('loading');
     setError(null);
-
     try {
       const [studentRes, scoresRes, rankRes, classesRes] = await Promise.all([
         api.get(`/api/v1/users/${id}`, { signal }),
@@ -40,7 +48,6 @@ const useStudentDetail = (id) => {
         api.get(`/api/v1/rankings/student/${id}`, { signal }).catch(() => ({ data: { data: null } })),
         api.get('/api/v1/classes', { signal })
       ]);
-
       setStudent(studentRes.data?.data || null);
       setScores(Array.isArray(scoresRes.data?.data) ? scoresRes.data.data : []);
       setRankData(rankRes.data?.data || null);
@@ -58,9 +65,6 @@ const useStudentDetail = (id) => {
   return { student, scores, rankData, classes, status, error, reload, setStudent };
 };
 
-/* --------------------------------------------------------------------------
-   Modals
-   -------------------------------------------------------------------------- */
 const BaseModal = ({ isOpen, onClose, children, title }) => {
   useEffect(() => {
     if (!isOpen) return;
@@ -68,9 +72,7 @@ const BaseModal = ({ isOpen, onClose, children, title }) => {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
-
   if (!isOpen) return null;
-
   return (
     <div className="sd-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
       <div className="sd-modal" onClick={(e) => e.stopPropagation()}>
@@ -85,7 +87,10 @@ const BaseModal = ({ isOpen, onClose, children, title }) => {
 };
 
 const EditStudentModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving }) => {
-  const [form, setForm] = useState({ fullName: '', email: '', class: '', rollNumber: '' });
+  const [form, setForm] = useState({
+    fullName: '', email: '', class: '', phone: '',
+    academicLevel: '', address: '', age: '', sex: '', fatherName: '',
+  });
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -94,7 +99,12 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, initialData, classes, isS
         fullName: initialData.fullName || '',
         email: initialData.email || '',
         class: initialData.class?._id || '',
-        rollNumber: initialData.rollNumber || '',
+        phone: initialData.phone || '',
+        academicLevel: initialData.academicLevel || '',
+        address: initialData.address || '',
+        age: initialData.age ? String(initialData.age) : '',
+        sex: initialData.sex || '',
+        fatherName: initialData.fatherName || '',
       });
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -104,17 +114,67 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, initialData, classes, isS
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const payload = { ...form };
+    if (payload.age) payload.age = Number(payload.age);
+    else delete payload.age;
+    onSubmit(payload);
+  };
+
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Edit Student">
-      <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="sd-form">
+      <form onSubmit={handleSubmit} className="sd-form">
         <div className="sd-form-group">
           <label className="sd-label">Full Name <span className="sd-required">*</span></label>
           <input ref={inputRef} name="fullName" className="sd-input" value={form.fullName} onChange={handleChange} required />
         </div>
-        <div className="sd-form-group">
-          <label className="sd-label">Email <span className="sd-required">*</span></label>
-          <input name="email" type="email" className="sd-input" value={form.email} onChange={handleChange} required />
+
+        <div className="sd-form-row">
+          <div className="sd-form-group">
+            <label className="sd-label">Age</label>
+            <input name="age" type="number" min="1" max="120" className="sd-input" value={form.age} onChange={handleChange} />
+          </div>
+          <div className="sd-form-group">
+            <label className="sd-label">Sex</label>
+            <div className="sd-select-wrapper">
+              <select name="sex" className="sd-select" value={form.sex} onChange={handleChange}>
+                {SEX_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <FiChevronDown className="sd-select-icon" />
+            </div>
+          </div>
         </div>
+
+        <div className="sd-form-group">
+          <label className="sd-label">Father's Name</label>
+          <input name="fatherName" className="sd-input" value={form.fatherName} onChange={handleChange} />
+        </div>
+
+        <div className="sd-form-group">
+          <label className="sd-label">Academic Level</label>
+          <input name="academicLevel" className="sd-input" placeholder="e.g., Grade 5" value={form.academicLevel} onChange={handleChange} />
+        </div>
+
+        <div className="sd-form-group">
+          <label className="sd-label">Address</label>
+          <div className="sd-select-wrapper">
+            <select name="address" className="sd-select" value={form.address} onChange={handleChange}>
+              {ADDRESS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <FiChevronDown className="sd-select-icon" />
+          </div>
+        </div>
+
+        <div className="sd-form-group">
+          <label className="sd-label">Parent Phone</label>
+          <input name="phone" type="tel" className="sd-input" placeholder="+251 912 345 678" value={form.phone} onChange={handleChange} />
+        </div>
+
         <div className="sd-form-group">
           <label className="sd-label">Class</label>
           <div className="sd-select-wrapper">
@@ -125,10 +185,7 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, initialData, classes, isS
             <FiChevronDown className="sd-select-icon" />
           </div>
         </div>
-        <div className="sd-form-group">
-          <label className="sd-label">Roll Number</label>
-          <input name="rollNumber" className="sd-input" value={form.rollNumber} onChange={handleChange} />
-        </div>
+
         <div className="sd-form-actions">
           <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose} disabled={isSaving}>Cancel</button>
           <button type="submit" className="sd-btn sd-btn--primary" disabled={isSaving}>
@@ -157,13 +214,9 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, isConfirming
   );
 };
 
-/* --------------------------------------------------------------------------
-   Main Component
-   -------------------------------------------------------------------------- */
 const StudentDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
   const { student, scores, rankData, classes, status, error, reload, setStudent } = useStudentDetail(id);
   
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -180,9 +233,7 @@ const StudentDetail = () => {
   const scoresByCourse = useMemo(() => {
     return scores.reduce((acc, score) => {
       const courseId = score.course?._id || 'unknown';
-      if (!acc[courseId]) {
-        acc[courseId] = { courseName: score.course?.name || 'Unknown Course', components: [] };
-      }
+      if (!acc[courseId]) acc[courseId] = { courseName: score.course?.name || 'Unknown Course', components: [] };
       acc[courseId].components.push(score);
       return acc;
     }, {});
@@ -277,8 +328,8 @@ const StudentDetail = () => {
             <h1 className="sd-name">{student.fullName}</h1>
             <div className="sd-pills">
               <span className="sd-pill"><FiUsers size={14} /> {student.class?.name || 'No Class Assigned'}</span>
-              {student.rollNumber && <span className="sd-pill"><FiHash size={14} /> Roll: {student.rollNumber}</span>}
-              <span className="sd-pill sd-pill--email"><FiMail size={14} /> {student.email}</span>
+              {student.studentId && <span className="sd-pill"><FiHash size={14} /> {student.studentId}</span>}
+              {student.phone && <span className="sd-pill sd-pill--email"><FiPhone size={14} /> {student.phone}</span>}
             </div>
           </div>
           <div className="sd-profile-actions">
@@ -288,6 +339,55 @@ const StudentDetail = () => {
             <button className="sd-btn sd-btn--danger" onClick={() => setDeleteModalOpen(true)}>
               <FiTrash2 size={16} /> Delete
             </button>
+          </div>
+        </div>
+
+        {/* NEW: Personal Information Section */}
+        <div className="sd-section">
+          <h2 className="sd-section-title">Personal Information</h2>
+          <div className="sd-info-grid">
+            <div className="sd-info-item">
+              <div className="sd-info-icon"><FiUser size={18} /></div>
+              <div className="sd-info-content">
+                <span className="sd-info-label">Father's Name</span>
+                <span className="sd-info-value">{student.fatherName || '—'}</span>
+              </div>
+            </div>
+            <div className="sd-info-item">
+              <div className="sd-info-icon sd-info-icon--calendar"><FiCalendar size={18} /></div>
+              <div className="sd-info-content">
+                <span className="sd-info-label">Age</span>
+                <span className="sd-info-value">{student.age ? `${student.age} years` : '—'}</span>
+              </div>
+            </div>
+            <div className="sd-info-item">
+              <div className="sd-info-icon sd-info-icon--gender"><FiUser size={18} /></div>
+              <div className="sd-info-content">
+                <span className="sd-info-label">Sex</span>
+                <span className="sd-info-value">{student.sex || '—'}</span>
+              </div>
+            </div>
+            <div className="sd-info-item">
+              <div className="sd-info-icon sd-info-icon--book"><FiBook size={18} /></div>
+              <div className="sd-info-content">
+                <span className="sd-info-label">Academic Level</span>
+                <span className="sd-info-value">{student.academicLevel || '—'}</span>
+              </div>
+            </div>
+            <div className="sd-info-item">
+              <div className="sd-info-icon sd-info-icon--map"><FiMapPin size={18} /></div>
+              <div className="sd-info-content">
+                <span className="sd-info-label">Address</span>
+                <span className="sd-info-value">{student.address || '—'}</span>
+              </div>
+            </div>
+            <div className="sd-info-item">
+              <div className="sd-info-icon sd-info-icon--phone"><FiPhone size={18} /></div>
+              <div className="sd-info-content">
+                <span className="sd-info-label">Parent Phone</span>
+                <span className="sd-info-value">{student.phone || '—'}</span>
+              </div>
+            </div>
           </div>
         </div>
 

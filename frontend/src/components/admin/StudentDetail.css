@@ -223,3 +223,94 @@
 @media (prefers-reduced-motion: reduce) {
   .sd-btn, .sd-modal, .sd-modal-backdrop, .sd-spinner, .sd-toast, .sd-back-btn { transition: none; animation: none; }
 }
+/* ==========================================================================
+   Personal Information Section
+   ========================================================================== */
+.sd-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: var(--sd-shadow);
+}
+
+.sd-info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.sd-info-item:hover {
+  background: var(--sd-bg);
+}
+
+.sd-info-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--sd-gold-soft);
+  color: var(--sd-maroon);
+  flex-shrink: 0;
+}
+
+.sd-info-icon--calendar { background: #eff6ff; color: #2563eb; }
+.sd-info-icon--gender { background: #fdf4ff; color: #a855f7; }
+.sd-info-icon--book { background: #fef3c7; color: #d97706; }
+.sd-info-icon--map { background: #ecfdf5; color: #059669; }
+.sd-info-icon--phone { background: #fee2e2; color: #dc2626; }
+
+.sd-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.sd-info-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sd-ink-soft);
+}
+
+.sd-info-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sd-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Two-column form row for Age + Sex side by side */
+.sd-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Two-column form row for ManageUsers modal (Age + Sex) */
+.mu-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 480px) {
+  .sd-form-row,
+  .mu-form-row {
+    grid-template-columns: 1fr;
+  }
+  .sd-info-grid {
+    grid-template-columns: 1fr;
+  }
+}

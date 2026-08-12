@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
         return this.role !== 'student';
       },
       unique: true,
-      sparse: true, // Allow multiple null values
+      sparse: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address'],
     },
@@ -63,25 +63,48 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Student personal information
+    academicLevel: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    address: {
+      type: String,
+      enum: ['ላይ ቤሮ', 'ታች ቤሮ', 'ጠቼ', null],
+      default: null,
+    },
+    age: {
+      type: Number,
+      min: [1, 'Age must be at least 1'],
+      max: [120, 'Age must be less than 120'],
+      default: null,
+    },
+    sex: {
+      type: String,
+      enum: ['Male', 'Female', null],
+      default: null,
+    },
+    fatherName: {
+      type: String,
+      default: null,
+      trim: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Indexes for faster queries
 userSchema.index({ studentId: 1 });
 userSchema.index({ email: 1 });
 
-// Hash password and PIN before saving
 userSchema.pre('save', async function (next) {
-  // Only hash password if it's modified and exists
   if (this.isModified('password') && this.password) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }
   
-  // Only hash PIN if it's modified and exists
   if (this.isModified('pinHash') && this.pinHash) {
     const salt = await bcrypt.genSalt(10);
     this.pinHash = await bcrypt.hash(this.pinHash, salt);
@@ -90,12 +113,10 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Compare password
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Compare PIN
 userSchema.methods.matchPin = async function (enteredPin) {
   if (!this.pinHash) return false;
   return await bcrypt.compare(enteredPin, this.pinHash);

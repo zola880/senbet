@@ -1,27 +1,14 @@
 import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiAlertTriangle,
-  FiCheckCircle,
-  FiEdit2,
-  FiFilter,
-  FiInbox,
-  FiLock,
-  FiPhone,
-  FiPlus,
-  FiRefreshCw,
-  FiSearch,
-  FiTrash2,
-  FiX,
+  FiAlertTriangle, FiCheckCircle, FiEdit2, FiFilter, FiInbox,
+  FiLock, FiPhone, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiX,
 } from 'react-icons/fi';
 
 import api from '../../services/api';
 import bgImage from '../../assets/L.png';
 import './ManageUsers.css';
 
-/* --------------------------------------------------------------------------
-   Data hook: Fetch Users & Classes with AbortController
-   -------------------------------------------------------------------------- */
 const useUsersAndClasses = () => {
   const [users, setUsers] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -33,16 +20,13 @@ const useUsersAndClasses = () => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-
     setStatus('loading');
     setError(null);
-
     try {
       const [usersRes, classesRes] = await Promise.all([
         api.get('/api/v1/users', { signal: controller.signal }),
         api.get('/api/v1/classes', { signal: controller.signal }),
       ]);
-
       setUsers(Array.isArray(usersRes.data?.data) ? usersRes.data.data : []);
       setClasses(Array.isArray(classesRes.data?.data) ? classesRes.data.data : []);
       setStatus('success');
@@ -54,40 +38,38 @@ const useUsersAndClasses = () => {
     }
   }, []);
 
-  useEffect(() => {
-    reload();
-    return () => abortRef.current?.abort();
-  }, [reload]);
-
+  useEffect(() => { reload(); return () => abortRef.current?.abort(); }, [reload]);
   return { users, classes, status, error, reload };
 };
 
-/* --------------------------------------------------------------------------
-   Department configuration
-   -------------------------------------------------------------------------- */
 const DEPARTMENTS = [
   { key: 'none', label: 'General Admin', color: '#7a6c6d' },
   { key: 'development', label: 'Development (ልማት)', color: '#2e7d32' },
 ];
 
-/* --------------------------------------------------------------------------
-   Locale-aware sorting
-   -------------------------------------------------------------------------- */
+const ADDRESS_OPTIONS = [
+  { value: '', label: 'Select address' },
+  { value: 'ላይ ቤሮ', label: 'ላይ ቤሮ' },
+  { value: 'ታች ቤሮ', label: 'ታች ቤሮ' },
+  { value: 'ጠቼ', label: 'ጠቼ' },
+];
+
+const SEX_OPTIONS = [
+  { value: '', label: 'Select sex' },
+  { value: 'Male', label: 'Male' },
+  { value: 'Female', label: 'Female' },
+];
+
 const getCollator = (locale) => {
-  try {
-    return new Intl.Collator(locale, { sensitivity: 'base', numeric: true });
-  } catch {
-    return new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
-  }
+  try { return new Intl.Collator(locale, { sensitivity: 'base', numeric: true }); }
+  catch { return new Intl.Collator(undefined, { sensitivity: 'base', numeric: true }); }
 };
 
-/* --------------------------------------------------------------------------
-   Modal Component
-   -------------------------------------------------------------------------- */
 const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, defaultRole }) => {
   const [formData, setFormData] = useState({
     fullName: '', email: '', password: '', role: defaultRole,
     class: '', qualifications: '', department: 'none', phone: '',
+    academicLevel: '', address: '', age: '', sex: '', fatherName: '',
   });
   const inputRef = useRef(null);
   const isEditing = Boolean(initialData);
@@ -95,7 +77,6 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
   useEffect(() => {
     if (isOpen) {
       const dept = initialData?.role === 'development' ? 'development' : 'none';
-      
       setFormData({
         fullName: initialData?.fullName || '',
         email: initialData?.email || '',
@@ -105,6 +86,11 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
         qualifications: initialData?.qualifications || '',
         department: dept,
         phone: initialData?.phone || '',
+        academicLevel: initialData?.academicLevel || '',
+        address: initialData?.address || '',
+        age: initialData?.age ? String(initialData.age) : '',
+        sex: initialData?.sex || '',
+        fatherName: initialData?.fatherName || '',
       });
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -122,14 +108,12 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
   const handleSubmit = (e) => {
     e.preventDefault();
     const payload = { ...formData };
-    
-    if (payload.role === 'admin' && payload.department === 'development') {
-      payload.role = 'development';
-    }
-    
+    if (payload.role === 'admin' && payload.department === 'development') payload.role = 'development';
     delete payload.department;
-    
     if (isEditing && !payload.password) delete payload.password;
+    // Convert age to number if provided
+    if (payload.age) payload.age = Number(payload.age);
+    else delete payload.age;
     onSubmit(payload);
   };
 
@@ -160,7 +144,6 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
                 <label htmlFor="mu-email" className="mu-label">Email <span className="mu-required">*</span></label>
                 <input id="mu-email" name="email" type="email" className="mu-input" placeholder="user@example.com" value={formData.email} onChange={handleChange} required />
               </div>
-
               <div className="mu-form-group">
                 <label htmlFor="mu-password" className="mu-label">
                   Password {isEditing && <span className="mu-optional">(leave blank to keep current)</span>}
@@ -176,7 +159,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
                 <FiLock size={16} />
                 <div>
                   <strong>Student ID will be auto-generated</strong>
-                  <p>After creating the student, a unique Student ID (format: SS-XXXX) will be assigned. You'll need to generate a 6-digit PIN from the actions column afterward — the PIN will be shown only once.</p>
+                  <p>A unique Student ID (SS-XXXX) will be assigned. Generate the 6-digit PIN from the actions column afterward.</p>
                 </div>
               </div>
             </div>
@@ -186,7 +169,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
             <div className="mu-form-group">
               <label className="mu-label">Student ID</label>
               <input type="text" className="mu-input" value={initialData?.studentId || '—'} disabled />
-              <small className="mu-hint">Student ID cannot be changed. Use the PIN button in the actions column to generate or reset the PIN.</small>
+              <small className="mu-hint">Student ID cannot be changed.</small>
             </div>
           )}
 
@@ -223,17 +206,49 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
                 </select>
               </div>
 
+              {/* NEW: Father Name */}
+              <div className="mu-form-group">
+                <label htmlFor="mu-fatherName" className="mu-label">Father's Name</label>
+                <input id="mu-fatherName" name="fatherName" type="text" className="mu-input" placeholder="e.g., አባት ስም / Father name" value={formData.fatherName} onChange={handleChange} />
+              </div>
+
+              {/* NEW: Age and Sex row */}
+              <div className="mu-form-row">
+                <div className="mu-form-group">
+                  <label htmlFor="mu-age" className="mu-label">Age</label>
+                  <input id="mu-age" name="age" type="number" min="1" max="120" className="mu-input" placeholder="e.g., 12" value={formData.age} onChange={handleChange} />
+                </div>
+                <div className="mu-form-group">
+                  <label htmlFor="mu-sex" className="mu-label">Sex</label>
+                  <select id="mu-sex" name="sex" className="mu-select" value={formData.sex} onChange={handleChange}>
+                    {SEX_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* NEW: Academic Level */}
+              <div className="mu-form-group">
+                <label htmlFor="mu-academicLevel" className="mu-label">Academic Level</label>
+                <input id="mu-academicLevel" name="academicLevel" type="text" className="mu-input" placeholder="e.g., Grade 5, Freshman" value={formData.academicLevel} onChange={handleChange} />
+                <small className="mu-hint">Regular school grade or academic level</small>
+              </div>
+
+              {/* NEW: Address */}
+              <div className="mu-form-group">
+                <label htmlFor="mu-address" className="mu-label">Address</label>
+                <select id="mu-address" name="address" className="mu-select" value={formData.address} onChange={handleChange}>
+                  {ADDRESS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Parent Phone */}
               <div className="mu-form-group">
                 <label htmlFor="mu-phone" className="mu-label">Parent Phone Number</label>
-                <input
-                  id="mu-phone"
-                  name="phone"
-                  type="tel"
-                  className="mu-input"
-                  placeholder="e.g., +251 912 345 678"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
+                <input id="mu-phone" name="phone" type="tel" className="mu-input" placeholder="e.g., +251 912 345 678" value={formData.phone} onChange={handleChange} />
                 <small className="mu-hint">Parent or guardian contact number</small>
               </div>
             </>
@@ -258,9 +273,6 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
   );
 };
 
-/* --------------------------------------------------------------------------
-   Main Page Component
-   -------------------------------------------------------------------------- */
 const TABS = [
   { key: 'admin', label: 'Admins' },
   { key: 'teacher', label: 'Teachers' },
@@ -293,34 +305,30 @@ const ManageUsers = () => {
 
   const filteredUsers = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
-
     const matches = users.filter((u) => {
       if (activeTab === 'admin') {
         if (u.role !== 'admin' && u.role !== 'development') return false;
       } else {
         if (u.role !== activeTab) return false;
       }
-
       if (activeTab === 'admin' && departmentFilter !== 'all') {
         if (departmentFilter === 'none' && u.role !== 'admin') return false;
         if (departmentFilter === 'development' && u.role !== 'development') return false;
       }
-
       if (activeTab === 'student' && classFilter !== 'all') {
         const studentClassId = u.class?._id || u.class;
         if (studentClassId !== classFilter) return false;
       }
-
       if (!q) return true;
       return (
         u.fullName?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
         u.studentId?.toLowerCase().includes(q) ||
         u.class?.name?.toLowerCase().includes(q) ||
-        u.phone?.toLowerCase().includes(q)
+        u.phone?.toLowerCase().includes(q) ||
+        u.fatherName?.toLowerCase().includes(q)
       );
     });
-
     return matches.sort((a, b) => collator.compare(a.fullName || '', b.fullName || ''));
   }, [users, activeTab, departmentFilter, classFilter, deferredQuery, collator]);
 
@@ -329,7 +337,6 @@ const ManageUsers = () => {
     const groups = [];
     let currentLetter = null;
     let currentGroup = null;
-
     filteredUsers.forEach((u) => {
       const letter = (u.fullName || '').trim().charAt(0) || '—';
       if (letter !== currentLetter) {
@@ -339,7 +346,6 @@ const ManageUsers = () => {
       }
       currentGroup.items.push(u);
     });
-
     return groups;
   }, [activeTab, filteredUsers]);
 
@@ -362,9 +368,7 @@ const ManageUsers = () => {
         if (payload.role === 'student') {
           const response = await api.post('/api/v1/auth/register/student', payload);
           const { studentId, createdPin } = response.data.data;
-          
           showToast('success', `Student created! ID: ${studentId}`);
-          
           setTimeout(() => {
             alert(
               `Student Created Successfully!\n\n` +
@@ -393,15 +397,11 @@ const ManageUsers = () => {
     const warning = hasPin
       ? 'The old PIN will be invalidated immediately.'
       : 'The PIN will be shown only once. Copy it and give it to the student/parent.';
-
     if (!window.confirm(`${actionWord} PIN for ${studentName}?\n\n${warning}`)) return;
-    
     try {
       const response = await api.post(`/api/v1/auth/generate-pin/${studentId}`);
       const newPin = response.data.data.createdPin;
-      
       showToast('success', `New PIN generated for ${studentName}`);
-      
       setTimeout(() => {
         alert(
           `${hasPin ? 'New' : 'Generated'} PIN for ${studentName}:\n\n` +
@@ -410,7 +410,6 @@ const ManageUsers = () => {
           `Please copy it now and provide it to the student/parent.`
         );
       }, 100);
-
       reload();
     } catch (err) {
       showToast('error', err.response?.data?.message || 'Failed to generate PIN.');
@@ -508,8 +507,7 @@ const ManageUsers = () => {
     </tr>
   );
 
-  const hasActiveFilters =
-    Boolean(searchQuery) || departmentFilter !== 'all' || classFilter !== 'all';
+  const hasActiveFilters = Boolean(searchQuery) || departmentFilter !== 'all' || classFilter !== 'all';
 
   return (
     <section className="mu-page">
@@ -562,16 +560,10 @@ const ManageUsers = () => {
               aria-label="Search users"
             />
           </div>
-
           {activeTab === 'admin' && (
             <div className="mu-filter-wrap">
               <FiFilter size={14} className="mu-filter-icon" />
-              <select
-                className="mu-filter-select"
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                aria-label="Filter by department"
-              >
+              <select className="mu-filter-select" value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} aria-label="Filter by department">
                 <option value="all">All Departments</option>
                 {DEPARTMENTS.map((dept) => (
                   <option key={dept.key} value={dept.key}>{dept.label}</option>
@@ -579,16 +571,10 @@ const ManageUsers = () => {
               </select>
             </div>
           )}
-
           {activeTab === 'student' && (
             <div className="mu-filter-wrap">
               <FiFilter size={14} className="mu-filter-icon" />
-              <select
-                className="mu-filter-select"
-                value={classFilter}
-                onChange={(e) => setClassFilter(e.target.value)}
-                aria-label="Filter by class"
-              >
+              <select className="mu-filter-select" value={classFilter} onChange={(e) => setClassFilter(e.target.value)} aria-label="Filter by class">
                 <option value="all">All Classes</option>
                 {classes.map((c) => (
                   <option key={c._id} value={c._id}>{c.name}</option>
@@ -596,7 +582,6 @@ const ManageUsers = () => {
               </select>
             </div>
           )}
-
           <button className="mu-btn mu-btn--primary" onClick={openNewModal}>
             <FiPlus size={18} /> Add {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
           </button>
