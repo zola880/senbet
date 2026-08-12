@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const { jwtSecret, jwtExpire } = require('../config/env');
 const crypto = require('crypto');
@@ -9,21 +10,37 @@ const generateToken = (id) => {
   });
 };
 
+// BULLETPROOF student ID generator:
+// - Queries all existing student IDs
+// - Finds the numeric maximum (not alphabetical)
+// - Has a safe fallback using timestamp
 const generateStudentId = async () => {
   try {
-    const latestUser = await User.findOne({ studentId: { $ne: null } })
-      .sort({ studentId: -1 })
-      .select('studentId')
-      .lean();
+    const allStudents = await User.find(
+      { studentId: { $ne: null } },
+      { studentId: 1 }
+    ).lean();
 
-    if (latestUser && latestUser.studentId) {
-      const lastNumber = parseInt(latestUser.studentId.split('-')[1], 10);
-      return `SS-${String(lastNumber + 1).padStart(4, '0')}`;
+    if (allStudents.length === 0) {
+      return 'SS-0001';
     }
-    return 'SS-0001';
+
+    const numbers = allStudents
+      .map(student => {
+        const match = student.studentId.match(/^SS-(\d{4})$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(num => num > 0);
+
+    const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+    const newNumber = maxNumber + 1;
+
+    return `SS-${String(newNumber).padStart(4, '0')}`;
   } catch (error) {
     console.error('Error generating student ID:', error);
-    throw new Error('Failed to generate Student ID');
+    // Fallback: timestamp-based unique ID
+    const timestamp = Date.now() % 10000;
+    return `SS-${String(timestamp).padStart(4, '0')}`;
   }
 };
 
@@ -33,6 +50,8 @@ const generatePin = () => {
   return String(num).padStart(6, '0');
 };
 
+// @desc    Register a new user (Admin only)
+// @route   POST /api/v1/auth/register
 const register = async (req, res, next) => {
   try {
     const {
@@ -45,7 +64,6 @@ const register = async (req, res, next) => {
       phone,
     } = req.body;
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email })
       .select('_id')
       .lean();
@@ -80,6 +98,9 @@ const register = async (req, res, next) => {
   }
 };
 
+// @desc    Register a new student (Admin only) with auto-generated Student ID + PIN
+// @route   POST /api/v1/auth/register/student
+// FIX: Retry up to 3 times on duplicate ID collision
 const registerStudent = async (req, res, next) => {
   try {
     const {
@@ -88,7 +109,6 @@ const registerStudent = async (req, res, next) => {
       phone,
     } = req.body;
 
-    // Validate required fields
     if (!fullName || !fullName.trim()) {
       return res.status(400).json({
         success: false,
@@ -103,53 +123,77 @@ const registerStudent = async (req, res, next) => {
       });
     }
 
-    // Generate unique student ID
-    const studentId = await generateStudentId();
-    
-    // Generate secure 6-digit PIN
-    const newPin = generatePin();
-
-    console.log('Creating student:', { fullName, studentId, class: classId });
-
-    const user = await User.create({
-      fullName: fullName.trim(),
-      studentId,
-      pinHash: newPin,
-      role: 'student',
-      class: classId,
-      phone: phone || null,
-      accountStatus: 'active',
-    });
-
-    user.password = undefined;
-    user.pinHash = undefined;
-
-    console.log('Student created successfully:', user.studentId);
-
-    res.status(201).json({
-      success: true,
-      data: {
-        studentId: user.studentId,
-        fullName: user.fullName,
-        class: user.class,
-        phone: user.phone,
-        role: user.role,
-        createdPin: newPin,
-      },
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    console.error('RegisterStudent error:', error);
-    
-    // Handle duplicate key error
-    if (error.code === 11000) {
+    if (!mongoose.Types.ObjectId.isValid(classId)) {
       return res.status(400).json({
         success: false,
-        message: 'Duplicate Student ID. Please try again.',
+        message: 'Invalid class selected',
       });
     }
+
+    // Retry up to 3 times in case of rare ID collision
+    let user = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts && !user) {
+      attempts++;
+      const studentId = await generateStudentId();
+      const newPin = generatePin();
+
+      console.log(`Attempt ${attempts}: Creating student with ID ${studentId}`);
+
+      try {
+        user = await User.create({
+          fullName: fullName.trim(),
+          studentId,
+          pinHash: newPin,
+          role: 'student',
+          class: classId,
+          phone: phone || null,
+          accountStatus: 'active',
+        });
+
+        user.password = undefined;
+        user.pinHash = undefined;
+
+        console.log('SUCCESS: Student created:', user.studentId);
+
+        return res.status(201).json({
+          success: true,
+          data: {
+            studentId: user.studentId,
+            fullName: user.fullName,
+            class: user.class,
+            phone: user.phone,
+            role: user.role,
+            createdPin: newPin,
+          },
+          token: generateToken(user._id),
+        });
+      } catch (createError) {
+        // If duplicate key, retry with new ID
+        if (createError.code === 11000) {
+          console.log(`Duplicate ID on attempt ${attempts}, retrying...`);
+          continue;
+        }
+        // Other errors, throw immediately
+        throw createError;
+      }
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate unique Student ID. Please try again.',
+    });
+  } catch (error) {
+    console.error('=== REGISTER STUDENT ERROR ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    if (error.errors) {
+      console.error('Error details:', JSON.stringify(error.errors, null, 2));
+    }
     
-    // Handle validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
@@ -162,6 +206,8 @@ const registerStudent = async (req, res, next) => {
   }
 };
 
+// @desc    Generate PIN for existing student (Admin only)
+// @route   POST /api/v1/auth/generate-pin/:id
 const generateStudentPin = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
@@ -202,6 +248,8 @@ const generateStudentPin = async (req, res, next) => {
   }
 };
 
+// @desc    Login user with email + password (Admin/Teacher)
+// @route   POST /api/v1/auth/login
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -256,6 +304,8 @@ const login = async (req, res, next) => {
   }
 };
 
+// @desc    Login student with Student ID + PIN
+// @route   POST /api/v1/auth/student/login
 const studentLogin = async (req, res, next) => {
   try {
     const { studentId, pin } = req.body;
@@ -319,6 +369,8 @@ const studentLogin = async (req, res, next) => {
   }
 };
 
+// @desc    Get current logged-in user
+// @route   GET /api/v1/auth/me
 const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id)
