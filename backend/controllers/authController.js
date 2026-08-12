@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const Counter = require('../models/Counter');
 const { jwtSecret, jwtExpire } = require('../config/env');
 const crypto = require('crypto');
 
@@ -10,38 +11,15 @@ const generateToken = (id) => {
   });
 };
 
-// BULLETPROOF student ID generator:
-// - Queries all existing student IDs
-// - Finds the numeric maximum (not alphabetical)
-// - Has a safe fallback using timestamp
+// GUARANTEED UNIQUE: Uses MongoDB atomic counter
 const generateStudentId = async () => {
-  try {
-    const allStudents = await User.find(
-      { studentId: { $ne: null } },
-      { studentId: 1 }
-    ).lean();
-
-    if (allStudents.length === 0) {
-      return 'SS-0001';
-    }
-
-    const numbers = allStudents
-      .map(student => {
-        const match = student.studentId.match(/^SS-(\d{4})$/);
-        return match ? parseInt(match[1], 10) : 0;
-      })
-      .filter(num => num > 0);
-
-    const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
-    const newNumber = maxNumber + 1;
-
-    return `SS-${String(newNumber).padStart(4, '0')}`;
-  } catch (error) {
-    console.error('Error generating student ID:', error);
-    // Fallback: timestamp-based unique ID
-    const timestamp = Date.now() % 10000;
-    return `SS-${String(timestamp).padStart(4, '0')}`;
-  }
+  const counter = await Counter.findByIdAndUpdate(
+    'studentId',
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+  
+  return `SS-${String(counter.seq).padStart(4, '0')}`;
 };
 
 const generatePin = () => {
@@ -98,9 +76,8 @@ const register = async (req, res, next) => {
   }
 };
 
-// @desc    Register a new student (Admin only) with auto-generated Student ID + PIN
+// @desc    Register a new student (Admin only)
 // @route   POST /api/v1/auth/register/student
-// FIX: Retry up to 3 times on duplicate ID collision
 const registerStudent = async (req, res, next) => {
   try {
     const {
@@ -130,68 +107,50 @@ const registerStudent = async (req, res, next) => {
       });
     }
 
-    // Retry up to 3 times in case of rare ID collision
-    let user = null;
-    let attempts = 0;
-    const maxAttempts = 3;
+    // Generate guaranteed-unique ID using atomic counter
+    const studentId = await generateStudentId();
+    const newPin = generatePin();
 
-    while (attempts < maxAttempts && !user) {
-      attempts++;
-      const studentId = await generateStudentId();
-      const newPin = generatePin();
+    console.log('Creating student:', { fullName, studentId, class: classId });
 
-      console.log(`Attempt ${attempts}: Creating student with ID ${studentId}`);
+    const user = await User.create({
+      fullName: fullName.trim(),
+      studentId,
+      pinHash: newPin,
+      role: 'student',
+      class: classId,
+      phone: phone || null,
+      accountStatus: 'active',
+    });
 
-      try {
-        user = await User.create({
-          fullName: fullName.trim(),
-          studentId,
-          pinHash: newPin,
-          role: 'student',
-          class: classId,
-          phone: phone || null,
-          accountStatus: 'active',
-        });
+    user.password = undefined;
+    user.pinHash = undefined;
 
-        user.password = undefined;
-        user.pinHash = undefined;
+    console.log('SUCCESS: Student created:', user.studentId);
 
-        console.log('SUCCESS: Student created:', user.studentId);
-
-        return res.status(201).json({
-          success: true,
-          data: {
-            studentId: user.studentId,
-            fullName: user.fullName,
-            class: user.class,
-            phone: user.phone,
-            role: user.role,
-            createdPin: newPin,
-          },
-          token: generateToken(user._id),
-        });
-      } catch (createError) {
-        // If duplicate key, retry with new ID
-        if (createError.code === 11000) {
-          console.log(`Duplicate ID on attempt ${attempts}, retrying...`);
-          continue;
-        }
-        // Other errors, throw immediately
-        throw createError;
-      }
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to generate unique Student ID. Please try again.',
+    res.status(201).json({
+      success: true,
+      data: {
+        studentId: user.studentId,
+        fullName: user.fullName,
+        class: user.class,
+        phone: user.phone,
+        role: user.role,
+        createdPin: newPin,
+      },
+      token: generateToken(user._id),
     });
   } catch (error) {
     console.error('=== REGISTER STUDENT ERROR ===');
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error code:', error.code);
-    if (error.errors) {
-      console.error('Error details:', JSON.stringify(error.errors, null, 2));
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Duplicate Student ID. Please try again.',
+      });
     }
     
     if (error.name === 'ValidationError') {
@@ -206,7 +165,7 @@ const registerStudent = async (req, res, next) => {
   }
 };
 
-// @desc    Generate PIN for existing student (Admin only)
+// @desc    Generate PIN for existing student
 // @route   POST /api/v1/auth/generate-pin/:id
 const generateStudentPin = async (req, res, next) => {
   try {
@@ -248,7 +207,7 @@ const generateStudentPin = async (req, res, next) => {
   }
 };
 
-// @desc    Login user with email + password (Admin/Teacher)
+// @desc    Login user with email + password
 // @route   POST /api/v1/auth/login
 const login = async (req, res, next) => {
   try {
