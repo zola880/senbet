@@ -9,13 +9,20 @@ const generateToken = (id) => {
   return jwt.sign({ id }, jwtSecret, { expiresIn: jwtExpire });
 };
 
-// FIXED: More robust ID generation with retry and verification
+// Generate a 6-digit PIN
+const generatePin = () => {
+  const buffer = crypto.randomBytes(3);
+  const num = buffer.readUIntBE(0, 3) % 1000000;
+  return String(num).padStart(6, '0');
+};
+
+// Generate a unique Student ID with retry
 const generateStudentId = async () => {
   const maxAttempts = 3;
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      // Increment the counter
+      // Atomically increment the counter
       const counter = await Counter.findByIdAndUpdate(
         'studentId',
         { $inc: { seq: 1 } },
@@ -24,44 +31,25 @@ const generateStudentId = async () => {
       
       const studentId = `SS-${String(counter.seq).padStart(4, '0')}`;
       
-      // Verify this ID doesn't already exist
+      // Quick existence check (not 100% safe under race, but reduces chances)
       const existing = await User.findOne({ studentId }).select('_id').lean();
       
       if (existing) {
-        console.warn(`Attempt ${attempt + 1}: Generated ID ${studentId} already exists, retrying...`);
-        continue; // Try again
+        console.warn(`Attempt ${attempt + 1}: ID ${studentId} exists, retrying...`);
+        continue; // Try next ID
       }
       
       return studentId;
     } catch (error) {
       console.error(`Attempt ${attempt + 1} failed:`, error);
-      if (attempt === maxAttempts - 1) throw error; // Throw on last attempt
+      if (attempt === maxAttempts - 1) throw error;
     }
   }
   
   throw new Error('Failed to generate unique Student ID after 3 attempts');
 };
 
-// FIXED: Rollback counter if user creation fails
-const rollbackStudentIdCounter = async () => {
-  try {
-    await Counter.findByIdAndUpdate(
-      'studentId',
-      { $inc: { seq: -1 } },
-      { new: true }
-    );
-    console.log('Rolled back student ID counter');
-  } catch (error) {
-    console.error('Failed to rollback counter:', error);
-  }
-};
-
-const generatePin = () => {
-  const buffer = crypto.randomBytes(3);
-  const num = buffer.readUIntBE(0, 3) % 1000000;
-  return String(num).padStart(6, '0');
-};
-
+// Register a non-student user (admin/teacher)
 const register = async (req, res, next) => {
   try {
     const { fullName, email, password, role, class: classId, qualifications, phone } = req.body;
@@ -89,6 +77,7 @@ const register = async (req, res, next) => {
   }
 };
 
+// Register a student with automatic ID and PIN generation
 const registerStudent = async (req, res, next) => {
   try {
     const {
@@ -102,6 +91,7 @@ const registerStudent = async (req, res, next) => {
       fatherName,
     } = req.body;
 
+    // Basic validations
     if (!fullName || !fullName.trim()) {
       return res.status(400).json({ success: false, message: 'Full name is required' });
     }
@@ -114,81 +104,104 @@ const registerStudent = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid class selected' });
     }
 
-    // Generate student ID with retry logic
-    const studentId = await generateStudentId();
-    const newPin = generatePin();
+    // Retry loop to handle duplicate key errors safely
+    const maxAttempts = 3;
+    let lastError = null;
 
-    console.log('Creating student:', { fullName, studentId, class: classId });
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        // Generate a fresh ID and PIN for each attempt
+        const studentId = await generateStudentId();
+        const newPin = generatePin();
 
-    try {
-      const user = await User.create({
-        fullName: fullName.trim(),
-        studentId,
-        pinHash: newPin,
-        role: 'student',
-        class: classId,
-        phone: phone || null,
-        accountStatus: 'active',
-        academicLevel: academicLevel || null,
-        address: address || null,
-        age: age ? Number(age) : null,
-        sex: sex || null,
-        fatherName: fatherName || null,
-        // PIN is generated automatically during registration
-        hasPin: true,
-      });
+        console.log(`Attempt ${attempt + 1}: Creating student ${fullName} with ID ${studentId}`);
 
-      user.password = undefined;
-      user.pinHash = undefined;
+        // Attempt to create the user
+        const user = await User.create({
+          fullName: fullName.trim(),
+          studentId,
+          pinHash: newPin,
+          role: 'student',
+          class: classId,
+          phone: phone || null,
+          accountStatus: 'active',
+          academicLevel: academicLevel || null,
+          address: address || null,
+          age: age ? Number(age) : null,
+          sex: sex || null,
+          fatherName: fatherName || null,
+          hasPin: true, // PIN is auto-generated
+        });
 
-      console.log('SUCCESS: Student created:', user.studentId);
+        // Success
+        user.password = undefined;
+        user.pinHash = undefined;
 
-      res.status(201).json({
-        success: true,
-        data: {
-          studentId: user.studentId,
-          fullName: user.fullName,
-          class: user.class,
-          phone: user.phone,
-          role: user.role,
-          createdPin: newPin,
-        },
-        token: generateToken(user._id),
-      });
-    } catch (createError) {
-      // If user creation failed, rollback the counter
-      await rollbackStudentIdCounter();
-      throw createError; // Re-throw to be caught by outer catch
+        console.log('SUCCESS: Student created:', user.studentId);
+
+        return res.status(201).json({
+          success: true,
+          data: {
+            studentId: user.studentId,
+            fullName: user.fullName,
+            class: user.class,
+            phone: user.phone,
+            role: user.role,
+            createdPin: newPin,
+          },
+          token: generateToken(user._id),
+        });
+      } catch (error) {
+        console.error(`Attempt ${attempt + 1} failed:`, error);
+
+        // If duplicate key on studentId, retry with a new ID
+        if (error.code === 11000 && error.keyPattern?.studentId) {
+          console.warn('Duplicate student ID detected, retrying...');
+          lastError = error;
+          continue;
+        }
+
+        // If duplicate on another field (should not happen), handle normally
+        if (error.code === 11000) {
+          return res.status(400).json({ success: false, message: 'Duplicate value for a unique field' });
+        }
+
+        // Validation error
+        if (error.name === 'ValidationError') {
+          const messages = Object.values(error.errors).map(err => err.message);
+          return res.status(400).json({ success: false, message: messages.join(', ') });
+        }
+
+        // Other errors: throw to global error handler
+        throw error;
+      }
     }
+
+    // If we exhausted all attempts
+    console.error('Failed to create student after multiple attempts:', lastError);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not generate a unique Student ID. Please try again.',
+    });
   } catch (error) {
     console.error('=== REGISTER STUDENT ERROR ===');
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
-    console.error('Error code:', error.code);
-    
-    if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: 'Duplicate Student ID. Please try again.' });
-    }
-    
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ success: false, message: messages.join(', ') });
-    }
-    
     next(error);
   }
 };
 
+// Generate or reset a student's PIN
 const generateStudentPin = async (req, res, next) => {
   try {
-    // IMPORTANT: Select pinHash so we can modify it
+    // Select pinHash so we can modify it
     const user = await User.findById(req.params.id).select('+pinHash');
     if (!user) return res.status(404).json({ success: false, message: 'Student not found' });
     if (user.role !== 'student') return res.status(400).json({ success: false, message: 'User is not a student' });
 
     const newPin = generatePin();
     user.pinHash = newPin;
-    user.hasPin = true; // Ensure hasPin is true after PIN generation
+    user.hasPin = true;
     await user.save();
 
     user.password = undefined;
@@ -204,10 +217,9 @@ const generateStudentPin = async (req, res, next) => {
   }
 };
 
-// NEW: Reset counter to match highest existing student ID
+// Reset counter to match highest existing student ID (admin utility)
 const resetStudentIdCounter = async (req, res, next) => {
   try {
-    // Find the highest existing student ID
     const allStudents = await User.find(
       { studentId: { $ne: null } },
       { studentId: 1 }
@@ -222,7 +234,6 @@ const resetStudentIdCounter = async (req, res, next) => {
       }
     });
 
-    // Reset counter to the highest number
     await Counter.findByIdAndUpdate(
       'studentId',
       { seq: maxNumber },
@@ -246,6 +257,7 @@ const resetStudentIdCounter = async (req, res, next) => {
   }
 };
 
+// Login for non-students
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -268,6 +280,7 @@ const login = async (req, res, next) => {
   }
 };
 
+// Student login with ID and PIN
 const studentLogin = async (req, res, next) => {
   try {
     const { studentId, pin } = req.body;
@@ -292,6 +305,7 @@ const studentLogin = async (req, res, next) => {
   }
 };
 
+// Get current user
 const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).populate('class', 'name').lean();
@@ -302,12 +316,12 @@ const getMe = async (req, res, next) => {
   }
 };
 
-module.exports = { 
-  register, 
-  registerStudent, 
-  generateStudentPin, 
-  login, 
-  studentLogin, 
+module.exports = {
+  register,
+  registerStudent,
+  generateStudentPin,
+  login,
+  studentLogin,
   getMe,
-  resetStudentIdCounter
+  resetStudentIdCounter,
 };
