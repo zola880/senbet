@@ -134,6 +134,8 @@ const registerStudent = async (req, res, next) => {
         age: age ? Number(age) : null,
         sex: sex || null,
         fatherName: fatherName || null,
+        // PIN is generated automatically during registration
+        hasPin: true,
       });
 
       user.password = undefined;
@@ -179,12 +181,14 @@ const registerStudent = async (req, res, next) => {
 
 const generateStudentPin = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id);
+    // IMPORTANT: Select pinHash so we can modify it
+    const user = await User.findById(req.params.id).select('+pinHash');
     if (!user) return res.status(404).json({ success: false, message: 'Student not found' });
     if (user.role !== 'student') return res.status(400).json({ success: false, message: 'User is not a student' });
 
     const newPin = generatePin();
     user.pinHash = newPin;
+    user.hasPin = true; // Ensure hasPin is true after PIN generation
     await user.save();
 
     user.password = undefined;
@@ -305,5 +309,5 @@ module.exports = {
   login, 
   studentLogin, 
   getMe,
-  resetStudentIdCounter // NEW: Export the reset function
+  resetStudentIdCounter
 };

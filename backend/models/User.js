@@ -22,11 +22,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       sparse: true,
-      match: [/^SS-\d{4}$/, 'Student ID must be in format SS-XXXX'],
+      // Allow 4 or more digits to prevent overflow issues
+      match: [/^SS-\d{4,}$/, 'Student ID must be in format SS-XXXX (at least 4 digits)'],
     },
     pinHash: {
       type: String,
       select: false,
+    },
+    // NEW: Track whether a PIN has been generated
+    hasPin: {
+      type: Boolean,
+      default: false,
     },
     password: {
       type: String,
