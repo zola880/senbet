@@ -7,6 +7,7 @@ const {
   login,
   studentLogin,
   getMe,
+  resetStudentIdCounter, // NEW
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/roleCheck');
@@ -15,6 +16,7 @@ const { authorize } = require('../middleware/roleCheck');
 router.post('/register', protect, authorize('admin'), register);
 router.post('/register/student', protect, authorize('admin'), registerStudent);
 router.post('/generate-pin/:id', protect, authorize('admin'), generateStudentPin);
+router.post('/reset-counter', protect, authorize('admin'), resetStudentIdCounter); // NEW
 
 // Public login routes
 router.post('/login', login);
