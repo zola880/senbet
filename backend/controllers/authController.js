@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/User');
-const Counter = require('../models/Counter');
 const { jwtSecret, jwtExpire } = require('../config/env');
 const crypto = require('crypto');
 
@@ -16,16 +15,16 @@ const generatePin = () => {
   return String(num).padStart(6, '0');
 };
 
-// Sync the counter with the highest existing student ID
-const syncStudentIdCounter = async () => {
-  // Find the highest student ID number
-  const allStudents = await User.find(
+// Get the next available student ID based on existing records
+const getNextStudentId = async () => {
+  // Find all student IDs and extract the numeric part
+  const students = await User.find(
     { studentId: { $ne: null } },
     { studentId: 1 }
   ).lean();
 
   let maxNumber = 0;
-  allStudents.forEach((student) => {
+  students.forEach((student) => {
     const match = student.studentId.match(/^SS-(\d+)$/);
     if (match) {
       const num = parseInt(match[1], 10);
@@ -33,38 +32,8 @@ const syncStudentIdCounter = async () => {
     }
   });
 
-  // Get current counter value
-  const counter = await Counter.findById('studentId');
-  const currentSeq = counter ? counter.seq : 0;
-
-  // If the highest existing ID is greater than or equal to current counter, update counter
-  if (maxNumber >= currentSeq) {
-    await Counter.findByIdAndUpdate(
-      'studentId',
-      { seq: maxNumber },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-    console.log(`Counter synced: max existing = ${maxNumber}, counter set to ${maxNumber}`);
-  } else {
-    console.log(`Counter already higher: counter = ${currentSeq}, max existing = ${maxNumber}`);
-  }
-};
-
-// Generate a unique Student ID
-const generateStudentId = async () => {
-  // First, sync the counter to avoid duplicates from stale counter
-  await syncStudentIdCounter();
-
-  // Increment the counter atomically
-  const counter = await Counter.findByIdAndUpdate(
-    'studentId',
-    { $inc: { seq: 1 } },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
-  );
-
-  const studentId = `SS-${String(counter.seq).padStart(4, '0')}`;
-  console.log(`Generated student ID: ${studentId}`);
-  return studentId;
+  // Next ID is max + 1, formatted with at least 4 digits
+  return `SS-${String(maxNumber + 1).padStart(4, '0')}`;
 };
 
 // Register a non-student user (admin/teacher)
@@ -122,18 +91,17 @@ const registerStudent = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid class selected' });
     }
 
-    const maxAttempts = 3;
+    const maxAttempts = 5; // Increase attempts since we rely on retry for races
     let lastError = null;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        // Generate a fresh ID for each attempt
-        const studentId = await generateStudentId();
+        // Generate the next ID based on current highest
+        const studentId = await getNextStudentId();
         const newPin = generatePin();
 
         console.log(`Attempt ${attempt + 1}: Creating student ${fullName} with ID ${studentId}`);
 
-        // Attempt to create the user
         const user = await User.create({
           fullName: fullName.trim(),
           studentId,
@@ -147,7 +115,7 @@ const registerStudent = async (req, res, next) => {
           age: age ? Number(age) : null,
           sex: sex || null,
           fatherName: fatherName || null,
-          hasPin: true, // PIN is auto-generated
+          hasPin: true,
         });
 
         // Success
@@ -171,11 +139,11 @@ const registerStudent = async (req, res, next) => {
       } catch (error) {
         console.error(`Attempt ${attempt + 1} failed:`, error);
 
-        // If duplicate key error, it's definitely the studentId (since no other unique fields are set)
+        // If duplicate key error, it's the studentId (no other unique fields are set)
         if (error.code === 11000) {
           console.warn(`Duplicate key error on attempt ${attempt + 1}. Retrying...`);
           lastError = error;
-          continue;
+          continue; // Recompute the next ID on the next attempt
         }
 
         // Validation error
@@ -189,7 +157,7 @@ const registerStudent = async (req, res, next) => {
       }
     }
 
-    // If all attempts failed due to duplicate
+    // Exhausted all attempts
     console.error('Failed to create student after multiple attempts:', lastError);
     return res.status(500).json({
       success: false,
@@ -224,28 +192,6 @@ const generateStudentPin = async (req, res, next) => {
     });
   } catch (error) {
     console.error('GenerateStudentPin error:', error);
-    next(error);
-  }
-};
-
-// Reset counter to match highest existing student ID (admin utility)
-const resetStudentIdCounter = async (req, res, next) => {
-  try {
-    await syncStudentIdCounter();
-    const counter = await Counter.findById('studentId');
-    const nextId = `SS-${String(counter.seq + 1).padStart(4, '0')}`;
-
-    res.status(200).json({
-      success: true,
-      message: `Counter reset. Next student will get ID: ${nextId}`,
-      data: {
-        highestExistingId: counter ? `SS-${String(counter.seq).padStart(4, '0')}` : null,
-        nextId,
-        totalStudents: await User.countDocuments({ role: 'student' }),
-      },
-    });
-  } catch (error) {
-    console.error('Reset counter error:', error);
     next(error);
   }
 };
@@ -316,5 +262,4 @@ module.exports = {
   login,
   studentLogin,
   getMe,
-  resetStudentIdCounter,
 };
