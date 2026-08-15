@@ -154,7 +154,7 @@ const Login = () => {
                 userType === 'student' ? 'Student ID detected' :
                 'Format: AS-XXXX, TS-XXXX, or SS-XXXX'
               ) : (
-                'Admin (AS-XXXX), Teacher (TS-XXXX), or Student (SS-XXXX)'
+                'Enter your ID'
               )}
             </small>
           </div>
