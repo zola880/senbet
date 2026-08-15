@@ -10,9 +10,6 @@ import './Login.css';
 const Login = () => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
-  const [studentId, setStudentId] = useState('');
-  const [pin, setPin] = useState('');
-  const [activeTab, setActiveTab] = useState('admin');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
   
@@ -31,15 +28,46 @@ const Login = () => {
     setTimeout(() => setToast({ type: '', message: '' }), 4000);
   };
 
-  const handleAdminLogin = async (e) => {
+  // Detect user type based on ID prefix
+  const getUserType = (id) => {
+    const upperId = id.trim().toUpperCase();
+    if (upperId.startsWith('AS-') || upperId.startsWith('TS-')) return 'staff';
+    if (upperId.startsWith('SS-')) return 'student';
+    return null;
+  };
+
+  const userType = getUserType(userId);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await api.post('/api/v1/auth/login', { 
-        userId: userId.trim().toUpperCase(), 
-        password 
-      });
+      const trimmedUserId = userId.trim().toUpperCase();
+      const type = getUserType(trimmedUserId);
+
+      if (!type) {
+        showToast('error', 'Invalid ID format. Please use AS-XXXX, TS-XXXX, or SS-XXXX');
+        setIsLoading(false);
+        return;
+      }
+
+      let response;
+
+      if (type === 'staff') {
+        // Admin or Teacher login
+        response = await api.post('/api/v1/auth/login', { 
+          userId: trimmedUserId, 
+          password 
+        });
+      } else {
+        // Student login
+        response = await api.post('/api/v1/auth/student/login', {
+          studentId: trimmedUserId,
+          pin: password,
+        });
+      }
+
       const { token: newToken, data: userData } = response.data;
 
       localStorage.setItem('token', newToken);
@@ -57,30 +85,18 @@ const Login = () => {
     }
   };
 
-  const handleStudentLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleUserIdChange = (e) => {
+    const value = e.target.value.toUpperCase();
+    setUserId(value);
+  };
 
-    try {
-      const response = await api.post('/api/v1/auth/student/login', {
-        studentId: studentId.trim().toUpperCase(),
-        pin: pin.trim(),
-      });
-
-      const { token: newToken, data: userData } = response.data;
-
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
-      setUser(userData);
-
-      showToast('success', 'Login successful! Redirecting...');
-      
-      const from = location.state?.from || '/student';
-      setTimeout(() => navigate(from, { replace: true }), 800);
-    } catch (err) {
-      const message = err.response?.data?.message || 'Login failed. Please check your Student ID and PIN.';
-      showToast('error', message);
-      setIsLoading(false);
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    // If student, only allow digits and limit to 6
+    if (userType === 'student') {
+      setPassword(value.replace(/\D/g, '').slice(0, 6));
+    } else {
+      setPassword(value);
     }
   };
 
@@ -115,118 +131,60 @@ const Login = () => {
           <p className="login-subtitle">Church Sunday School Management System</p>
         </header>
 
-        <div className="login-tabs" role="tablist" aria-label="Login type">
-          <button
-            className={`login-tab ${activeTab === 'admin' ? 'login-tab--active' : ''}`}
-            onClick={() => { setActiveTab('admin'); setUserId(''); setPassword(''); }}
-            role="tab"
-            aria-selected={activeTab === 'admin'}
-          >
-            Admin / Teacher
-          </button>
-          <button
-            className={`login-tab ${activeTab === 'student' ? 'login-tab--active' : ''}`}
-            onClick={() => { setActiveTab('student'); setStudentId(''); setPin(''); }}
-            role="tab"
-            aria-selected={activeTab === 'student'}
-          >
-            Student
-          </button>
-        </div>
+        <form className="login-form" onSubmit={handleLogin} noValidate>
+          <div className="login-field">
+            <label htmlFor="userId" className="login-label">
+              <FiUser className="login-label-icon" />
+              User ID
+            </label>
+            <input
+              id="userId"
+              type="text"
+              className="login-input"
+              placeholder="e.g., AS-0001, TS-0001, or SS-0001"
+              value={userId}
+              onChange={handleUserIdChange}
+              required
+              autoComplete="off"
+              disabled={isLoading}
+            />
+            <small className="login-hint">
+              {userId ? (
+                userType === 'staff' ? 'Admin or Teacher ID detected' :
+                userType === 'student' ? 'Student ID detected' :
+                'Format: AS-XXXX, TS-XXXX, or SS-XXXX'
+              ) : (
+                'Admin (AS-XXXX), Teacher (TS-XXXX), or Student (SS-XXXX)'
+              )}
+            </small>
+          </div>
 
-        <form className="login-form" onSubmit={activeTab === 'admin' ? handleAdminLogin : handleStudentLogin} noValidate>
-          {activeTab === 'admin' ? (
-            <>
-              <div className="login-field">
-                <label htmlFor="userId" className="login-label">
-                  <FiUser className="login-label-icon" />
-                  User ID
-                </label>
-                <input
-                  id="userId"
-                  type="text"
-                  className="login-input"
-                  placeholder="e.g., AS-0001 or TS-0001"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value.toUpperCase())}
-                  required
-                  autoComplete="off"
-                  disabled={isLoading}
-                  pattern="[AT]S-\d{4}"
-                  title="Format: AS-XXXX (Admin) or TS-XXXX (Teacher)"
-                />
-                <small className="login-hint">Admin ID (AS-XXXX) or Teacher ID (TS-XXXX)</small>
-              </div>
-
-              <div className="login-field">
-                <label htmlFor="password" className="login-label">
-                  <FiLock className="login-label-icon" />
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  className="login-input"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  disabled={isLoading}
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="login-field">
-                <label htmlFor="studentId" className="login-label">
-                  <FiUser className="login-label-icon" />
-                  Student ID
-                </label>
-                <input
-                  id="studentId"
-                  type="text"
-                  className="login-input"
-                  placeholder="e.g., SS-0001"
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value.toUpperCase())}
-                  required
-                  autoComplete="off"
-                  disabled={isLoading}
-                  pattern="SS-\d{4}"
-                  title="Format: SS-XXXX (e.g., SS-0001)"
-                />
-                <small className="login-hint">Format: SS-XXXX (e.g., SS-0001)</small>
-              </div>
-
-              <div className="login-field">
-                <label htmlFor="pin" className="login-label">
-                  <FiLock className="login-label-icon" />
-                  PIN
-                </label>
-                <input
-                  id="pin"
-                  type="password"
-                  className="login-input"
-                  placeholder="Enter your 6-digit PIN"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  required
-                  autoComplete="off"
-                  disabled={isLoading}
-                  inputMode="numeric"
-                  pattern="\d{6}"
-                  title="6-digit PIN"
-                />
-                <small className="login-hint">Your 6-digit PIN</small>
-              </div>
-            </>
-          )}
+          <div className="login-field">
+            <label htmlFor="password" className="login-label">
+              <FiLock className="login-label-icon" />
+              {userType === 'student' ? 'PIN' : 'Password'}
+            </label>
+            <input
+              id="password"
+              type="password"
+              className="login-input"
+              placeholder={userType === 'student' ? 'Enter your 6-digit PIN' : 'Enter your password'}
+              value={password}
+              onChange={handlePasswordChange}
+              required
+              autoComplete={userType === 'student' ? 'off' : 'current-password'}
+              disabled={isLoading}
+              inputMode={userType === 'student' ? 'numeric' : 'text'}
+            />
+            <small className="login-hint">
+              {userType === 'student' ? 'Your 6-digit PIN' : 'Your secure password'}
+            </small>
+          </div>
 
           <button 
             type="submit" 
             className="login-btn" 
-            disabled={isLoading}
+            disabled={isLoading || !userType}
           >
             {isLoading ? (
               <>
@@ -234,7 +192,7 @@ const Login = () => {
                 <span>Signing In...</span>
               </>
             ) : (
-              activeTab === 'admin' ? 'Sign In' : 'Student Login'
+              'Sign In'
             )}
           </button>
         </form>

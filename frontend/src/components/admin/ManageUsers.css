@@ -807,3 +807,160 @@
   0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35); }
   50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
 }
+/* ==========================================================================
+   CREDENTIALS MODAL — Beautiful replacement for native alert() with copy button
+   ========================================================================== */
+
+.mu-credentials-modal {
+  max-width: 460px;
+}
+
+.mu-credentials-header {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-bottom-color: #bbf7d0;
+}
+
+.mu-credentials-header h2 {
+  color: var(--mu-success) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mu-credentials-header-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--mu-success);
+  color: white;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.mu-credentials-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.mu-credentials-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  color: #78350f;
+}
+
+.mu-credentials-warning svg {
+  flex-shrink: 0;
+  color: #d97706;
+  margin-top: 0.15rem;
+}
+
+.mu-credentials-warning p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.mu-credentials-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--mu-bg);
+  border: 1px solid var(--mu-border);
+  border-radius: 12px;
+  padding: 0.5rem;
+}
+
+.mu-credential-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  gap: 1rem;
+  transition: background 0.2s;
+}
+
+.mu-credential-row:hover {
+  background: rgba(109, 26, 40, 0.04);
+}
+
+.mu-credential-row--highlight {
+  background: var(--mu-gold-soft);
+  border: 1px solid rgba(210, 161, 44, 0.3);
+}
+
+.mu-credential-row--highlight:hover {
+  background: #f5e2b8;
+}
+
+.mu-credential-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--mu-ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.mu-credential-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--mu-ink);
+  text-align: right;
+  word-break: break-word;
+}
+
+.mu-credential-value--mono {
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  letter-spacing: 0.05em;
+}
+
+.mu-credential-value--secret {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--mu-maroon);
+  letter-spacing: 0.15em;
+}
+
+.mu-credentials-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.mu-btn--copy {
+  background: var(--mu-success);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(46, 125, 50, 0.2);
+}
+
+.mu-btn--copy:hover:not(:disabled) {
+  background: #1b5e20;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 480px) {
+  .mu-credentials-actions {
+    flex-direction: column-reverse;
+  }
+  .mu-credentials-actions .mu-btn {
+    width: 100%;
+  }
+  .mu-credential-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .mu-credential-value {
+    text-align: left;
+  }
+}

@@ -14,14 +14,11 @@ const generatePin = () => {
   return String(num).padStart(6, '0');
 };
 
+// Generate a 6-digit numeric password (same format as student PIN)
 const generatePassword = () => {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  let password = '';
-  const randomBytes = crypto.randomBytes(8);
-  for (let i = 0; i < 8; i++) {
-    password += chars[randomBytes[i] % chars.length];
-  }
-  return password;
+  const buffer = crypto.randomBytes(3);
+  const num = buffer.readUIntBE(0, 3) % 1000000;
+  return String(num).padStart(6, '0');
 };
 
 const getNextId = async (prefix, fieldName) => {

@@ -2,7 +2,7 @@ import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useRef, us
 import { useNavigate } from 'react-router-dom';
 import {
   FiAlertTriangle, FiCheckCircle, FiEdit2, FiFilter, FiInbox,
-  FiLock, FiPhone, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiX,
+  FiLock, FiPhone, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiX, FiCopy,
 } from 'react-icons/fi';
 
 import api from '../../services/api';
@@ -65,6 +65,121 @@ const getCollator = (locale) => {
   catch { return new Intl.Collator(undefined, { sensitivity: 'base', numeric: true }); }
 };
 
+/* --------------------------------------------------------------------------
+   Credentials Modal — Replaces native alert() with a copy-friendly dialog
+   -------------------------------------------------------------------------- */
+const CredentialsModal = ({ isOpen, onClose, credentials, showToast }) => {
+  const [copied, setCopied] = useState(false);
+  const credentialRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCopied(false);
+      return;
+    }
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !credentials) return null;
+
+  const handleCopy = async () => {
+    const text =
+      `${credentials.roleLabel} Created Successfully\n\n` +
+      `Name: ${credentials.name}\n` +
+      `${credentials.idLabel}: ${credentials.id}\n` +
+      `${credentials.secretLabel}: ${credentials.secret}\n`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      showToast('success', 'Credentials copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        showToast('success', 'Credentials copied to clipboard!');
+        setTimeout(() => setCopied(false), 2000);
+      } catch (e) {
+        showToast('error', 'Failed to copy. Please copy manually.');
+      }
+      document.body.removeChild(textarea);
+    }
+  };
+
+  return (
+    <div className="mu-modal-backdrop mu-credentials-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="mu-modal mu-credentials-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="mu-modal-header mu-credentials-header">
+          <div className="mu-credentials-header-icon" aria-hidden="true">
+            <FiCheckCircle size={22} />
+          </div>
+          <h2>{credentials.roleLabel} Created Successfully</h2>
+          <button className="mu-modal-close" onClick={onClose} aria-label="Close">
+            <FiX size={20} />
+          </button>
+        </div>
+
+        <div className="mu-credentials-body">
+          <div className="mu-credentials-warning">
+            <FiLock size={16} />
+            <p>
+              <strong>Save these credentials now.</strong> The {credentials.secretLabel.toLowerCase()} will not be shown again after you close this window.
+            </p>
+          </div>
+
+          <div className="mu-credentials-list" ref={credentialRef}>
+            <div className="mu-credential-row">
+              <span className="mu-credential-label">Name</span>
+              <span className="mu-credential-value">{credentials.name}</span>
+            </div>
+            <div className="mu-credential-row">
+              <span className="mu-credential-label">{credentials.idLabel}</span>
+              <span className="mu-credential-value mu-credential-value--mono">{credentials.id}</span>
+            </div>
+            <div className="mu-credential-row mu-credential-row--highlight">
+              <span className="mu-credential-label">{credentials.secretLabel}</span>
+              <span className="mu-credential-value mu-credential-value--mono mu-credential-value--secret">
+                {credentials.secret}
+              </span>
+            </div>
+          </div>
+
+          <div className="mu-credentials-actions">
+            <button
+              type="button"
+              className="mu-btn mu-btn--primary mu-btn--copy"
+              onClick={handleCopy}
+            >
+              <FiCopy size={16} />
+              {copied ? 'Copied!' : 'Copy Credentials'}
+            </button>
+            <button
+              type="button"
+              className="mu-btn mu-btn--ghost"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* --------------------------------------------------------------------------
+   User Modal (Create / Edit)
+   -------------------------------------------------------------------------- */
 const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, defaultRole }) => {
   const [formData, setFormData] = useState({
     fullName: '', role: defaultRole,
@@ -142,8 +257,8 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
                   <strong>ID and Password will be auto-generated</strong>
                   <p>
                     {formData.role === 'admin' || formData.role === 'development' 
-                      ? 'An Admin ID (AS-XXXX) and secure password will be generated automatically after creation.'
-                      : 'A Teacher ID (TS-XXXX) and secure password will be generated automatically after creation.'}
+                      ? 'An Admin ID (AS-XXXX) and 6-digit password will be generated automatically after creation.'
+                      : 'A Teacher ID (TS-XXXX) and 6-digit password will be generated automatically after creation.'}
                   </p>
                 </div>
               </div>
@@ -271,6 +386,9 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
   );
 };
 
+/* --------------------------------------------------------------------------
+   Main Component
+   -------------------------------------------------------------------------- */
 const TABS = [
   { key: 'admin', label: 'Admins' },
   { key: 'teacher', label: 'Teachers' },
@@ -289,6 +407,9 @@ const ManageUsers = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
+
+  // Credentials modal state (replaces native alert())
+  const [credentialsModal, setCredentialsModal] = useState({ isOpen: false, data: null });
 
   const deferredQuery = useDeferredValue(searchQuery);
   const tabRefs = useRef({});
@@ -357,6 +478,14 @@ const ManageUsers = () => {
   const openEditModal = (user) => { setEditingUser(user); setModalOpen(true); };
   const closeModal = () => { setModalOpen(false); setEditingUser(null); };
 
+  const showCredentials = (data) => {
+    setCredentialsModal({ isOpen: true, data });
+  };
+
+  const closeCredentialsModal = () => {
+    setCredentialsModal({ isOpen: false, data: null });
+  };
+
   const handleSave = async (payload) => {
     setIsSaving(true);
     try {
@@ -368,30 +497,27 @@ const ManageUsers = () => {
           const response = await api.post('/api/v1/auth/register/student', payload);
           const { studentId, createdPin } = response.data.data;
           showToast('success', `Student created! ID: ${studentId}`);
-          setTimeout(() => {
-            alert(
-              `Student Created Successfully!\n\n` +
-              `Name: ${payload.fullName}\n` +
-              `Student ID: ${studentId}\n` +
-              `PIN: ${createdPin}\n\n` +
-              `Please provide these credentials to the student/parent.`
-            );
-          }, 100);
+          showCredentials({
+            roleLabel: 'Student',
+            name: payload.fullName,
+            idLabel: 'Student ID',
+            id: studentId,
+            secretLabel: 'PIN',
+            secret: createdPin,
+          });
         } else {
           const response = await api.post('/api/v1/auth/register', payload);
           const { userId, createdPassword } = response.data.data;
-          const roleLabel = payload.role === 'admin' || payload.role === 'development' ? 'Admin' : 'Teacher';
+          const roleLabel = (payload.role === 'admin' || payload.role === 'development') ? 'Admin' : 'Teacher';
           showToast('success', `${roleLabel} created! ID: ${userId}`);
-          setTimeout(() => {
-            alert(
-              `${roleLabel} Created Successfully!\n\n` +
-              `Name: ${payload.fullName}\n` +
-              `${roleLabel} ID: ${userId}\n` +
-              `Password: ${createdPassword}\n\n` +
-              `⚠️ IMPORTANT: Save these credentials securely.\n` +
-              `The password will not be shown again.`
-            );
-          }, 100);
+          showCredentials({
+            roleLabel,
+            name: payload.fullName,
+            idLabel: `${roleLabel} ID`,
+            id: userId,
+            secretLabel: 'Password',
+            secret: createdPassword,
+          });
         }
       }
       closeModal();
@@ -413,14 +539,14 @@ const ManageUsers = () => {
       const response = await api.post(`/api/v1/auth/generate-pin/${studentId}`);
       const newPin = response.data.data.createdPin;
       showToast('success', `New PIN generated for ${studentName}`);
-      setTimeout(() => {
-        alert(
-          `${hasPin ? 'New' : 'Generated'} PIN for ${studentName}:\n\n` +
-          `${newPin}\n\n` +
-          `⚠️ IMPORTANT: This PIN cannot be retrieved again.\n` +
-          `Please copy it now and provide it to the student/parent.`
-        );
-      }, 100);
+      showCredentials({
+        roleLabel: 'Student',
+        name: studentName,
+        idLabel: 'Student ID',
+        id: studentId,
+        secretLabel: `${hasPin ? 'New ' : ''}PIN`,
+        secret: newPin,
+      });
       reload();
     } catch (err) {
       showToast('error', err.response?.data?.message || 'Failed to generate PIN.');
@@ -666,6 +792,13 @@ const ManageUsers = () => {
         classes={classes}
         isSaving={isSaving}
         defaultRole={activeTab === 'admin' ? 'admin' : activeTab}
+      />
+
+      <CredentialsModal
+        isOpen={credentialsModal.isOpen}
+        onClose={closeCredentialsModal}
+        credentials={credentialsModal.data}
+        showToast={showToast}
       />
     </section>
   );
