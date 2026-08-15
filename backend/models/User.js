@@ -10,11 +10,8 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: function() {
-        return this.role !== 'student';
-      },
       unique: true,
-      sparse: true,
+      sparse: true, // Allow multiple null values
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address'],
     },
@@ -22,23 +19,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       sparse: true,
-      // Allow 4 or more digits to prevent overflow issues
-      match: [/^SS-\d{4,}$/, 'Student ID must be in format SS-XXXX (at least 4 digits)'],
+      match: [/^SS-\d{4}$/, 'Student ID must be in format SS-XXXX'],
     },
     pinHash: {
       type: String,
       select: false,
     },
-    // NEW: Track whether a PIN has been generated
-    hasPin: {
-      type: Boolean,
-      default: false,
-    },
     password: {
       type: String,
-      required: function() {
-        return this.role !== 'student';
-      },
       minlength: [6, 'Password must be at least 6 characters'],
       select: false,
     },
@@ -69,7 +57,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    // Student personal information
     academicLevel: {
       type: String,
       default: null,
@@ -95,6 +82,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
       trim: true,
+    },
+    hasPin: {
+      type: Boolean,
+      default: false,
     },
   },
   {
