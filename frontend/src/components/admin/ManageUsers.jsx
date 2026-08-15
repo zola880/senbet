@@ -67,7 +67,7 @@ const getCollator = (locale) => {
 
 const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, defaultRole }) => {
   const [formData, setFormData] = useState({
-    fullName: '', email: '', password: '', role: defaultRole,
+    fullName: '', role: defaultRole,
     class: '', qualifications: '', department: 'none', phone: '',
     academicLevel: '', address: '', age: '', sex: '', fatherName: '',
   });
@@ -79,8 +79,6 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
       const dept = initialData?.role === 'development' ? 'development' : 'none';
       setFormData({
         fullName: initialData?.fullName || '',
-        email: initialData?.email || '',
-        password: '',
         role: initialData?.role === 'development' ? 'admin' : (initialData?.role || defaultRole),
         class: initialData?.class?._id || initialData?.class || '',
         qualifications: initialData?.qualifications || '',
@@ -110,8 +108,6 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
     const payload = { ...formData };
     if (payload.role === 'admin' && payload.department === 'development') payload.role = 'development';
     delete payload.department;
-    if (isEditing && !payload.password) delete payload.password;
-    // Convert age to number if provided
     if (payload.age) payload.age = Number(payload.age);
     else delete payload.age;
     onSubmit(payload);
@@ -137,20 +133,21 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
             <label htmlFor="mu-fullName" className="mu-label">Full Name <span className="mu-required">*</span></label>
             <input id="mu-fullName" ref={inputRef} name="fullName" type="text" className="mu-input" placeholder="e.g., ዮሐንስ ተስፋዬ / John Doe" value={formData.fullName} onChange={handleChange} required />
           </div>
-          
-          {formData.role !== 'student' && (
-            <>
-              <div className="mu-form-group">
-                <label htmlFor="mu-email" className="mu-label">Email <span className="mu-required">*</span></label>
-                <input id="mu-email" name="email" type="email" className="mu-input" placeholder="user@example.com" value={formData.email} onChange={handleChange} required />
+
+          {formData.role !== 'student' && !isEditing && (
+            <div className="mu-form-group">
+              <div className="mu-info-box">
+                <FiLock size={16} />
+                <div>
+                  <strong>ID and Password will be auto-generated</strong>
+                  <p>
+                    {formData.role === 'admin' || formData.role === 'development' 
+                      ? 'An Admin ID (AS-XXXX) and secure password will be generated automatically after creation.'
+                      : 'A Teacher ID (TS-XXXX) and secure password will be generated automatically after creation.'}
+                  </p>
+                </div>
               </div>
-              <div className="mu-form-group">
-                <label htmlFor="mu-password" className="mu-label">
-                  Password {isEditing && <span className="mu-optional">(leave blank to keep current)</span>}
-                </label>
-                <input id="mu-password" name="password" type="password" className="mu-input" placeholder="••••••••" value={formData.password} onChange={handleChange} required={!isEditing} />
-              </div>
-            </>
+            </div>
           )}
 
           {formData.role === 'student' && !isEditing && (
@@ -175,7 +172,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
 
           <div className="mu-form-group">
             <label htmlFor="mu-role" className="mu-label">Role</label>
-            <select id="mu-role" name="role" className="mu-select" value={formData.role} onChange={handleChange}>
+            <select id="mu-role" name="role" className="mu-select" value={formData.role} onChange={handleChange} disabled={isEditing}>
               <option value="admin">Admin</option>
               <option value="teacher">Teacher</option>
               <option value="student">Student</option>
@@ -206,13 +203,11 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
                 </select>
               </div>
 
-              {/* NEW: Father Name */}
               <div className="mu-form-group">
                 <label htmlFor="mu-fatherName" className="mu-label">Father's Name</label>
                 <input id="mu-fatherName" name="fatherName" type="text" className="mu-input" placeholder="e.g., አባት ስም / Father name" value={formData.fatherName} onChange={handleChange} />
               </div>
 
-              {/* NEW: Age and Sex row */}
               <div className="mu-form-row">
                 <div className="mu-form-group">
                   <label htmlFor="mu-age" className="mu-label">Age</label>
@@ -228,14 +223,12 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
                 </div>
               </div>
 
-              {/* NEW: Academic Level */}
               <div className="mu-form-group">
                 <label htmlFor="mu-academicLevel" className="mu-label">Academic Level</label>
                 <input id="mu-academicLevel" name="academicLevel" type="text" className="mu-input" placeholder="e.g., Grade 5, Freshman" value={formData.academicLevel} onChange={handleChange} />
                 <small className="mu-hint">Regular school grade or academic level</small>
               </div>
 
-              {/* NEW: Address */}
               <div className="mu-form-group">
                 <label htmlFor="mu-address" className="mu-label">Address</label>
                 <select id="mu-address" name="address" className="mu-select" value={formData.address} onChange={handleChange}>
@@ -245,7 +238,6 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
                 </select>
               </div>
 
-              {/* Parent Phone */}
               <div className="mu-form-group">
                 <label htmlFor="mu-phone" className="mu-label">Parent Phone Number</label>
                 <input id="mu-phone" name="phone" type="tel" className="mu-input" placeholder="e.g., +251 912 345 678" value={formData.phone} onChange={handleChange} />
@@ -255,10 +247,16 @@ const UserModal = ({ isOpen, onClose, onSubmit, initialData, classes, isSaving, 
           )}
 
           {formData.role === 'teacher' && (
-            <div className="mu-form-group">
-              <label htmlFor="mu-qualifications" className="mu-label">Qualifications</label>
-              <input id="mu-qualifications" name="qualifications" type="text" className="mu-input" placeholder="e.g., B.Ed, M.A." value={formData.qualifications} onChange={handleChange} />
-            </div>
+            <>
+              <div className="mu-form-group">
+                <label htmlFor="mu-qualifications" className="mu-label">Qualifications</label>
+                <input id="mu-qualifications" name="qualifications" type="text" className="mu-input" placeholder="e.g., B.Ed, M.A." value={formData.qualifications} onChange={handleChange} />
+              </div>
+              <div className="mu-form-group">
+                <label htmlFor="mu-phone" className="mu-label">Phone Number</label>
+                <input id="mu-phone" name="phone" type="tel" className="mu-input" placeholder="e.g., +251 912 345 678" value={formData.phone} onChange={handleChange} />
+              </div>
+            </>
           )}
 
           <div className="mu-form-actions">
@@ -322,8 +320,9 @@ const ManageUsers = () => {
       if (!q) return true;
       return (
         u.fullName?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
         u.studentId?.toLowerCase().includes(q) ||
+        u.adminId?.toLowerCase().includes(q) ||
+        u.teacherId?.toLowerCase().includes(q) ||
         u.class?.name?.toLowerCase().includes(q) ||
         u.phone?.toLowerCase().includes(q) ||
         u.fatherName?.toLowerCase().includes(q)
@@ -379,8 +378,20 @@ const ManageUsers = () => {
             );
           }, 100);
         } else {
-          await api.post('/api/v1/auth/register', payload);
-          showToast('success', 'User created successfully.');
+          const response = await api.post('/api/v1/auth/register', payload);
+          const { userId, createdPassword } = response.data.data;
+          const roleLabel = payload.role === 'admin' || payload.role === 'development' ? 'Admin' : 'Teacher';
+          showToast('success', `${roleLabel} created! ID: ${userId}`);
+          setTimeout(() => {
+            alert(
+              `${roleLabel} Created Successfully!\n\n` +
+              `Name: ${payload.fullName}\n` +
+              `${roleLabel} ID: ${userId}\n` +
+              `Password: ${createdPassword}\n\n` +
+              `⚠️ IMPORTANT: Save these credentials securely.\n` +
+              `The password will not be shown again.`
+            );
+          }, 100);
         }
       }
       closeModal();
@@ -475,15 +486,14 @@ const ManageUsers = () => {
           <span className="mu-user-name">{u.fullName}</span>
         </div>
       </td>
-      {activeTab === 'student' ? (
-        <td data-label="Student ID">{u.studentId || '—'}</td>
-      ) : (
-        <td data-label="Email">{u.email}</td>
-      )}
+      {activeTab === 'admin' && <td data-label="Admin ID">{u.adminId || '—'}</td>}
+      {activeTab === 'teacher' && <td data-label="Teacher ID">{u.teacherId || '—'}</td>}
+      {activeTab === 'student' && <td data-label="Student ID">{u.studentId || '—'}</td>}
       {activeTab === 'admin' && <td data-label="Department">{getDepartmentBadge(u)}</td>}
       {activeTab === 'student' && <td data-label="Class">{u.class?.name || '—'}</td>}
       {activeTab === 'student' && <td data-label="Parent Phone">{u.phone || '—'}</td>}
       {activeTab === 'teacher' && <td data-label="Qualifications">{u.qualifications || '—'}</td>}
+      {activeTab === 'teacher' && <td data-label="Phone">{u.phone || '—'}</td>}
       <td data-label="Actions" className="mu-td-actions">
         <div className="mu-actions" onClick={(e) => e.stopPropagation()}>
           {activeTab === 'student' && u.role === 'student' && (
@@ -619,11 +629,12 @@ const ManageUsers = () => {
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>{activeTab === 'student' ? 'Student ID' : 'Email'}</th>
+                  <th>{activeTab === 'admin' ? 'Admin ID' : activeTab === 'teacher' ? 'Teacher ID' : 'Student ID'}</th>
                   {activeTab === 'admin' && <th>Department</th>}
                   {activeTab === 'student' && <th>Class</th>}
                   {activeTab === 'student' && <th>Parent Phone</th>}
                   {activeTab === 'teacher' && <th>Qualifications</th>}
+                  {activeTab === 'teacher' && <th>Phone</th>}
                   <th className="mu-th-actions">Actions</th>
                 </tr>
               </thead>

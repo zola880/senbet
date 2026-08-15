@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       unique: true,
-      sparse: true, // Allow multiple null values
+      sparse: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address'],
     },
@@ -20,6 +20,18 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
       match: [/^SS-\d{4}$/, 'Student ID must be in format SS-XXXX'],
+    },
+    adminId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      match: [/^AS-\d{4}$/, 'Admin ID must be in format AS-XXXX'],
+    },
+    teacherId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      match: [/^TS-\d{4}$/, 'Teacher ID must be in format TS-XXXX'],
     },
     pinHash: {
       type: String,
@@ -94,6 +106,8 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ studentId: 1 });
+userSchema.index({ adminId: 1 });
+userSchema.index({ teacherId: 1 });
 userSchema.index({ email: 1 });
 
 userSchema.pre('save', async function (next) {

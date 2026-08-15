@@ -7,7 +7,7 @@ const getUsers = async (req, res, next) => {
     if (req.query.class) query.class = req.query.class;
 
     const users = await User.find(query)
-      .select('fullName email role studentId qualifications class phone academicLevel address age sex fatherName')
+      .select('fullName email role studentId adminId teacherId qualifications class phone academicLevel address age sex fatherName')
       .populate('class', 'name')
       .sort({ fullName: 1 })
       .lean();

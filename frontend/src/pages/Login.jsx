@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiAlertTriangle, FiCheckCircle, FiLock, FiMail, FiX, FiUser } from 'react-icons/fi';
+import { FiAlertTriangle, FiCheckCircle, FiLock, FiX, FiUser } from 'react-icons/fi';
 
 import AuthContext from '../context/AuthContext';
 import api from '../services/api';
@@ -8,7 +8,7 @@ import bgImage from '../assets/L.png';
 import './Login.css';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [studentId, setStudentId] = useState('');
   const [pin, setPin] = useState('');
@@ -36,7 +36,10 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/api/v1/auth/login', { email, password });
+      const response = await api.post('/api/v1/auth/login', { 
+        userId: userId.trim().toUpperCase(), 
+        password 
+      });
       const { token: newToken, data: userData } = response.data;
 
       localStorage.setItem('token', newToken);
@@ -60,7 +63,7 @@ const Login = () => {
 
     try {
       const response = await api.post('/api/v1/auth/student/login', {
-        studentId: studentId.trim(),
+        studentId: studentId.trim().toUpperCase(),
         pin: pin.trim(),
       });
 
@@ -115,7 +118,7 @@ const Login = () => {
         <div className="login-tabs" role="tablist" aria-label="Login type">
           <button
             className={`login-tab ${activeTab === 'admin' ? 'login-tab--active' : ''}`}
-            onClick={() => { setActiveTab('admin'); setEmail(''); setPassword(''); }}
+            onClick={() => { setActiveTab('admin'); setUserId(''); setPassword(''); }}
             role="tab"
             aria-selected={activeTab === 'admin'}
           >
@@ -135,21 +138,24 @@ const Login = () => {
           {activeTab === 'admin' ? (
             <>
               <div className="login-field">
-                <label htmlFor="email" className="login-label">
-                  <FiMail className="login-label-icon" />
-                  Email Address
+                <label htmlFor="userId" className="login-label">
+                  <FiUser className="login-label-icon" />
+                  User ID
                 </label>
                 <input
-                  id="email"
-                  type="email"
+                  id="userId"
+                  type="text"
                   className="login-input"
-                  placeholder="your.email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g., AS-0001 or TS-0001"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value.toUpperCase())}
                   required
-                  autoComplete="email"
+                  autoComplete="off"
                   disabled={isLoading}
+                  pattern="[AT]S-\d{4}"
+                  title="Format: AS-XXXX (Admin) or TS-XXXX (Teacher)"
                 />
+                <small className="login-hint">Admin ID (AS-XXXX) or Teacher ID (TS-XXXX)</small>
               </div>
 
               <div className="login-field">
