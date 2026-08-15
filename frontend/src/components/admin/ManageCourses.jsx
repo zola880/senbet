@@ -336,35 +336,36 @@ const ManageCourses = () => {
                   role="button"
                   aria-label={`Open ${course.name}`}
                 >
-                  <div className="mgc-card-icon" aria-hidden="true">
-                    <FiBookOpen size={24} />
+                  <div className="mgc-card-top">
+                    <div className="mgc-card-icon" aria-hidden="true">
+                      <FiBookOpen size={18} />
+                    </div>
+                    <div className="mgc-card-actions" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="mgc-icon-btn"
+                        onClick={(e) => openEditModal(course, e)}
+                        aria-label={`Edit ${course.name}`}
+                        title="Edit"
+                      >
+                        <FiEdit2 size={14} />
+                      </button>
+                      <button
+                        className="mgc-icon-btn mgc-icon-btn--danger"
+                        onClick={(e) => handleDelete(course._id, course.name, e)}
+                        aria-label={`Delete ${course.name}`}
+                        title="Delete"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                  
+
                   <div className="mgc-card-content">
                     <h2 className="mgc-card-title">{course.name}</h2>
                     {course.code && <span className="mgc-card-code">{course.code}</span>}
                     {course.description && (
                       <p className="mgc-card-desc">{course.description}</p>
                     )}
-                  </div>
-
-                  <div className="mgc-card-actions" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      className="mgc-icon-btn"
-                      onClick={(e) => openEditModal(course, e)}
-                      aria-label={`Edit ${course.name}`}
-                      title="Edit"
-                    >
-                      <FiEdit2 size={16} />
-                    </button>
-                    <button
-                      className="mgc-icon-btn mgc-icon-btn--danger"
-                      onClick={(e) => handleDelete(course._id, course.name, e)}
-                      aria-label={`Delete ${course.name}`}
-                      title="Delete"
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
                   </div>
                 </article>
               ))}
