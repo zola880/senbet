@@ -1,0 +1,24 @@
+{
+  "name": "መስቀለ ብርሃን ሰንበት ትምህርት ቤት",
+  "short_name": "መስቀለ ብርሃን",
+  "description": "Church Sunday School Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f0ea",
+  "theme_color": "#6d1a28",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
