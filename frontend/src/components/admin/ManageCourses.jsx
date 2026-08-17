@@ -6,6 +6,7 @@ import {
   FiCheckCircle,
   FiEdit2,
   FiInbox,
+  FiMoreVertical,
   FiPlus,
   FiRefreshCw,
   FiSearch,
@@ -153,6 +154,40 @@ const CourseModal = ({ isOpen, onClose, onSubmit, initialData, isSaving }) => {
 };
 
 /* --------------------------------------------------------------------------
+   Mobile Action Sheet — Edit / Delete for a single course.
+   Only ever opened via the mobile-only kebab button, so it has no effect
+   on the desktop layout or interactions.
+   -------------------------------------------------------------------------- */
+const CourseActionSheet = ({ course, onClose, onEdit, onDelete }) => {
+  useEffect(() => {
+    if (!course) return;
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [course, onClose]);
+
+  if (!course) return null;
+
+  return (
+    <div className="mgc-sheet-backdrop" onClick={onClose} role="presentation">
+      <div className="mgc-sheet" onClick={(e) => e.stopPropagation()} role="menu" aria-label={`Actions for ${course.name}`}>
+        <div className="mgc-sheet-handle" aria-hidden="true" />
+        <div className="mgc-sheet-title">{course.name}</div>
+        <button className="mgc-sheet-action" role="menuitem" onClick={() => onEdit(course)}>
+          <FiEdit2 size={18} /> Edit course
+        </button>
+        <button className="mgc-sheet-action mgc-sheet-action--danger" role="menuitem" onClick={() => onDelete(course)}>
+          <FiTrash2 size={18} /> Delete course
+        </button>
+        <button className="mgc-sheet-action mgc-sheet-cancel" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* --------------------------------------------------------------------------
    Main Component
    -------------------------------------------------------------------------- */
 const ManageCourses = () => {
@@ -164,6 +199,7 @@ const ManageCourses = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState({ type: '', message: '' });
+  const [sheetCourse, setSheetCourse] = useState(null);
 
   const isLoading = status === 'loading';
   const hasCourses = courses.length > 0;
@@ -234,6 +270,23 @@ const ManageCourses = () => {
     navigate(`/admin/courses/${courseId}`);
   };
 
+  const openActionSheet = (course, e) => {
+    if (e) e.stopPropagation();
+    setSheetCourse(course);
+  };
+
+  const closeActionSheet = () => setSheetCourse(null);
+
+  const handleSheetEdit = (course) => {
+    closeActionSheet();
+    openEditModal(course);
+  };
+
+  const handleSheetDelete = (course) => {
+    closeActionSheet();
+    handleDelete(course._id, course.name);
+  };
+
   return (
     <section className="mgc-page">
       <div className="mgc-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
@@ -257,7 +310,9 @@ const ManageCourses = () => {
               Organise your church school courses
             </p>
           </div>
-          <button className="mgc-btn mgc-btn--primary" onClick={openNewModal}>
+          {/* Hidden on mobile (replaced by the floating action button below);
+              unchanged on desktop. */}
+          <button className="mgc-btn mgc-btn--primary mgc-header-add-btn" onClick={openNewModal}>
             <FiPlus size={18} /> Add Course
           </button>
         </header>
@@ -326,10 +381,10 @@ const ManageCourses = () => {
             )}
 
             <div className="mgc-grid">
-              {filteredCourses.map((course) => (
+              {filteredCourses.map((course, i) => (
                 <article
                   key={course._id}
-                  className="mgc-card"
+                  className={`mgc-card mgc-card--accent-${i % 4}`}
                   onClick={() => handleCardClick(course._id)}
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardClick(course._id); }}
@@ -342,7 +397,7 @@ const ManageCourses = () => {
                     </div>
                     <div className="mgc-card-actions" onClick={(e) => e.stopPropagation()}>
                       <button
-                        className="mgc-icon-btn"
+                        className="mgc-icon-btn mgc-icon-btn--edit-full"
                         onClick={(e) => openEditModal(course, e)}
                         aria-label={`Edit ${course.name}`}
                         title="Edit"
@@ -350,12 +405,23 @@ const ManageCourses = () => {
                         <FiEdit2 size={14} />
                       </button>
                       <button
-                        className="mgc-icon-btn mgc-icon-btn--danger"
+                        className="mgc-icon-btn mgc-icon-btn--danger mgc-icon-btn--delete-full"
                         onClick={(e) => handleDelete(course._id, course.name, e)}
                         aria-label={`Delete ${course.name}`}
                         title="Delete"
                       >
                         <FiTrash2 size={14} />
+                      </button>
+                      {/* Mobile-only: collapses edit/delete into one button
+                          that opens the bottom action sheet. Hidden on
+                          desktop. */}
+                      <button
+                        className="mgc-icon-btn mgc-kebab-btn"
+                        onClick={(e) => openActionSheet(course, e)}
+                        aria-label={`More actions for ${course.name}`}
+                        title="More actions"
+                      >
+                        <FiMoreVertical size={14} />
                       </button>
                     </div>
                   </div>
@@ -374,12 +440,24 @@ const ManageCourses = () => {
         )}
       </main>
 
+      {/* Floating action button — mobile only (hidden on desktop via CSS). */}
+      <button className="mgc-fab" onClick={openNewModal} aria-label="Add new course">
+        <FiPlus size={24} />
+      </button>
+
       <CourseModal
         isOpen={modalOpen}
         onClose={closeModal}
         onSubmit={handleSave}
         initialData={editingCourse}
         isSaving={isSaving}
+      />
+
+      <CourseActionSheet
+        course={sheetCourse}
+        onClose={closeActionSheet}
+        onEdit={handleSheetEdit}
+        onDelete={handleSheetDelete}
       />
     </section>
   );

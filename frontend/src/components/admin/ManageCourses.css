@@ -305,22 +305,289 @@
 @keyframes mgc-fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes mgc-slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* Responsive */
+/* ==========================================================================
+   NEW MOBILE-ONLY ELEMENTS — inert/hidden by default.
+   Every rule below styles a brand-new element (FAB, kebab button, action
+   sheet). None of them touch an existing selector, so desktop rendering
+   above this line is completely unaffected. Each is hidden here and only
+   switched on inside the mobile media query further down, except the
+   action sheet, which is only ever mounted in the DOM when opened (and
+   can only be opened from the kebab button, which itself only exists on
+   mobile).
+   ========================================================================== */
+.mgc-fab { display: none; }
+.mgc-kebab-btn { display: none; }
+
+/* Action sheet (bottom sheet for Edit / Delete) — reachable only via the
+   mobile-only kebab button, so this never surfaces on desktop. */
+.mgc-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(15, 10, 12, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: mgc-fadeIn 0.18s ease;
+}
+.mgc-sheet {
+  width: 100%; max-width: 480px;
+  background: var(--mgc-surface);
+  border-radius: 18px 18px 0 0;
+  padding: 0.6rem 1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 30px -10px rgba(0, 0, 0, 0.35);
+  animation: mgc-slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mgc-sheet-handle {
+  width: 40px; height: 4px; border-radius: 999px;
+  background: var(--mgc-border-strong);
+  margin: 0.4rem auto 0.9rem;
+}
+.mgc-sheet-title {
+  font-weight: 700; font-size: 1rem; color: var(--mgc-maroon);
+  padding: 0 0.35rem 0.75rem;
+  border-bottom: 1px dashed var(--mgc-border);
+  margin-bottom: 0.5rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mgc-sheet-action {
+  width: 100%;
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.85rem 0.5rem;
+  background: transparent; border: none;
+  font-family: inherit; font-size: 0.95rem; font-weight: 600;
+  color: var(--mgc-ink);
+  cursor: pointer;
+  text-align: left;
+  border-radius: 10px;
+}
+.mgc-sheet-action:active { background: var(--mgc-bg); }
+.mgc-sheet-action--danger { color: var(--mgc-danger); }
+.mgc-sheet-cancel {
+  margin-top: 0.4rem;
+  justify-content: center;
+  color: var(--mgc-ink-soft);
+  border-top: 1px solid var(--mgc-border);
+  padding-top: 0.9rem;
+  border-radius: 0;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE — 768px and below.
+   Desktop styles above remain completely unchanged.
+   ========================================================================== */
 @media (max-width: 768px) {
-  .mgc-page { padding: 1.5rem 1rem 2.5rem; }
-  .mgc-header { flex-direction: column; align-items: stretch; gap: 1rem; }
-  .mgc-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.85rem; }
-  .mgc-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; }
+  /* Reserve a dedicated header zone for a fixed top nav / hamburger button
+     (16px offset + 44px control + safe-area inset), and extra bottom room
+     for the floating action button so it never covers the last row of
+     cards. */
+  .mgc-page {
+    padding:
+      calc(4.75rem + env(safe-area-inset-top, 0px))
+      0.85rem
+      calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mgc-content { gap: 1.1rem; }
+
+  .mgc-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+
+  .mgc-title { font-size: 1.5rem; }
+  .mgc-title::after { width: 64px; height: 2.5px; margin-top: 0.4rem; }
+  .mgc-subtitle { font-size: 0.88rem; margin-top: 0.4rem; }
+
+  /* Header "Add Course" button is replaced by the floating action button
+     below, so it's hidden here to keep the header light. */
+  .mgc-header-add-btn { display: none; }
+
+  /* Search: full width, slightly more compact */
+  .mgc-toolbar { gap: 0.75rem; }
+  .mgc-search { flex: 1 1 auto; max-width: none; }
+  .mgc-search-input {
+    padding: 0.65rem 0.9rem 0.65rem 2.4rem;
+    font-size: 0.88rem;
+  }
+  .mgc-search-icon { left: 0.9rem; }
+
+  .mgc-btn {
+    width: 100%;
+    padding: 0.65rem 1.2rem;
+    font-size: 0.88rem;
+  }
+
+  /* Grid: 2 columns on mobile */
+  .mgc-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Cards: more compact, with tap feedback since :hover doesn't exist
+     on touch. The corner glow and icon-rotate hover effects are simply
+     never triggered on touch, so they're left as-is. */
+  .mgc-card {
+    padding: 0.75rem 0.8rem 0.65rem;
+    border-radius: 12px;
+  }
+
+  .mgc-card:active {
+    transform: scale(0.97);
+  }
+
+  .mgc-card-top { margin-bottom: 0.5rem; }
+
+  .mgc-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  .mgc-card-icon svg { width: 16px; height: 16px; }
+
+  /* Each card cycles through a small accent palette (still maroon/gold
+     family) so the grid is easy to scan at a glance. */
+  .mgc-card--accent-1 .mgc-card-icon {
+    background: linear-gradient(140deg, #dab24a, #a97a1c);
+    color: #3a2a08;
+  }
+  .mgc-card--accent-2 .mgc-card-icon {
+    background: linear-gradient(140deg, #c17a52, #8a4226);
+    color: #fdf1e6;
+  }
+  .mgc-card--accent-3 .mgc-card-icon {
+    background: linear-gradient(140deg, #8a8a4d, #565625);
+    color: #f6f4e2;
+  }
+
+  .mgc-card-content { gap: 0.3rem; }
+
+  .mgc-card-title {
+    font-size: 0.9rem;
+  }
+
+  .mgc-card-code {
+    font-size: 0.62rem;
+    padding: 0.1rem 0.45rem;
+  }
+
+  .mgc-card-desc {
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  /* Actions: the two hover-revealed icon buttons collapse into a single
+     always-visible kebab button that opens a bottom action sheet — frees
+     up room on small cards and matches native mobile list patterns. */
+  .mgc-card-actions {
+    opacity: 1;
+    transform: none;
+  }
+
+  .mgc-icon-btn--edit-full,
+  .mgc-icon-btn--delete-full {
+    display: none;
+  }
+
+  .mgc-kebab-btn {
+    display: grid;
+  }
+
+  .mgc-icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+  }
+
+  .mgc-icon-btn svg { width: 13px; height: 13px; }
+
+  /* Skeleton: matches compact card */
+  .mgc-skeleton-card {
+    padding: 0.75rem 0.8rem 0.65rem;
+    border-radius: 12px;
+    gap: 0.6rem;
+  }
+  .mgc-sk-icon { width: 32px !important; height: 32px !important; border-radius: 9px !important; }
+  .mgc-sk-title { height: 15px; }
+  .mgc-sk-line { height: 10px; }
+
+  /* State messages: more compact */
+  .mgc-state { padding: 2.5rem 1.25rem; border-radius: 14px; }
+  .mgc-state h3 { font-size: 1.1rem; }
+  .mgc-state p { font-size: 0.88rem; }
+
+  .mgc-banner { padding: 0.65rem 0.95rem; border-radius: 10px; font-size: 0.82rem; }
+
+  /* Toast: positioned below the fixed header zone, not on top of it */
+  .mgc-toast {
+    left: 0.85rem;
+    right: 0.85rem;
+    max-width: none;
+    top: calc(4.5rem + env(safe-area-inset-top, 0px));
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  /* Modal: bottom sheet with safe-area padding for gesture bars */
+  .mgc-modal-backdrop { padding: 0; align-items: flex-end; }
+  .mgc-modal {
+    border-radius: 16px 16px 0 0;
+    max-height: 85vh;
+    max-width: none;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mgc-modal-header { padding: 1rem 1.25rem; }
+  .mgc-modal-header h2 { font-size: 1.1rem; }
+  .mgc-form { padding: 1.25rem; gap: 1rem; }
+  .mgc-form-group { gap: 0.35rem; }
+  .mgc-label { font-size: 0.78rem; }
+  .mgc-input, .mgc-textarea { padding: 0.7rem 0.9rem; font-size: 0.9rem; }
+  .mgc-textarea { min-height: 70px; }
+  .mgc-form-actions { flex-direction: column-reverse; gap: 0.65rem; margin-top: 0.75rem; }
+  .mgc-form-actions .mgc-btn { width: 100%; padding: 0.75rem; }
+
+  /* Floating action button — replaces the header's "Add Course" button on
+     mobile with a thumb-reachable, always-visible affordance. */
+  .mgc-fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 1.1rem;
+    bottom: calc(1.4rem + env(safe-area-inset-bottom, 0px));
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(140deg, var(--mgc-maroon-soft), var(--mgc-maroon-deep));
+    color: var(--mgc-gold-soft);
+    border: none;
+    box-shadow: 0 10px 24px -8px rgba(82, 16, 28, 0.55), 0 2px 6px rgba(82, 16, 28, 0.3);
+    z-index: 900;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .mgc-fab:active {
+    transform: scale(0.92);
+    box-shadow: 0 6px 14px -6px rgba(82, 16, 28, 0.55);
+  }
 }
 
 @media (max-width: 420px) {
   .mgc-grid { grid-template-columns: 1fr; }
+
+  .mgc-card { padding: 0.85rem 0.9rem 0.75rem; }
+  .mgc-card-icon { width: 34px; height: 34px; }
+  .mgc-card-title { font-size: 0.95rem; }
+  .mgc-card-desc { font-size: 0.76rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mgc-card, .mgc-btn, .mgc-icon-btn, .mgc-modal, .mgc-modal-backdrop, .mgc-skeleton-card > div, .mgc-toast {
+  .mgc-card, .mgc-btn, .mgc-icon-btn, .mgc-modal, .mgc-modal-backdrop, .mgc-skeleton-card > div, .mgc-toast,
+  .mgc-fab, .mgc-sheet, .mgc-sheet-backdrop {
     transition: none; animation: none;
   }
-  .mgc-card:hover { transform: none; }
+  .mgc-card:hover, .mgc-card:active, .mgc-fab:active { transform: none; }
   .mgc-card:hover .mgc-card-icon { transform: none; }
 }
