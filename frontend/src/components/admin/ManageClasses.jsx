@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiAlertTriangle,
@@ -7,8 +7,10 @@ import {
   FiCheckCircle,
   FiEdit2,
   FiInbox,
+  FiMoreVertical,
   FiPlus,
   FiRefreshCw,
+  FiSearch,
   FiTrash2,
   FiX,
 } from 'react-icons/fi';
@@ -140,6 +142,40 @@ const ClassModal = ({ isOpen, onClose, onSubmit, initialData, isSaving }) => {
 };
 
 /* --------------------------------------------------------------------------
+   Mobile Action Sheet — Edit / Delete for a single class.
+   Only ever opened via the mobile-only kebab button, so it has no effect
+   on the desktop layout or interactions.
+   -------------------------------------------------------------------------- */
+const ClassActionSheet = ({ cls, onClose, onEdit, onDelete }) => {
+  useEffect(() => {
+    if (!cls) return;
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [cls, onClose]);
+
+  if (!cls) return null;
+
+  return (
+    <div className="mc-sheet-backdrop" onClick={onClose} role="presentation">
+      <div className="mc-sheet" onClick={(e) => e.stopPropagation()} role="menu" aria-label={`Actions for ${cls.name}`}>
+        <div className="mc-sheet-handle" aria-hidden="true" />
+        <div className="mc-sheet-title">{cls.name}</div>
+        <button className="mc-sheet-action" role="menuitem" onClick={() => onEdit(cls)}>
+          <FiEdit2 size={18} /> Edit class
+        </button>
+        <button className="mc-sheet-action mc-sheet-action--danger" role="menuitem" onClick={() => onDelete(cls)}>
+          <FiTrash2 size={18} /> Delete class
+        </button>
+        <button className="mc-sheet-action mc-sheet-cancel" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* --------------------------------------------------------------------------
    Main Component
    -------------------------------------------------------------------------- */
 const ManageClasses = () => {
@@ -150,9 +186,26 @@ const ManageClasses = () => {
   const [editingClass, setEditingClass] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sheetClass, setSheetClass] = useState(null);
 
   const isLoading = status === 'loading';
   const hasClasses = classes.length > 0;
+
+  // Only ever non-empty on mobile, where the search input is reachable —
+  // on desktop the input is hidden and searchQuery stays '', so this is
+  // always equal to `classes` there.
+  const filteredClasses = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return classes;
+    return classes.filter(
+      (cls) =>
+        cls.name?.toLowerCase().includes(q) ||
+        cls.description?.toLowerCase().includes(q)
+    );
+  }, [classes, searchQuery]);
+
+  const hasSearchResults = filteredClasses.length > 0;
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -210,6 +263,23 @@ const ManageClasses = () => {
     navigate(`/admin/classes/${classId}`);
   };
 
+  const openActionSheet = (cls, e) => {
+    if (e) e.stopPropagation();
+    setSheetClass(cls);
+  };
+
+  const closeActionSheet = () => setSheetClass(null);
+
+  const handleSheetEdit = (cls) => {
+    closeActionSheet();
+    openEditModal(cls);
+  };
+
+  const handleSheetDelete = (cls) => {
+    closeActionSheet();
+    handleDelete(cls._id, cls.name);
+  };
+
   return (
     <section className="mc-page">
       <div className="mc-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
@@ -231,10 +301,42 @@ const ManageClasses = () => {
             <h1 className="mc-title">Manage Classes</h1>
             <p className="mc-subtitle">Organise your church school classes (ክፍሎች)</p>
           </div>
-          <button className="mc-btn mc-btn--primary" onClick={openNewModal}>
+          {/* Hidden on mobile (replaced by the floating action button below);
+              unchanged on desktop. */}
+          <button className="mc-btn mc-btn--primary mc-header-add-btn" onClick={openNewModal}>
             <FiPlus size={18} /> Add Class
           </button>
         </header>
+
+        {/* Mobile-only quick filter. Hidden entirely on desktop via CSS, and
+            only rendered here once there's something worth searching. */}
+        {hasClasses && (
+          <div className="mc-mobile-search">
+            <FiSearch size={16} className="mc-mobile-search-icon" aria-hidden="true" />
+            <input
+              type="text"
+              className="mc-mobile-search-input"
+              placeholder="Search classes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search classes"
+            />
+            {searchQuery && (
+              <button
+                className="mc-mobile-search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+              >
+                <FiX size={13} />
+              </button>
+            )}
+          </div>
+        )}
+        {hasClasses && searchQuery && (
+          <p className="mc-mobile-result-count">
+            {filteredClasses.length} of {classes.length} classes match &ldquo;{searchQuery}&rdquo;
+          </p>
+        )}
 
         {isLoading && !hasClasses ? (
           <div className="mc-grid" aria-busy="true">
@@ -267,6 +369,15 @@ const ManageClasses = () => {
               <FiPlus size={16} /> Add First Class
             </button>
           </div>
+        ) : !hasSearchResults ? (
+          <div className="mc-state">
+            <FiSearch size={36} />
+            <h3>No matches found</h3>
+            <p>No classes match &ldquo;{searchQuery}&rdquo;. Try a different search term.</p>
+            <button className="mc-btn mc-btn--ghost" onClick={() => setSearchQuery('')}>
+              Clear search
+            </button>
+          </div>
         ) : (
           <>
             {status === 'error' && (
@@ -277,10 +388,10 @@ const ManageClasses = () => {
             )}
 
             <div className="mc-grid">
-              {classes.map((cls) => (
+              {filteredClasses.map((cls, i) => (
                 <article
                   key={cls._id}
-                  className="mc-card"
+                  className={`mc-card mc-card--accent-${i % 4}`}
                   onClick={() => handleCardClick(cls._id)}
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardClick(cls._id); }}
@@ -294,7 +405,7 @@ const ManageClasses = () => {
                     </div>
                     <div className="mc-card-actions" onClick={(e) => e.stopPropagation()}>
                       <button
-                        className="mc-icon-btn"
+                        className="mc-icon-btn mc-icon-btn--edit-full"
                         onClick={(e) => openEditModal(cls, e)}
                         aria-label={`Edit ${cls.name}`}
                         title="Edit"
@@ -302,12 +413,23 @@ const ManageClasses = () => {
                         <FiEdit2 size={14} />
                       </button>
                       <button
-                        className="mc-icon-btn mc-icon-btn--danger"
+                        className="mc-icon-btn mc-icon-btn--danger mc-icon-btn--delete-full"
                         onClick={(e) => handleDelete(cls._id, cls.name, e)}
                         aria-label={`Delete ${cls.name}`}
                         title="Delete"
                       >
                         <FiTrash2 size={14} />
+                      </button>
+                      {/* Mobile-only: collapses edit/delete into one button
+                          that opens the bottom action sheet. Hidden on
+                          desktop. */}
+                      <button
+                        className="mc-icon-btn mc-kebab-btn"
+                        onClick={(e) => openActionSheet(cls, e)}
+                        aria-label={`More actions for ${cls.name}`}
+                        title="More actions"
+                      >
+                        <FiMoreVertical size={14} />
                       </button>
                     </div>
                   </div>
@@ -331,12 +453,24 @@ const ManageClasses = () => {
         )}
       </main>
 
+      {/* Floating action button — mobile only (hidden on desktop via CSS). */}
+      <button className="mc-fab" onClick={openNewModal} aria-label="Add new class">
+        <FiPlus size={24} />
+      </button>
+
       <ClassModal
         isOpen={modalOpen}
         onClose={closeModal}
         onSubmit={handleSave}
         initialData={editingClass}
         isSaving={isSaving}
+      />
+
+      <ClassActionSheet
+        cls={sheetClass}
+        onClose={closeActionSheet}
+        onEdit={handleSheetEdit}
+        onDelete={handleSheetDelete}
       />
     </section>
   );
