@@ -1,6 +1,12 @@
 /* ==========================================================================
    ENTER SCORES (ADMIN) — School theme (maroon / gold / parchment) with L.png
    Scoped with `.es-` to prevent global style leakage.
+
+   Layout strategy:
+   - Desktop (>768px): unchanged spreadsheet-style table with sticky name col.
+   - Mobile (<=768px): the table becomes a stack of student "cards", each
+     score field labeled and full-width for accurate thumb input, and the
+     save actions become a sticky bottom bar so they're always reachable.
    ========================================================================== */
 
 .es-page {
@@ -18,6 +24,7 @@
   --es-danger: #b3403f;
   --es-success: #2e7d32;
   --es-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
+  --es-safe-b: env(safe-area-inset-bottom, 0px);
 
   position: relative; isolation: isolate; min-height: 100vh;
   padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
@@ -37,7 +44,7 @@
 
 .es-title {
   margin: 0; font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
-  font-size: clamp(1.9rem, 3.2vw, 2.5rem); font-weight: 700; color: var(--es-maroon);
+  font-size: clamp(1.5rem, 3.2vw, 2.5rem); font-weight: 700; color: var(--es-maroon);
 }
 .es-title::after {
   content: ''; display: block; width: 88px; height: 3px; margin-top: 0.55rem; border-radius: 999px;
@@ -55,7 +62,7 @@
   width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0;
   background: linear-gradient(140deg, var(--es-maroon-soft), var(--es-maroon-deep)); color: var(--es-gold-soft);
 }
-.es-select-body { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+.es-select-body { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
 .es-label { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--es-ink-soft); }
 .es-select-wrapper { position: relative; display: flex; align-items: center; }
 .es-select {
@@ -118,7 +125,7 @@
 
 /* Gradebook Table */
 .es-gradebook { background: var(--es-surface); border: 1px solid var(--es-border); border-radius: 16px; overflow: hidden; box-shadow: var(--es-shadow); }
-.es-table-wrapper { overflow-x: auto; max-height: 65vh; overflow-y: auto; }
+.es-table-wrapper { overflow-x: auto; max-height: 65vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .es-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.95rem; }
 .es-table thead { position: sticky; top: 0; z-index: 10; }
 .es-table th {
@@ -144,6 +151,7 @@
 .es-student-name { font-weight: 600; color: var(--es-ink); }
 
 .es-td-score { padding: 0.5rem 1rem; }
+.es-td-score-max { display: none; } /* only shown inline on mobile cards */
 .es-score-input {
   width: 80px; padding: 0.5rem 0.75rem; border: 1px solid var(--es-border-strong); border-radius: 6px; font-family: inherit;
   font-size: 0.95rem; text-align: center; background: var(--es-bg); color: var(--es-ink); transition: all 0.2s;
@@ -154,6 +162,9 @@
 .es-score-input--invalid { border-color: var(--es-danger); background: #fff5f5; color: var(--es-danger); font-weight: 600; }
 .es-score-input--invalid:focus { box-shadow: 0 0 0 3px rgba(179, 64, 63, 0.15); }
 
+/* Legend chips — only rendered visually on mobile, see media query below */
+.es-legend { display: none; }
+
 .es-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 1.25rem 1.5rem; border-top: 1px solid var(--es-border); background: #faf6ef; }
 
 /* Buttons */
@@ -163,6 +174,7 @@
 }
 .es-btn--primary { background: var(--es-maroon); color: #fff; box-shadow: 0 4px 6px -1px rgba(109, 26, 40, 0.2); }
 .es-btn--primary:hover:not(:disabled) { background: var(--es-maroon-deep); transform: translateY(-1px); }
+.es-btn--primary:active:not(:disabled) { transform: translateY(0); }
 .es-btn--primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 
 /* States */
@@ -194,20 +206,136 @@
 .es-toast-close { background: transparent; border: none; color: inherit; cursor: pointer; padding: 0.25rem; opacity: 0.7; }
 @keyframes es-slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-/* Responsive */
+/* ==========================================================================
+   TABLET (<=900px) — selectors and stats reflow to two columns
+   ========================================================================== */
 @media (max-width: 900px) {
   .es-selectors { grid-template-columns: 1fr; }
   .es-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ==========================================================================
+   MOBILE (<=768px) — full redesign of the interactive areas
+   ========================================================================== */
 @media (max-width: 768px) {
-  .es-page { padding: 1.5rem 1rem 2.5rem; }
-  .es-stats { grid-template-columns: 1fr; }
-  .es-sticky-col { min-width: 160px; }
-  .es-th-component { min-width: 100px; }
-  .es-score-input { width: 65px; padding: 0.4rem 0.5rem; font-size: 0.9rem; }
-  .es-actions { justify-content: center; }
-  .es-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; }
+  .es-page { padding: 1.25rem 1rem calc(1.5rem + var(--es-safe-b)); }
+  .es-content { gap: 1.25rem; }
+
+  .es-header { padding: 0 0.1rem; }
+  .es-subtitle { font-size: 0.88rem; }
+
+  /* Selector cards: tighter, thumb-friendly, icon shrinks a touch */
+  .es-selectors { gap: 0.75rem; }
+  .es-select-card { padding: 1rem 1.1rem; gap: 1rem; border-radius: 12px; }
+  .es-select-icon { width: 40px; height: 40px; border-radius: 10px; }
+  .es-select-icon svg { width: 18px; height: 18px; }
+  .es-label { font-size: 0.72rem; }
+  .es-select {
+    padding: 0.7rem 2.25rem 0.7rem 0.85rem;
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+    border-radius: 8px;
+  }
+
+  /* Hero: shorter, denser copy block */
+  .es-hero { min-height: 0; border-radius: 16px; }
+  .es-hero-content { padding: 2rem 1.25rem; }
+  .es-hero-icon { width: 52px; height: 52px; margin-bottom: 1rem; }
+  .es-hero-icon svg { width: 24px; height: 24px; }
+  .es-hero-content h2 { font-size: 1.35rem; }
+  .es-hero-content p { font-size: 0.9rem; margin-bottom: 1.25rem; line-height: 1.55; }
+  .es-quote { padding: 1.1rem 1.1rem 1rem; }
+  .es-quote p { font-size: 0.95rem; }
+  .es-quote-mark { font-size: 3rem; top: -6px; left: 14px; }
+
+  /* Stats: single column, icon-left row so numbers read like a scannable list */
+  .es-stats { grid-template-columns: 1fr; gap: 0.65rem; }
+  .es-stat-card { padding: 0.9rem 1.1rem; border-top: none; border-left: 4px solid var(--es-maroon); border-radius: 12px; }
+  .es-stat-card h3 { font-size: 1.25rem; }
+
+  .es-footer-text { font-size: 0.9rem; }
+
+  /* ---- Gradebook: table becomes a stack of student cards ---- */
+  .es-gradebook { border-radius: 14px; padding-bottom: 0; }
+
+  .es-legend {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    padding: 0.85rem 0.9rem 0.75rem; border-bottom: 1px solid var(--es-border);
+  }
+  .es-legend-chip {
+    font-size: 0.72rem; font-weight: 600; color: var(--es-maroon);
+    background: var(--es-gold-soft); border: 1px solid rgba(210, 161, 44, 0.4);
+    padding: 0.3rem 0.6rem; border-radius: 999px; white-space: nowrap;
+  }
+  .es-legend-chip b { font-weight: 700; color: var(--es-maroon-deep); }
+
+  .es-table-wrapper { overflow-x: visible; max-height: none; overflow-y: visible; padding: 0.75rem; }
+
+  .es-table, .es-table tbody { display: block; width: 100%; }
+  .es-table thead { display: none; } /* labels move onto each field via data-label */
+
+  .es-row {
+    display: block; width: 100%; background: var(--es-surface);
+    border: 1px solid var(--es-border); border-radius: 12px; overflow: hidden;
+  }
+  .es-row + .es-row { margin-top: 0.75rem; }
+
+  .es-sticky-col {
+    position: static; box-shadow: none; min-width: 0; width: 100%;
+    background: linear-gradient(135deg, var(--es-maroon-soft), var(--es-maroon-deep));
+    padding: 0.85rem 1rem; border-bottom: none;
+  }
+  .es-td-student { display: block; }
+  .es-avatar { background: rgba(255, 255, 255, 0.18); color: #fff; }
+  .es-student-name { color: #fff; }
+
+  .es-table td { border-bottom: 1px solid var(--es-border); padding: 0; background: var(--es-surface); }
+  .es-table tbody tr:hover td, .es-table tbody tr:hover .es-sticky-col { background: inherit; }
+
+  .es-td-score {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    padding: 0.7rem 1rem;
+  }
+  .es-td-score:last-child { border-bottom: none; }
+  .es-td-score::before {
+    content: attr(data-label);
+    font-size: 0.85rem; font-weight: 600; color: var(--es-ink-soft); flex: 1; min-width: 0;
+  }
+  .es-td-score-max {
+    display: inline; font-size: 0.78rem; color: var(--es-ink-soft); flex-shrink: 0;
+  }
+
+  .es-score-input {
+    width: 92px; padding: 0.55rem 0.5rem; font-size: 16px; /* no iOS zoom */
+    border-radius: 8px; flex-shrink: 0;
+  }
+  .es-score-input--invalid { background: #fff5f5; }
+
+  /* Sticky save bar — always reachable while scrolling a long roster */
+  .es-actions {
+    position: sticky; bottom: 0; z-index: 20; margin-top: 0.9rem;
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    gap: 0.6rem; padding: 0.75rem 0.9rem calc(0.75rem + var(--es-safe-b));
+    background: rgba(250, 246, 239, 0.94); backdrop-filter: blur(6px);
+    border-top: 1px solid var(--es-border);
+    box-shadow: 0 -8px 20px -12px rgba(64, 20, 30, 0.35);
+    scroll-snap-type: x proximity;
+  }
+  .es-btn--primary {
+    flex: 0 0 auto; white-space: nowrap; padding: 0.7rem 1.1rem; font-size: 0.9rem;
+    scroll-snap-align: start;
+  }
+
+  .es-toast { left: 1rem; right: 1rem; max-width: none; top: 1rem; padding: 0.85rem 1rem; }
+}
+
+/* ==========================================================================
+   SMALL PHONES (<=380px) — extra tightening
+   ========================================================================== */
+@media (max-width: 380px) {
+  .es-title { font-size: 1.35rem; }
+  .es-hero-content h2 { font-size: 1.2rem; }
+  .es-score-input { width: 78px; }
+  .es-td-score::before { font-size: 0.8rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

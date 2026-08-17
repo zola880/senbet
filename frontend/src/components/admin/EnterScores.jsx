@@ -112,7 +112,7 @@ const useSelectionData = (selectedClass, selectedCourse) => {
    -------------------------------------------------------------------------- */
 const EnterScores = () => {
   const { classes, totalStudents, status: initStatus, reload: reloadInit } = useInitialData();
-  
+
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('');
   const [scores, setScores] = useState({});
@@ -269,7 +269,7 @@ const EnterScores = () => {
                 <div className="es-hero-icon" aria-hidden="true"><FiClipboard size={32} /></div>
                 <h2>Ready to Enter Scores</h2>
                 <p>Please select a class and course from the dropdowns above to view students and enter their scores.</p>
-                
+
                 <div className="es-quote">
                   <span className="es-quote-mark">&ldquo;</span>
                   <p>ልጅን በሚሄድበት መንገድ ምራው፤ በሸመገለም ጊዜ ከእርሱ ፈቀቅ አይልም</p>
@@ -328,6 +328,16 @@ const EnterScores = () => {
               </div>
             ) : (
               <div className="es-gradebook">
+                {/* Component legend — shown above the list on mobile so max scores are visible
+                    without repeating them inside every card. Hidden on desktop (table header covers it). */}
+                <div className="es-legend" aria-hidden="true">
+                  {config.components.map((comp) => (
+                    <span key={comp.name} className="es-legend-chip">
+                      {comp.name} <b>· {comp.maxScore}</b>
+                    </span>
+                  ))}
+                </div>
+
                 <div className="es-table-wrapper">
                   <table className="es-table">
                     <thead>
@@ -343,7 +353,7 @@ const EnterScores = () => {
                     </thead>
                     <tbody>
                       {students.map((student) => (
-                        <tr key={student._id}>
+                        <tr key={student._id} className="es-row">
                           <td className="es-sticky-col es-td-student">
                             <div className="es-student-info">
                               <span className="es-avatar" aria-hidden="true">{student.fullName?.charAt(0).toUpperCase() || '?'}</span>
@@ -353,15 +363,17 @@ const EnterScores = () => {
                           {config.components.map((comp) => {
                             const scoreStatus = getScoreStatus(student._id, comp.name, comp.maxScore);
                             return (
-                              <td key={comp.name} className="es-td-score">
+                              <td key={comp.name} className="es-td-score" data-label={comp.name}>
                                 <input
                                   type="number" min="0" max={comp.maxScore} step="any"
+                                  inputMode="decimal"
                                   className={`es-score-input ${scoreStatus === 'invalid' ? 'es-score-input--invalid' : ''}`}
                                   value={scores[`${student._id}-${comp.name}`] || ''}
                                   onChange={(e) => handleScoreChange(student._id, comp.name, e.target.value)}
                                   placeholder="—"
                                   aria-label={`${comp.name} score for ${student.fullName}`}
                                 />
+                                <span className="es-td-score-max" aria-hidden="true">/ {comp.maxScore}</span>
                               </td>
                             );
                           })}
