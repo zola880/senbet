@@ -1,572 +1,792 @@
 /* ==========================================================================
-   TEACHER COURSE DETAIL — Maroon / Gold / Parchment Theme
-   Scoped with `.tcd-` to prevent global style leakage.
+   TEACHER DASHBOARD — Illuminated manuscript theme (maroon / gold / parchment)
+   Signature system: the Lalibela cross — the stepped cross-form of Bete
+   Giyorgis, the church named in the header — reused as the page's single
+   emblem across the verse medallion, corners, card marks and empty-state
+   seal, framed by a woven interlace border between header and body.
+   Scoped with `.td-` to prevent global style leakage.
    ========================================================================== */
 
-.tcd-page {
-  --tcd-bg: #f3f0ea;
-  --tcd-surface: #fffdf8;
-  --tcd-border: #e6ddcf;
-  --tcd-border-strong: #d8cbb6;
-  --tcd-maroon: #6d1a28;
-  --tcd-maroon-deep: #52101c;
-  --tcd-maroon-soft: #8c2f3d;
-  --tcd-gold: #d2a12c;
-  --tcd-gold-soft: #f6e7c6;
-  --tcd-ink: #33262a;
-  --tcd-ink-soft: #7a6c6d;
-  --tcd-danger: #b3403f;
-  --tcd-shadow: 0 1px 2px rgba(64, 20, 30, 0.08), 0 14px 28px -20px rgba(64, 20, 30, 0.35);
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap');
+
+.td-page {
+  --td-parchment: #f4e9d0;
+  --td-surface: #fffaf0;
+  --td-border: #e3d3a0;
+  --td-border-strong: #cdb06a;
+  --td-maroon: #6b1626;
+  --td-maroon-deep: #3c0d18;
+  --td-maroon-soft: #8f2c3e;
+  --td-gold: #b8923a;
+  --td-gold-bright: #e6c469;
+  --td-gold-pale: #f7ecc8;
+  --td-forest: #2f5d46;
+  --td-ink: #2a1810;
+  --td-ink-soft: #7a6650;
+  --td-shadow: 0 1px 2px rgba(60, 13, 24, 0.08), 0 16px 30px -20px rgba(60, 13, 24, 0.4);
+  --td-font-display: 'Cormorant Garamond', 'Noto Serif Ethiopic', Georgia, serif;
 
   position: relative;
   isolation: isolate;
   min-height: 100vh;
   padding: 2.25rem clamp(1.25rem, 4vw, 3rem) 3.5rem;
-  background-color: var(--tcd-bg);
-  color: var(--tcd-ink);
+  background-color: var(--td-parchment);
+  color: var(--td-ink);
   font-family: 'Inter', 'Noto Sans Ethiopic', 'Segoe UI', system-ui, -apple-system, sans-serif;
   overflow-x: clip;
 }
 
-/* Background & Overlay */
-.tcd-bg {
+/* Background, texture & overlay */
+.td-bg {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: -4;
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
 }
 
-.tcd-overlay {
+.td-pattern {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%236b1626' stroke-width='1.4'%3E%3Cpath d='M36 12v48M12 36h48M22 22l28 28M50 22 22 50'/%3E%3Ccircle cx='36' cy='36' r='9'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
+}
+
+/* Fine vellum grain — a whisper of texture so the parchment doesn't read
+   as flat digital colour. Kept extremely subtle on purpose. */
+.td-grain {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.td-overlay {
   position: absolute;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(1100px 320px at 50% 0%, rgba(109, 26, 40, 0.06), transparent 70%),
-    linear-gradient(170deg, rgba(247, 244, 238, 0.94) 0%, rgba(243, 240, 234, 0.88) 45%, rgba(238, 231, 220, 0.93) 100%);
+    radial-gradient(1100px 340px at 50% 0%, rgba(110, 22, 38, 0.08), transparent 70%),
+    linear-gradient(170deg, rgba(249, 244, 232, 0.95) 0%, rgba(246, 239, 225, 0.9) 45%, rgba(240, 229, 205, 0.94) 100%);
 }
 
-/* Header & Back Button */
-.tcd-header {
-  max-width: 1200px;
-  margin: 0 auto 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+/* Content Layout */
+.td-content {
+  position: relative;
+  z-index: 1;
+  width: min(1100px, calc(100% - 2rem));
+  margin-inline: auto;
+  padding: 2.75rem clamp(0.5rem, 3vw, 2.5rem);
+  display: grid;
+  justify-items: center;
+  gap: 1.9rem;
 }
 
-.tcd-back-btn {
+/* Manuscript-page corner flourishes framing the whole dashboard, each
+   closed with a miniature Lalibela cross rather than a plain dot. */
+.td-corner-svg {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  color: var(--td-gold);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 2;
+}
+.td-corner--tl { top: 0; left: 0; }
+.td-corner--tr { top: 0; right: 0; transform: scaleX(-1); }
+.td-corner--bl { bottom: 0; left: 0; transform: scaleY(-1); }
+.td-corner--br { bottom: 0; right: 0; transform: scale(-1, -1); }
+
+/* Header */
+.td-header {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  text-align: center;
+  max-width: 800px;
+  animation: td-rise 0.6s ease both;
+}
+
+.td-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  background: var(--tcd-surface);
-  border: 1px solid var(--tcd-border);
+  padding: 0.4rem 1.1rem 0.4rem 0.85rem;
   border-radius: 999px;
-  color: var(--tcd-maroon);
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--tcd-shadow);
-  width: fit-content;
-}
-
-.tcd-back-btn:hover {
-  background: var(--tcd-maroon);
-  color: #fff;
-  border-color: var(--tcd-maroon);
-}
-
-.tcd-course-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.tcd-title {
-  margin: 0;
-  font-family: 'Playfair Display', 'Noto Serif Ethiopic', Georgia, serif;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  border: 1px solid var(--td-gold);
+  background: linear-gradient(180deg, var(--td-gold-pale), var(--td-surface));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), var(--td-shadow);
+  color: var(--td-maroon);
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--tcd-maroon);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.td-eyebrow-mark {
+  width: 13px;
+  height: 13px;
+  color: var(--td-gold);
+  flex-shrink: 0;
+}
+
+/* Title, with an illuminated drop-cap opening the line the way a scribe
+   would light the first letter of a manuscript page. */
+.td-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: 'Noto Serif Ethiopic', var(--td-font-display);
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  color: var(--td-maroon);
   letter-spacing: 0.01em;
 }
 
-.tcd-meta {
+.td-drop-cap {
+  display: inline-grid;
+  place-items: center;
+  width: 1.7em;
+  height: 1.7em;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background:
+    linear-gradient(155deg, var(--td-gold-bright), var(--td-gold) 70%),
+    repeating-linear-gradient(45deg, rgba(60,13,24,0.08) 0 2px, transparent 2px 6px);
+  color: var(--td-maroon-deep);
+  font-size: 0.62em;
+  line-height: 1;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), 0 6px 14px -8px rgba(60, 13, 24, 0.55);
+}
+
+.td-title-rest {
+  display: inline;
+}
+
+/* Colophon-style divider: two hairlines flanking the emblem, echoing the
+   dividers found between sections in illuminated manuscripts. */
+.td-title-divider {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.tcd-badge {
-  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.8rem;
-  background: var(--tcd-surface);
-  border: 1px solid var(--tcd-border);
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--tcd-ink-soft);
+  gap: 0.65rem;
+  margin-top: 0.2rem;
 }
 
-.tcd-badge--gold {
-  background: var(--tcd-gold-soft);
-  border-color: rgba(210, 161, 44, 0.35);
-  color: var(--tcd-maroon);
+.td-title-divider-line {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--td-gold), transparent);
 }
 
-.tcd-desc {
+.td-title-divider-mark {
+  width: 15px;
+  height: 15px;
+  color: var(--td-gold-bright);
+  filter: drop-shadow(0 0 3px rgba(233, 200, 116, 0.55));
+}
+
+.td-subtitle-am {
   margin: 0;
-  color: var(--tcd-ink-soft);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  max-width: 800px;
-}
-
-/* Tabs */
-.tcd-tabs {
-  max-width: 1200px;
-  margin: 0 auto 2rem;
-  display: flex;
-  gap: 0.5rem;
-  border-bottom: 2px solid var(--tcd-border);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.tcd-tabs::-webkit-scrollbar { display: none; }
-
-.tcd-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.85rem 1.25rem;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  color: var(--tcd-ink-soft);
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
   font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  color: var(--td-ink);
 }
 
-.tcd-tab:hover {
-  color: var(--tcd-maroon);
+.td-subtitle-en {
+  margin: 0.15rem 0 0;
+  font-family: var(--td-font-display);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--td-ink-soft);
 }
 
-.tcd-tab--active {
-  color: var(--tcd-maroon);
-  border-bottom-color: var(--tcd-gold);
+/* --------------------------------------------------------------------------
+   Interlace band — a two-strand woven ribbon, the classic border device
+   in Ethiopian manuscript illumination, seaming header to body.
+   -------------------------------------------------------------------------- */
+.td-interlace {
+  width: min(560px, 100%);
+  height: 14px;
+  opacity: 0.75;
+  background-repeat: repeat-x;
+  background-size: 40px 14px;
+  background-position: center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='14' viewBox='0 0 40 14'%3E%3Cpath d='M0 7C5 -1,15 15,20 7C25 -1,35 15,40 7' stroke='%23b8923a' stroke-width='1.6' fill='none'/%3E%3Cpath d='M0 7C5 15,15 -1,20 7C25 15,35 -1,40 7' stroke='%236b1626' stroke-width='1.6' fill='none' opacity='0.75'/%3E%3C/svg%3E");
 }
 
-/* Content Grid */
-.tcd-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 1.5rem;
-  align-items: start;
+.td-interlace--flip {
+  transform: scaleY(-1);
+  opacity: 0.5;
 }
 
-/* Cards */
-.tcd-card {
-  background: var(--tcd-surface);
-  border: 1px solid var(--tcd-border);
-  border-radius: 16px;
-  padding: 1.75rem;
-  box-shadow: var(--tcd-shadow);
-}
+/* --------------------------------------------------------------------------
+   Verse ribbon — signature panel. An illuminated scroll that quietly
+   cycles through scripture on a timer, lit by a flickering cross medallion.
+   -------------------------------------------------------------------------- */
 
-.tcd-card-title {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--tcd-maroon);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.tcd-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 0.5rem;
-  background: var(--tcd-gold-soft);
-  color: var(--tcd-maroon);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-/* Form */
-.tcd-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.tcd-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.tcd-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--tcd-ink-soft);
-}
-
-.tcd-required {
-  color: var(--tcd-danger);
-}
-
-.tcd-input,
-.tcd-textarea {
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--tcd-border-strong);
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.95rem;
-  background: var(--tcd-bg);
-  color: var(--tcd-ink);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.tcd-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.tcd-input:focus,
-.tcd-textarea:focus {
-  outline: none;
-  border-color: var(--tcd-maroon);
-  box-shadow: 0 0 0 3px rgba(109, 26, 40, 0.1);
-}
-
-/* Custom File Input */
-.tcd-file-drop {
+.td-verse-ribbon {
+  position: relative;
   width: 100%;
-}
-
-.tcd-file-label {
-  display: flex;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border: 2px dashed var(--tcd-border-strong);
-  border-radius: 8px;
-  background: var(--tcd-bg);
-  color: var(--tcd-ink-soft);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tcd-file-label:hover {
-  border-color: var(--tcd-maroon);
-  color: var(--tcd-maroon);
-  background: rgba(109, 26, 40, 0.02);
-}
-
-.tcd-file-name {
-  flex: 1;
-  white-space: nowrap;
+  gap: 1.1rem;
+  padding: 1.1rem 1.5rem;
+  border-radius: 16px;
+  background: linear-gradient(120deg, var(--td-maroon-deep), var(--td-maroon) 60%, var(--td-maroon-soft));
+  border: 1px solid rgba(233, 200, 116, 0.3);
+  box-shadow: 0 18px 34px -20px rgba(60, 13, 24, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--tcd-ink);
-  font-weight: 600;
+  min-height: 4.5rem;
+  animation: td-rise 0.6s ease both 0.12s;
 }
 
-.tcd-file-clear {
+.td-verse-ribbon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(233, 200, 116, 0.07) 0px,
+    rgba(233, 200, 116, 0.07) 1px,
+    transparent 1px,
+    transparent 14px
+  );
+  pointer-events: none;
+}
+
+.td-verse-mark {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  background: rgba(179, 64, 63, 0.1);
-  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
-  color: var(--tcd-danger);
-  cursor: pointer;
-  transition: background 0.2s;
+  border: 1px solid rgba(233, 200, 116, 0.55);
+  color: var(--td-gold-bright);
+  flex-shrink: 0;
+  animation: td-candle-flicker 2.6s ease-in-out infinite;
 }
 
-.tcd-file-clear:hover {
-  background: rgba(179, 64, 63, 0.2);
+.td-verse-mark-svg {
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
-/* Buttons */
-.tcd-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* Irregular, multi-step timing reads as candlelight rather than a
+   mechanical pulse — the deliberate signature detail of the ribbon. */
+@keyframes td-candle-flicker {
+  0%, 100% {
+    box-shadow: 0 0 10px 2px rgba(233, 200, 116, 0.32), inset 0 0 6px rgba(233, 200, 116, 0.22);
+  }
+  14% {
+    box-shadow: 0 0 15px 4px rgba(233, 200, 116, 0.5), inset 0 0 8px rgba(233, 200, 116, 0.35);
+  }
+  29% {
+    box-shadow: 0 0 8px 1px rgba(233, 200, 116, 0.24), inset 0 0 4px rgba(233, 200, 116, 0.18);
+  }
+  47% {
+    box-shadow: 0 0 17px 5px rgba(233, 200, 116, 0.55), inset 0 0 9px rgba(233, 200, 116, 0.4);
+  }
+  61% {
+    box-shadow: 0 0 9px 2px rgba(233, 200, 116, 0.28), inset 0 0 5px rgba(233, 200, 116, 0.2);
+  }
+  80% {
+    box-shadow: 0 0 13px 3px rgba(233, 200, 116, 0.42), inset 0 0 7px rgba(233, 200, 116, 0.3);
+  }
 }
 
-.tcd-btn--primary {
-  background: var(--tcd-maroon);
-  color: #fff;
-}
-
-.tcd-btn--primary:hover:not(:disabled) {
-  background: var(--tcd-maroon-deep);
-}
-
-.tcd-btn--primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.tcd-btn--sm {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
-  border-radius: 6px;
-}
-
-.tcd-btn--ghost {
-  background: var(--tcd-bg);
-  border: 1px solid var(--tcd-border);
-  color: var(--tcd-maroon);
-}
-
-.tcd-btn--ghost:hover {
-  background: var(--tcd-gold-soft);
-  border-color: var(--tcd-gold);
-}
-
-.tcd-btn--danger {
-  background: rgba(179, 64, 63, 0.1);
-  color: var(--tcd-danger);
-}
-
-.tcd-btn--danger:hover {
-  background: var(--tcd-danger);
-  color: #fff;
-}
-
-/* Table */
-.tcd-table-wrapper {
-  overflow-x: auto;
-  margin: 0 -1.75rem -1.75rem;
-  width: calc(100% + 3.5rem);
-}
-
-.tcd-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.tcd-table thead {
-  background: #faf6ef;
-  border-bottom: 2px solid var(--tcd-border);
-}
-
-.tcd-table th {
-  padding: 1rem 1.5rem;
+.td-verse-copy {
+  position: relative;
+  min-width: 0;
   text-align: left;
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--tcd-ink-soft);
+  display: grid;
+  gap: 0.15rem;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: td-verse-in 0.5s ease forwards;
 }
 
-.tcd-table td {
-  padding: 1.15rem 1.5rem;
-  border-bottom: 1px solid var(--tcd-border);
-  vertical-align: middle;
+.td-verse-copy.is-visible {
+  animation: td-verse-in 0.5s ease forwards;
 }
 
-.tcd-table tbody tr:last-child td {
-  border-bottom: none;
+@keyframes td-verse-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.tcd-table tbody tr:hover {
-  background: #fcfaf5;
-}
-
-.tcd-text-right {
-  text-align: right;
-}
-
-.tcd-item-title {
-  font-weight: 600;
-  color: var(--tcd-ink);
-}
-
-.tcd-item-desc {
-  color: var(--tcd-ink-soft);
-  font-size: 0.85rem;
+.td-verse-text {
+  margin: 0;
+  color: #fbf3e2;
+  font-family: 'Noto Serif Ethiopic', var(--td-font-display);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-/* States */
-.tcd-state {
-  padding: 3rem 1.5rem;
+.td-verse-source {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--td-gold-bright);
+}
+
+/* Ge'ez numeral counter — replaces a generic dot-pager with the verse's
+   real position, written in the same script as the verse itself. */
+.td-verse-counter {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding-left: 0.85rem;
+  border-left: 1px solid rgba(233, 200, 116, 0.35);
+  font-family: 'Noto Serif Ethiopic', var(--td-font-display);
+}
+
+.td-verse-counter-current {
+  color: var(--td-gold-bright);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.td-verse-counter-sep {
+  color: rgba(251, 243, 226, 0.5);
+  font-size: 0.85rem;
+}
+
+.td-verse-counter-total {
+  color: rgba(251, 243, 226, 0.65);
+  font-size: 0.9rem;
+}
+
+/* Alert */
+.td-alert {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
   align-items: center;
   gap: 0.75rem;
-  text-align: center;
-  color: var(--tcd-ink-soft);
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  background: #fdf6f4;
+  border: 1px solid #e3b7b7;
+  color: #8a2430;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
-.tcd-state h3 {
+.td-alert-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #8a2430;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.td-alert-btn:hover { background: rgba(138, 36, 48, 0.1); }
+.td-alert-btn:focus-visible {
+  outline: 2px solid var(--td-gold-bright);
+  outline-offset: 2px;
+}
+
+/* Stats Grid */
+.td-stats {
+  width: 100%;
   margin: 0;
-  color: var(--tcd-maroon);
-  font-size: 1.1rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  max-width: 700px;
+  animation: td-rise 0.6s ease both 0.22s;
 }
 
-.tcd-state p { margin: 0; font-size: 0.9rem; }
-
-.tcd-state--error {
-  color: #8a4a4a;
+.td-stat-card {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 14px;
+  border: 1px solid var(--td-border);
+  border-top: 4px solid var(--td-maroon);
+  background: var(--td-surface);
+  color: var(--td-ink);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  box-shadow: var(--td-shadow);
+  overflow: hidden;
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
-.tcd-state--error h3 { color: #8a2430; }
-.tcd-state--error svg { color: #b3403f; }
+/* A quiet gold-leaf mark at the corner, drawn from the same emblem as the
+   rest of the page rather than a generic sparkle glyph. */
+.td-stat-mark {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.7rem;
+  width: 13px;
+  height: 13px;
+  color: var(--td-gold);
+  opacity: 0.4;
+}
 
-.tcd-spinner {
+/* A thin sweep of light, as if catching gold leaf, on hover/focus — the
+   card's one deliberate motion accent. */
+.td-stat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(233, 200, 116, 0.35) 50%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.td-stat-card:hover:not(:disabled)::after,
+.td-stat-card:focus-visible::after {
+  transform: translateX(120%);
+}
+
+.td-stat-card:hover:not(:disabled) {
+  transform: translateY(-4px);
+  border-top-color: var(--td-gold);
+  box-shadow: 0 2px 4px rgba(60, 13, 24, 0.08), 0 24px 36px -20px rgba(60, 13, 24, 0.42);
+}
+
+.td-stat-card:focus-visible {
+  outline: 2px solid var(--td-gold-bright);
+  outline-offset: 3px;
+}
+
+.td-stat-card:disabled {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.td-stat-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--td-gold-pale);
+  color: var(--td-maroon);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.td-stat-details {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.td-stat-value {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  font-family: var(--td-font-display);
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--td-ink);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.td-stat-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--td-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.td-stat-action {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  border: 3px solid rgba(109, 26, 40, 0.15);
-  border-top-color: var(--tcd-maroon);
-  animation: tcd-spin 0.8s linear infinite;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--td-parchment);
+  color: var(--td-ink-soft);
+  transition: all 0.22s ease;
+  flex-shrink: 0;
 }
 
-.tcd-spinner--sm {
-  width: 16px;
-  height: 16px;
-  border-width: 2px;
+.td-stat-card:hover:not(:disabled) .td-stat-action {
+  transform: translateX(4px);
+  background: var(--td-maroon);
+  color: #fff;
 }
 
-@keyframes tcd-spin {
-  to { transform: rotate(360deg); }
+/* Assignments card */
+.td-assignments {
+  width: 100%;
+  max-width: 900px;
+  background: var(--td-surface);
+  border: 1px solid var(--td-border);
+  border-radius: 16px;
+  padding: 2rem 2.25rem;
+  box-shadow: var(--td-shadow);
+  animation: td-rise 0.6s ease both 0.32s;
 }
 
-/* ==========================================================================
-   RESPONSIVE DESIGN
-   ========================================================================== */
+.td-assignments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
 
-@media (max-width: 900px) {
-  .tcd-content {
+.td-assignments-title {
+  margin: 0;
+  font-family: var(--td-font-display);
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--td-maroon);
+  letter-spacing: -0.01em;
+}
+
+.td-assignments-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(47, 93, 70, 0.08);
+  border: 1px solid rgba(47, 93, 70, 0.25);
+  color: var(--td-forest);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.td-assignments-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.td-assignment-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  background: var(--td-parchment);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.td-assignment-item:hover {
+  background: #fff;
+  border-color: var(--td-border);
+  box-shadow: 0 4px 12px -4px rgba(60, 13, 24, 0.1);
+}
+
+/* Ge'ez numeral medallion — the assignment's real position in the list,
+   set in the manuscript's own numeral system instead of a stock icon. */
+.td-assignment-badge {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--td-gold-pale), var(--td-surface));
+  border: 1px solid var(--td-border-strong);
+  color: var(--td-maroon);
+  font-family: 'Noto Serif Ethiopic', var(--td-font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+.td-assignment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.td-assignment-course {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--td-ink);
+}
+
+.td-assignment-class {
+  font-size: 0.85rem;
+  color: var(--td-ink-soft);
+}
+
+.td-assignment-arrow {
+  color: var(--td-ink-soft);
+  flex-shrink: 0;
+}
+
+/* Empty state — a closed, sealed scroll rather than a stock inbox icon,
+   stamped with the page's own emblem. */
+.td-assignments-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  padding: 2.5rem 1rem;
+  color: var(--td-ink-soft);
+  text-align: center;
+}
+
+.td-empty-svg {
+  width: 96px;
+  height: 72px;
+  color: var(--td-gold);
+}
+
+.td-empty-seal {
+  fill: var(--td-maroon);
+  stroke: var(--td-gold-bright);
+  stroke-width: 1.2;
+}
+
+.td-assignments-empty p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.td-assignments-action {
+  margin-top: 0.25rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--td-maroon);
+  background: var(--td-maroon);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.td-assignments-action:hover {
+  background: var(--td-maroon-deep);
+  transform: translateY(-2px);
+}
+
+.td-assignments-action:focus-visible {
+  outline: 2px solid var(--td-gold-bright);
+  outline-offset: 3px;
+}
+
+/* Skeletons */
+.td-skeleton {
+  display: block;
+  background: linear-gradient(90deg, #ece1c6 25%, #f8f0dc 50%, #ece1c6 75%);
+  background-size: 250% 100%;
+  animation: td-shimmer 1.5s ease infinite;
+  border-radius: 6px;
+}
+
+.td-skeleton--icon { width: 28px; height: 28px; border-radius: 8px; }
+.td-skeleton--value { width: 80px; height: 32px; border-radius: 8px; }
+.td-skeleton--label { width: 100px; height: 14px; border-radius: 4px; }
+.td-skeleton--row { width: 100%; height: 56px; border-radius: 12px; }
+
+@keyframes td-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Page-load reveal: header, ribbon, stats and assignments rise in as a
+   single orchestrated sequence rather than each element animating alone. */
+@keyframes td-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .td-stats {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .td-verse-ribbon {
+    grid-template-columns: auto 1fr;
+  }
+
+  .td-verse-counter {
+    display: none;
+  }
+
+  .td-corner-svg {
+    display: none;
+  }
+
+  .td-title {
+    flex-direction: column;
+    gap: 0.3rem;
   }
 }
 
 @media (max-width: 768px) {
-  .tcd-page {
-    padding: 1.5rem 1rem 2.5rem;
-  }
-
-  .tcd-card {
-    padding: 1.25rem;
-  }
-
-  /* Transform table to cards on mobile */
-  .tcd-table-wrapper {
-    margin: 0;
-    width: 100%;
-  }
-
-  .tcd-table, .tcd-table thead, .tcd-table tbody, .tcd-table th, .tcd-table td, .tcd-table tr {
-    display: block;
-  }
-
-  .tcd-table thead { display: none; }
-
-  .tcd-table tr {
-    background: var(--tcd-bg);
-    border: 1px solid var(--tcd-border);
-    border-radius: 12px;
-    margin-bottom: 1rem;
-    padding: 0.5rem 0;
-  }
-
-  .tcd-table td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1.25rem;
-    border-bottom: 1px solid var(--tcd-border);
-    text-align: right;
-  }
-
-  .tcd-table td:last-child { border-bottom: none; }
-
-  .tcd-table td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--tcd-ink-soft);
-    text-align: left;
-    flex-shrink: 0;
-    margin-right: 1rem;
-  }
-
-  .tcd-item-desc {
-    text-align: right;
-    max-width: 60%;
-  }
-  
-  .tcd-text-right {
-    text-align: center;
-  }
+  .td-content { padding: 1.5rem 0.5rem; gap: 1.6rem; }
+  .td-stat-card { padding: 1.25rem 1.5rem; }
+  .td-stat-value { font-size: 1.5rem; min-height: 28px; }
+  .td-assignments { padding: 1.5rem 1.25rem; border-radius: 16px; }
+  .td-assignments-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .td-interlace { height: 10px; background-size: 30px 10px; }
 }
 
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
-  .tcd-btn, .tcd-tab, .tcd-back-btn, .tcd-spinner {
+  .td-stat-card,
+  .td-stat-action,
+  .td-stat-card::after,
+  .td-assignment-item,
+  .td-skeleton,
+  .td-verse-mark,
+  .td-verse-copy,
+  .td-assignments-action,
+  .td-header,
+  .td-verse-ribbon,
+  .td-stats,
+  .td-assignments {
     transition: none;
     animation: none;
   }
-}
-/* Assignment-specific styles */
-.tcd-badge--blue {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-}
-
-.tcd-assignment-info {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.tcd-assignment-badge {
-  display: inline-block;
-  background: rgba(59, 130, 246, 0.1);
-  color: #1e40af;
-  padding: 0.375rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  .td-stat-card:hover:not(:disabled) { transform: none; }
+  .td-stat-card:hover:not(:disabled) .td-stat-action { transform: none; }
+  .td-stat-card:hover:not(:disabled)::after,
+  .td-stat-card:focus-visible::after { transform: translateX(-120%); }
+  .td-verse-copy { opacity: 1; transform: none; }
+  .td-assignments-action:hover { transform: none; }
 }

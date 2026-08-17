@@ -1,450 +1,515 @@
-import { useContext, useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import {
-  FiArrowLeft,
-  FiUpload,
-  FiTrash2,
-  FiFile,
-  FiMessageSquare,
-  FiBookOpen,
-  FiEdit,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
   FiAlertTriangle,
-  FiInbox,
-  FiX,
-  FiDownload,
+  FiArrowRight,
+  FiBook,
+  FiCalendar,
+  FiRefreshCw,
 } from 'react-icons/fi';
 
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import bgImage from '../../assets/L.png';
-import './TeacherCourseDetail.css';
+import './TeacherDashboard.css';
 
-/* Helper: build the authenticated download URL */
-const getFileUrl = (filePath) => {
-  const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-  const filename = filePath.split('/').pop();
-  return `${base}/api/v1/files/${filename}`;
-};
+/* --------------------------------------------------------------------------
+   Data hook: Fetch Teacher Dashboard Data with AbortController
+   -------------------------------------------------------------------------- */
+const useTeacherDashboardData = () => {
+  const [data, setData] = useState({
+    assignmentsCount: 0,
+    assignments: [],
+    upcomingPracticeCount: 0,
+  });
+  const [status, setStatus] = useState('loading');
+  const abortRef = useRef(null);
 
-/* Fetch file with auth, then open in new tab or download */
-const handleFileClick = async (filePath, fileType) => {
-  try {
-    const url = getFileUrl(filePath);
-    const response = await api.get(url, { responseType: 'blob' });
-    const blob = response.data;
-    const blobUrl = URL.createObjectURL(blob);
+  const reload = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-    if (fileType === 'image') {
-      window.open(blobUrl, '_blank');
-    } else {
-      const filename = filePath.split('/').pop();
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    setStatus('loading');
+
+    try {
+      const response = await api.get('/api/v1/dashboard/teacher', {
+        signal: controller.signal,
+      });
+
+      if (response?.data?.data) {
+        setData({
+          assignmentsCount: Number(response.data.data.assignmentsCount) || 0,
+          assignments: Array.isArray(response.data.data.assignments)
+            ? response.data.data.assignments
+            : [],
+          upcomingPracticeCount:
+            Number(response.data.data.upcomingPracticeCount) || 0,
+        });
+      }
+      setStatus('success');
+    } catch (err) {
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') return;
+      console.error('Unable to load teacher dashboard data.', err);
+      setStatus('error');
     }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-  } catch (err) {
-    console.error('Failed to fetch file:', err);
-    alert('Unable to access the file. Please try again.');
-  }
-};
-
-const TABS = [
-  { id: 'material', label: 'Materials', icon: FiBookOpen },
-  { id: 'homework', label: 'Homework', icon: FiEdit },
-  { id: 'message', label: 'Messages', icon: FiMessageSquare },
-];
-
-const TeacherCourseDetail = () => {
-  const { id, assignmentId } = useParams();
-  const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
-  const fileInputRef = useRef(null);
-
-  const [course, setCourse] = useState(null);
-  const [assignment, setAssignment] = useState(null);
-  const [materials, setMaterials] = useState([]);
-  const [activeTab, setActiveTab] = useState('material');
-  
-  const [form, setForm] = useState({ title: '', description: '' });
-  const [selectedFile, setSelectedFile] = useState(null);
-  
-  const [isFetchingCourse, setIsFetchingCourse] = useState(true);
-  const [isFetchingMaterials, setIsFetchingMaterials] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
-  const [courseError, setCourseError] = useState(null);
-
-  // Determine if we're using assignment-based or course-based routing
-  const isAssignmentBased = Boolean(assignmentId);
-  const resourceId = assignmentId || id;
+  }, []);
 
   useEffect(() => {
-    if (!resourceId) return;
-    let isMounted = true;
+    reload();
+    return () => abortRef.current?.abort();
+  }, [reload]);
 
-    const loadData = async () => {
-      setIsFetchingCourse(true);
-      setIsFetchingMaterials(true);
-      setCourseError(null);
+  return { data, status, reload };
+};
 
-      try {
-        if (isAssignmentBased) {
-          // Load assignment and course data
-          const assignmentRes = await api.get(`/api/v1/assignments/${assignmentId}`);
-          const assignmentData = assignmentRes.data?.data;
-          
-          if (isMounted) {
-            setAssignment(assignmentData);
-            setCourse(assignmentData?.course || null);
-          }
-        } else {
-          // Load course data directly (legacy route)
-          const courseRes = await api.get(`/api/v1/courses/${id}`);
-          if (isMounted) {
-            setCourse(courseRes.data?.data || null);
-            setAssignment(null);
-          }
-        }
-      } catch (err) {
-        if (isMounted) {
-          setCourseError(
-            isAssignmentBased 
-              ? 'Unable to load assignment details.' 
-              : 'Unable to load course details.'
-          );
-        }
-      } finally {
-        if (isMounted) setIsFetchingCourse(false);
-      }
+/* --------------------------------------------------------------------------
+   Helpers
+   -------------------------------------------------------------------------- */
+const numberFormatter = new Intl.NumberFormat();
+const formatNumber = (value) => numberFormatter.format(Number(value) || 0);
 
-      try {
-        const materialsEndpoint = isAssignmentBased
-          ? `/api/v1/assignments/${assignmentId}/materials`
-          : `/api/v1/courses/${id}/materials`;
-          
-        const matRes = await api.get(materialsEndpoint);
-        if (isMounted) setMaterials(matRes.data?.data || []);
-      } catch (err) {
-        console.error('Failed to load materials:', err);
-        // If assignment-specific materials endpoint doesn't exist, fall back to course materials
-        if (isAssignmentBased && err.response?.status === 404) {
-          try {
-            const courseId = assignment?.course?._id || course?._id;
-            if (courseId) {
-              const fallbackRes = await api.get(`/api/v1/courses/${courseId}/materials`);
-              if (isMounted) setMaterials(fallbackRes.data?.data || []);
-            }
-          } catch (fallbackErr) {
-            console.error('Fallback materials load failed:', fallbackErr);
-          }
-        }
-      } finally {
-        if (isMounted) setIsFetchingMaterials(false);
-      }
-    };
+// Real Ge'ez numerals (1-99). Used as structural markers throughout the
+// dashboard instead of generic dots/icons — the numbering system belongs
+// to the same script as the rest of the page's content.
+const GEEZ_ONES = ['', '፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰', '፱'];
+const GEEZ_TENS = ['', '፲', '፳', '፴', '፵', '፶', '፷', '፸', '፹', '፺'];
+const toGeez = (n) => {
+  if (!Number.isInteger(n) || n <= 0) return String(n);
+  if (n > 99) return String(n);
+  const tens = Math.floor(n / 10);
+  const ones = n % 10;
+  return `${GEEZ_TENS[tens]}${GEEZ_ONES[ones]}`;
+};
 
-    loadData();
-    return () => { isMounted = false; };
-  }, [resourceId, isAssignmentBased, assignmentId, id, assignment?.course?._id, course?._id]);
+/* --------------------------------------------------------------------------
+   Lalibela cross — the dashboard's unifying emblem, drawn from the stepped
+   cross-form of Bete Giyorgis at Lalibela (the church named in the header).
+   Reused at every scale — verse medallion, corners, card marks, empty
+   state seal — the way a church reuses its own emblem across materials,
+   rather than mixing in generic dots and stock icons.
+   -------------------------------------------------------------------------- */
+const LalibelaCross = ({ className = '' }) => (
+  <svg
+    className={className}
+    viewBox="0 0 44 44"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <path
+      d="M18 2h8v6h6v-4h4v8h-4v4h4v8h-4v-4h-6v6h4v4h-8v-4h-4v4H10v-4h4v-6h-6v4H4v-8h4v-4H4v-8h4v4h6V8h-4V2h8v4h4V2Z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </svg>
+);
 
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!form.title && !selectedFile) {
-      alert('Please provide a title or attach a file.');
+/* --------------------------------------------------------------------------
+   Corner ornament — manuscript-page flourish, now built around the same
+   stepped-cross vocabulary as the rest of the emblem set.
+   -------------------------------------------------------------------------- */
+const CornerOrnament = ({ className = '' }) => (
+  <svg
+    className={`td-corner-svg ${className}`}
+    viewBox="0 0 60 60"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path d="M2 26 V2 H26" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M2 34 V10" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+    <path d="M34 2 H10" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+    <g transform="translate(1.5,1.5) scale(0.16)">
+      <path
+        d="M18 2h8v6h6v-4h4v8h-4v4h4v8h-4v-4h-6v6h4v4h-8v-4h-4v4H10v-4h4v-6h-6v4H4v-8h4v-4H4v-8h4v4h6V8h-4V2h8v4h4V2Z"
+        stroke="currentColor"
+        strokeWidth="2.2"
+      />
+    </g>
+  </svg>
+);
+
+/* --------------------------------------------------------------------------
+   Interlace band — a two-strand woven ribbon, the border device found
+   framing text panels in Ethiopian manuscript illumination. Used to seam
+   the header to the body instead of a plain hairline.
+   -------------------------------------------------------------------------- */
+const InterlaceBand = ({ flip = false }) => (
+  <div className={`td-interlace ${flip ? 'td-interlace--flip' : ''}`} aria-hidden="true" />
+);
+
+/* --------------------------------------------------------------------------
+   Scripture verses — rotate on a timer inside the illuminated ribbon.
+   Add / edit verses here; the ribbon adapts to however many you provide.
+   -------------------------------------------------------------------------- */
+const VERSES = [
+  {
+    text: 'የሰማይ አምላክ ያከናውንልናል፤ እኛም ባሪያዎቹ ተነሥተን እንሠራለን።',
+    source: 'ነህምያ 2:20',
+  },
+  {
+    text: 'ሥራህን ለጌታ አደራ ስጥ፤ ሐሳብህም ይጸናል።',
+    source: 'ምሳሌ 16:3',
+  },
+  {
+    text: 'የምትሠሩትን ሁሉ ለሰው ሳይሆን ለጌታ እንደምትሠሩ በትጋት አድርጉት።',
+    source: 'ቆላሲስ 3:23',
+  },
+  {
+    text: 'መልካም ማድረግን አንታክት፤ ካልደከምን በጊዜው እናጭዳለንና።',
+    source: 'ገላትያ 6:9',
+  },
+  {
+    text: 'ኃይልን በሚሰጠኝ በክርስቶስ ሁሉን እችላለሁ።',
+    source: 'ፊልጵስዩስ 4:13',
+  },
+];
+
+const VERSE_INTERVAL_MS = 7000;
+
+/* --------------------------------------------------------------------------
+   Illuminated verse ribbon — the dashboard's signature panel. Fades
+   between scripture verses; pauses politely on hover/focus; the Lalibela
+   cross medallion flickers like candlelight rather than a mechanical pulse.
+   -------------------------------------------------------------------------- */
+const VerseRibbon = () => {
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+  const pausedRef = useRef(false);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      if (pausedRef.current) return;
+
+      setVisible(false);
+
+      window.setTimeout(() => {
+        setIndex((prev) => (prev + 1) % VERSES.length);
+        setVisible(true);
+      }, 380);
+    }, VERSE_INTERVAL_MS);
+
+    return () => clearInterval(tick);
+  }, []);
+
+  const verse = VERSES[index];
+
+  return (
+    <div
+      className="td-verse-ribbon"
+      onMouseEnter={() => (pausedRef.current = true)}
+      onMouseLeave={() => (pausedRef.current = false)}
+      onFocus={() => (pausedRef.current = true)}
+      onBlur={() => (pausedRef.current = false)}
+      role="region"
+      aria-label="Scripture of the day"
+    >
+      <span className="td-verse-mark" aria-hidden="true">
+        <LalibelaCross className="td-verse-mark-svg" />
+      </span>
+
+      <div className={`td-verse-copy ${visible ? 'is-visible' : ''}`} key={index}>
+        <p className="td-verse-text">{verse.text}</p>
+        <span className="td-verse-source">{verse.source}</span>
+      </div>
+
+      <div className="td-verse-counter" aria-hidden="true">
+        <span className="td-verse-counter-current">{toGeez(index + 1)}</span>
+        <span className="td-verse-counter-sep">⁄</span>
+        <span className="td-verse-counter-total">{toGeez(VERSES.length)}</span>
+      </div>
+    </div>
+  );
+};
+
+/* --------------------------------------------------------------------------
+   Count-up number — small bit of life for the stat cards once data lands.
+   -------------------------------------------------------------------------- */
+const useCountUp = (target, active) => {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setValue(0);
       return;
     }
 
-    const fd = new FormData();
-    fd.append('title', form.title);
-    fd.append('description', form.description);
-    fd.append('type', activeTab);
-    if (selectedFile) fd.append('file', selectedFile);
+    const duration = 700;
+    const start = performance.now();
 
-    setIsUploading(true);
-    try {
-      const uploadEndpoint = isAssignmentBased
-        ? `/api/v1/assignments/${assignmentId}/materials`
-        : `/api/v1/courses/${id}/materials`;
-        
-      await api.post(uploadEndpoint, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      
-      // Reset form
-      setForm({ title: '', description: '' });
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      
-      // Refresh list
-      const materialsEndpoint = isAssignmentBased
-        ? `/api/v1/assignments/${assignmentId}/materials`
-        : `/api/v1/courses/${id}/materials`;
-      const matRes = await api.get(materialsEndpoint);
-      setMaterials(matRes.data?.data || []);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Upload failed. Please try again.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
+    let frame;
+    const step = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(target * eased));
+      if (progress < 1) frame = requestAnimationFrame(step);
+    };
 
-  const handleDelete = async (materialId) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
-    try {
-      const deleteEndpoint = isAssignmentBased
-        ? `/api/v1/assignments/${assignmentId}/materials/${materialId}`
-        : `/api/v1/courses/${id}/materials/${materialId}`;
-        
-      await api.delete(deleteEndpoint);
-      setMaterials((prev) => prev.filter((m) => m._id !== materialId));
-    } catch (err) {
-      alert('Failed to delete item.');
-    }
-  };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [target, active]);
 
-  const clearFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+  return value;
+};
 
-  const filteredMaterials = materials.filter((m) => m.type === activeTab);
-  const ActiveTabIcon = TABS.find((t) => t.id === activeTab)?.icon || FiFile;
+const AnimatedValue = ({ target, active }) => {
+  const value = useCountUp(target, active);
+  return <>{formatNumber(value)}</>;
+};
+
+/* --------------------------------------------------------------------------
+   Empty-scroll seal — replaces the generic inbox glyph in the empty state
+   with a rolled scroll closed under a wax seal, stamped with the emblem.
+   -------------------------------------------------------------------------- */
+const EmptyScroll = () => (
+  <svg
+    className="td-empty-svg"
+    viewBox="0 0 96 72"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <rect x="10" y="14" width="76" height="44" rx="4" stroke="currentColor" strokeWidth="1.6" opacity="0.5" />
+    <path d="M10 20c4-4 4-10 0-12M86 20c-4-4-4-10 0-12M10 52c4 4 4 10 0 12M86 52c-4 4-4 10 0 12"
+      stroke="currentColor" strokeWidth="1.6" opacity="0.5" strokeLinecap="round" />
+    <line x1="22" y1="26" x2="58" y2="26" stroke="currentColor" strokeWidth="1.4" opacity="0.35" />
+    <line x1="22" y1="34" x2="58" y2="34" stroke="currentColor" strokeWidth="1.4" opacity="0.35" />
+    <line x1="22" y1="42" x2="46" y2="42" stroke="currentColor" strokeWidth="1.4" opacity="0.35" />
+    <circle cx="70" cy="42" r="15" className="td-empty-seal" />
+    <g transform="translate(70,42) scale(0.34)" fill="none">
+      <path
+        d="M18 2h8v6h6v-4h4v8h-4v4h4v8h-4v-4h-6v6h4v4h-8v-4h-4v4H10v-4h4v-6h-6v4H4v-8h4v-4H4v-8h4v4h6V8h-4V2h8v4h4V2Z"
+        stroke="var(--td-gold-pale)"
+        strokeWidth="2.4"
+      />
+    </g>
+  </svg>
+);
+
+/* --------------------------------------------------------------------------
+   Main Component
+   -------------------------------------------------------------------------- */
+const TeacherDashboard = () => {
+  const navigate = useNavigate();
+  const { user: authUser } = useContext(AuthContext);
+
+  const { data, status, reload } = useTeacherDashboardData();
+  const isLoading = status === 'loading';
+  const hasError = status === 'error';
+  const hasData =
+    data.assignments.length > 0 ||
+    data.assignmentsCount > 0 ||
+    data.upcomingPracticeCount > 0;
+
+  const teacher = authUser || {};
+  const coursesCount = data.assignmentsCount || data.assignments.length || 0;
+
+  const statCards = useMemo(
+    () => [
+      {
+        id: 'courses',
+        label: 'My Courses',
+        count: coursesCount,
+        icon: FiBook,
+        link: '/teacher/courses',
+      },
+      {
+        id: 'practices',
+        label: 'Upcoming Practices',
+        count: data.upcomingPracticeCount,
+        icon: FiCalendar,
+        link: '/teacher/practices',
+      },
+    ],
+    [coursesCount, data.upcomingPracticeCount]
+  );
+
+  const welcomeMessage = teacher.fullName
+    ? `Welcome, ${teacher.fullName}`
+    : 'Sacred Chant — Wisdom for your ministry';
+
+  const titleRest = 'ቤሮ ደብረ ምህረት ቅድስት ስላሴ ወ ቅዱስ ላሊበላ';
 
   return (
-    <section className="tcd-page">
-      <div className="tcd-bg" style={{ backgroundImage: `url(${bgImage})` }} aria-hidden="true" />
-      <div className="tcd-overlay" aria-hidden="true" />
+    <section className="td-page">
+      <div
+        className="td-bg"
+        style={{ backgroundImage: `url(${bgImage})` }}
+        aria-hidden="true"
+      />
+      <div className="td-pattern" aria-hidden="true" />
+      <div className="td-grain" aria-hidden="true" />
+      <div className="td-overlay" aria-hidden="true" />
 
-      <header className="tcd-header">
-        <button className="tcd-back-btn" onClick={() => navigate('/teacher/courses')}>
-          <FiArrowLeft size={18} /> Back to My Courses
-        </button>
+      <main className="td-content">
+        <CornerOrnament className="td-corner--tl" />
+        <CornerOrnament className="td-corner--tr" />
+        <CornerOrnament className="td-corner--bl" />
+        <CornerOrnament className="td-corner--br" />
 
-        {isFetchingCourse ? (
-          <div className="tcd-state" role="status">
-            <span className="tcd-spinner" aria-hidden="true" />
-            <p>Loading course…</p>
+        <header className="td-header">
+          <span className="td-eyebrow">
+            <LalibelaCross className="td-eyebrow-mark" />
+            Teacher Portal
+          </span>
+
+          <h1 className="td-title">
+            <span className="td-drop-cap" aria-hidden="true">የ</span>
+            <span className="td-title-rest">{titleRest}</span>
+          </h1>
+
+          <div className="td-title-divider" aria-hidden="true">
+            <span className="td-title-divider-line" />
+            <LalibelaCross className="td-title-divider-mark" />
+            <span className="td-title-divider-line" />
           </div>
-        ) : courseError ? (
-          <div className="tcd-state tcd-state--error" role="alert">
-            <FiAlertTriangle size={30} aria-hidden="true" />
-            <h3>Course Not Found</h3>
-            <p>{courseError}</p>
+
+          <p className="td-subtitle-am">መስቀለ ብርሃን ስንበት ትምህርት ቤት</p>
+          <p className="td-subtitle-en">{welcomeMessage}</p>
+        </header>
+
+        <InterlaceBand />
+
+        <VerseRibbon />
+
+        {hasError && (
+          <div className="td-alert" role="alert">
+            <FiAlertTriangle size={18} />
+            <span>Unable to load live data. Showing latest available values.</span>
+            <button
+              className="td-alert-btn"
+              onClick={reload}
+              aria-label="Retry loading data"
+            >
+              <FiRefreshCw size={14} />
+            </button>
           </div>
-        ) : !course ? null : (
-          <div className="tcd-course-info">
-            <h1 className="tcd-title">{course.name}</h1>
-            <div className="tcd-meta">
-              {course.code && <span className="tcd-badge">Code: {course.code}</span>}
-              {isAssignmentBased && assignment?.class && (
-                <span className="tcd-badge tcd-badge--blue">
-                  Class: {assignment.class.name}
-                </span>
-              )}
-              <span className="tcd-badge tcd-badge--gold">
-                <ActiveTabIcon size={14} /> {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}s
+        )}
+
+        <ul className="td-stats" aria-label="Teaching statistics">
+          {statCards.map((card) => {
+            const Icon = card.icon;
+            const accessibleLabel =
+              isLoading && !hasData
+                ? `Loading ${card.label.toLowerCase()}`
+                : `${card.label}: ${formatNumber(
+                    card.count
+                  )}. Open ${card.label.toLowerCase()}.`;
+
+            return (
+              <li key={card.id}>
+                <button
+                  type="button"
+                  className="td-stat-card"
+                  onClick={() => navigate(card.link)}
+                  aria-label={accessibleLabel}
+                  disabled={isLoading && !hasData}
+                >
+                  <LalibelaCross className="td-stat-mark" />
+
+                  <span className="td-stat-icon" aria-hidden="true">
+                    {isLoading && !hasData ? (
+                      <span className="td-skeleton td-skeleton--icon" />
+                    ) : (
+                      <Icon size={22} strokeWidth={1.8} />
+                    )}
+                  </span>
+
+                  <span className="td-stat-details">
+                    <span className="td-stat-value">
+                      {isLoading && !hasData ? (
+                        <span className="td-skeleton td-skeleton--value" />
+                      ) : (
+                        <AnimatedValue target={card.count} active={!isLoading} />
+                      )}
+                    </span>
+                    <span className="td-stat-label">
+                      {isLoading && !hasData ? (
+                        <span className="td-skeleton td-skeleton--label" />
+                      ) : (
+                        card.label
+                      )}
+                    </span>
+                  </span>
+
+                  <span className="td-stat-action" aria-hidden="true">
+                    <FiArrowRight size={18} strokeWidth={1.8} />
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        <article className="td-assignments">
+          <header className="td-assignments-header">
+            <h2 className="td-assignments-title">My Teaching Assignments</h2>
+            {!isLoading && data.assignments.length > 0 && (
+              <span className="td-assignments-count">
+                {data.assignments.length} Active
               </span>
-            </div>
-            {course.description && <p className="tcd-desc">{course.description}</p>}
-            {isAssignmentBased && (
-              <div className="tcd-assignment-info">
-                <span className="tcd-assignment-badge">
-                  Assignment-specific materials for {assignment?.class?.name || 'this class'}
-                </span>
+            )}
+          </header>
+
+          <div className="td-assignments-body">
+            {isLoading && !hasData ? (
+              <ul className="td-assignments-list">
+                {[1, 2, 3].map((i) => (
+                  <li key={i} className="td-assignment-item">
+                    <span className="td-skeleton td-skeleton--row" />
+                  </li>
+                ))}
+              </ul>
+            ) : data.assignments.length > 0 ? (
+              <ul className="td-assignments-list">
+                {data.assignments.map((assignment, idx) => (
+                  <li key={assignment._id} className="td-assignment-item">
+                    <span className="td-assignment-badge" aria-hidden="true">
+                      {toGeez(idx + 1)}
+                    </span>
+                    <span className="td-assignment-details">
+                      <span className="td-assignment-course">
+                        {assignment.course?.name || 'Assigned Course'}
+                      </span>
+                      <span className="td-assignment-class">
+                        {assignment.class?.name || 'General Class'}
+                      </span>
+                    </span>
+                    <span className="td-assignment-arrow" aria-hidden="true">
+                      <FiArrowRight size={16} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="td-assignments-empty">
+                <EmptyScroll />
+                <p>No teaching assignments currently assigned.</p>
+                <button
+                  type="button"
+                  className="td-assignments-action"
+                  onClick={() => navigate('/teacher/courses')}
+                >
+                  Browse available courses
+                </button>
               </div>
             )}
           </div>
-        )}
-      </header>
+        </article>
 
-      {!isFetchingCourse && course && (
-        <>
-          <nav className="tcd-tabs" role="tablist">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  className={`tcd-tab ${activeTab === tab.id ? 'tcd-tab--active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <Icon size={16} aria-hidden="true" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="tcd-content">
-            {/* Upload Form */}
-            <div className="tcd-card tcd-form-card">
-              <h2 className="tcd-card-title">
-                Add New {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-              </h2>
-              <form onSubmit={handleUpload} className="tcd-form">
-                <div className="tcd-form-group">
-                  <label htmlFor="tcd-title" className="tcd-label">
-                    Title {activeTab !== 'message' && <span className="tcd-required">*</span>}
-                  </label>
-                  <input
-                    id="tcd-title"
-                    type="text"
-                    className="tcd-input"
-                    placeholder="Enter a descriptive title"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    required={activeTab !== 'message'}
-                  />
-                </div>
-
-                <div className="tcd-form-group">
-                  <label htmlFor="tcd-desc" className="tcd-label">
-                    Description
-                  </label>
-                  <textarea
-                    id="tcd-desc"
-                    className="tcd-textarea"
-                    placeholder="Add details or instructions (optional)"
-                    rows="3"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  />
-                </div>
-
-                {(activeTab === 'material' || activeTab === 'homework') && (
-                  <div className="tcd-form-group">
-                    <label className="tcd-label">Attachment</label>
-                    <div className="tcd-file-drop">
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={(e) => setSelectedFile(e.target.files[0])}
-                        accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt"
-                        id="tcd-file"
-                        hidden
-                      />
-                      <label htmlFor="tcd-file" className="tcd-file-label">
-                        {selectedFile ? (
-                          <>
-                            <FiFile size={16} />
-                            <span className="tcd-file-name">{selectedFile.name}</span>
-                            <button
-                              type="button"
-                              className="tcd-file-clear"
-                              onClick={(e) => { e.preventDefault(); clearFile(); }}
-                              aria-label="Remove file"
-                            >
-                              <FiX size={16} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <FiUpload size={16} />
-                            <span>Click to select a file</span>
-                          </>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-                )}
-
-                <button type="submit" className="tcd-btn tcd-btn--primary" disabled={isUploading}>
-                  {isUploading ? (
-                    <>
-                      <span className="tcd-spinner tcd-spinner--sm" aria-hidden="true" />
-                      Uploading…
-                    </>
-                  ) : (
-                    <>
-                      <FiUpload size={16} /> Post {activeTab}
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* Materials List */}
-            <div className="tcd-card tcd-list-card">
-              <h2 className="tcd-card-title">
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}s
-                <span className="tcd-count">{filteredMaterials.length}</span>
-              </h2>
-
-              <div className="tcd-list-body">
-                {isFetchingMaterials ? (
-                  <div className="tcd-state" role="status">
-                    <span className="tcd-spinner" aria-hidden="true" />
-                    <p>Loading items…</p>
-                  </div>
-                ) : filteredMaterials.length === 0 ? (
-                  <div className="tcd-state">
-                    <FiInbox size={32} aria-hidden="true" />
-                    <h3>No {activeTab}s yet</h3>
-                    <p>Use the form above to add your first item.</p>
-                  </div>
-                ) : (
-                  <div className="tcd-table-wrapper">
-                    <table className="tcd-table">
-                      <thead>
-                        <tr>
-                          <th scope="col">Title</th>
-                          <th scope="col">Description</th>
-                          <th scope="col">File</th>
-                          <th scope="col" className="tcd-text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredMaterials.map((item) => (
-                          <tr key={item._id}>
-                            <td data-label="Title">
-                              <div className="tcd-item-title">
-                                {item.title}
-                              </div>
-                            </td>
-                            <td data-label="Description">
-                              <span className="tcd-item-desc">
-                                {item.description || '—'}
-                              </span>
-                            </td>
-                            <td data-label="File">
-                              {item.file ? (
-                                <button
-                                  className="tcd-btn tcd-btn--sm tcd-btn--ghost"
-                                  onClick={() => handleFileClick(item.file, item.fileType)}
-                                >
-                                  <FiDownload size={14} /> {item.fileType || 'Download'}
-                                </button>
-                              ) : (
-                                '—'
-                              )}
-                            </td>
-                            <td data-label="Actions" className="tcd-text-right">
-                              <button
-                                className="tcd-btn tcd-btn--sm tcd-btn--danger"
-                                onClick={() => handleDelete(item._id)}
-                                title="Delete item"
-                              >
-                                <FiTrash2 size={14} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+        <InterlaceBand flip />
+      </main>
     </section>
   );
 };
 
-export default TeacherCourseDetail;
+export default TeacherDashboard;
