@@ -210,7 +210,7 @@ const Sidebar = ({ role }) => {
           <div className="sidebar-brand">
             <img src={crestImage} alt="" className="sidebar-crest" aria-hidden="true" />
             <h3 className="sidebar-title">
-              መስቀለብርሃን ንበት<br />ትምህርት ቤት
+              መስቀለብርሃን ሰንበት<br />ትምህርት ቤት
             </h3>
           </div>
           {roleLabel && <span className="sidebar-role-badge">{roleLabel}</span>}
