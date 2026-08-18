@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   FiAlertTriangle,
   FiArrowRight,
+  FiAward,
   FiBook,
   FiClipboard,
   FiRefreshCw,
@@ -19,6 +20,9 @@ import {
 import api from '../../services/api';
 import AuthContext from '../../context/AuthContext';
 import bgImage from '../../assets/L.png';
+// School crest — drop the provided crest.png into src/assets/ (same folder as L.png)
+// and this import will resolve. It's the large, prominent image in the hero below.
+import crestImage from '../../assets/crest.png';
 import './StudentDashboard.css';
 
 /* --------------------------------------------------------------------------
@@ -72,6 +76,15 @@ const useStudentDashboardData = () => {
 const numberFormatter = new Intl.NumberFormat();
 const formatNumber = (value) => numberFormatter.format(Number(value) || 0);
 
+const getTimeGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 5) return 'Peace be with you';
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  if (hour < 21) return 'Good evening';
+  return 'Peace be with you';
+};
+
 /* --------------------------------------------------------------------------
    Scripture verses — rotate on a timer inside the illuminated ribbon.
    Add / edit verses here; the ribbon adapts to however many you provide.
@@ -102,8 +115,7 @@ const VERSES = [
 const VERSE_INTERVAL_MS = 7000;
 
 /* --------------------------------------------------------------------------
-   Illuminated verse ribbon — the dashboard's signature element.
-   Fades between scripture verses; pauses politely on hover/focus.
+   Illuminated verse ribbon — cycles through scripture. Pauses on hover/focus.
    -------------------------------------------------------------------------- */
 const VerseRibbon = () => {
   const [index, setIndex] = useState(0);
@@ -242,12 +254,21 @@ const StudentDashboard = () => {
         link: '/student/attendance',
         isText: true,
       },
+      {
+        id: 'ranking',
+        label: 'Class Ranking',
+        value: 'View',
+        icon: FiAward,
+        link: '/student/ranking',
+        isText: true,
+      },
     ],
     [student.class?.name, coursesCount]
   );
 
+  const greeting = useMemo(() => getTimeGreeting(), []);
   const welcomeMessage = student.fullName
-    ? `Welcome, ${student.fullName}`
+    ? `${greeting}, ${student.fullName}`
     : 'Student Dashboard';
 
   return (
@@ -261,14 +282,25 @@ const StudentDashboard = () => {
       <div className="std-overlay" aria-hidden="true" />
 
       <main className="std-content">
-        <header className="std-header">
+        {/* Hero — the crest is the centerpiece, large and unmissable */}
+        <div className="std-hero">
+          <span className="std-hero-glow" aria-hidden="true" />
+          <span className="std-hero-rays" aria-hidden="true" />
+
+          <img
+            src={crestImage}
+            alt="Church and school crest"
+            className="std-hero-crest"
+          />
+
           <span className="std-eyebrow">Student Portal</span>
+
           <h1 className="std-title">
             የቤሮ ደብረ ምህረት ቅድስት ስላሴ ወ ቅዱስ ላሊበላ
           </h1>
           <p className="std-subtitle-am">መስቀለ ብርሃን ስንበት ትምህርት ቤት</p>
           <p className="std-subtitle-en">{welcomeMessage}</p>
-        </header>
+        </div>
 
         <VerseRibbon />
 
@@ -285,6 +317,10 @@ const StudentDashboard = () => {
             </button>
           </div>
         )}
+
+        <div className="std-divider" aria-hidden="true">
+          <span>✝</span>
+        </div>
 
         <ul className="std-stats" aria-label="Student statistics">
           {statCards.map((card) => {
@@ -346,73 +382,10 @@ const StudentDashboard = () => {
           })}
         </ul>
 
-        <article className="std-quick-actions">
-          <header className="std-quick-header">
-            <h2 className="std-quick-title">Quick Access</h2>
-            <span className="std-quick-badge">
-              <FiClipboard size={14} />
-              Student Tools
-            </span>
-          </header>
-
-          <div className="std-quick-list">
-            {isLoading && !hasData ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="std-quick-item">
-                  <span className="std-skeleton std-skeleton--quick-icon" />
-                  <div className="std-quick-text">
-                    <span className="std-skeleton std-skeleton--quick-title" />
-                    <span className="std-skeleton std-skeleton--quick-desc" />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <>
-                <button
-                  className="std-quick-item"
-                  onClick={() => navigate('/student/materials')}
-                >
-                  <span className="std-quick-icon" aria-hidden="true">
-                    <FiBook size={19} />
-                  </span>
-                  <span className="std-quick-text">
-                    <strong>Course Materials</strong>
-                    <small>Access your study materials and resources</small>
-                  </span>
-                  <FiArrowRight className="std-quick-arrow" size={18} />
-                </button>
-
-                <button
-                  className="std-quick-item"
-                  onClick={() => navigate('/student/attendance')}
-                >
-                  <span className="std-quick-icon" aria-hidden="true">
-                    <FiClipboard size={19} />
-                  </span>
-                  <span className="std-quick-text">
-                    <strong>View Attendance</strong>
-                    <small>Check your attendance records</small>
-                  </span>
-                  <FiArrowRight className="std-quick-arrow" size={18} />
-                </button>
-
-                <button
-                  className="std-quick-item"
-                  onClick={() => navigate('/student/ranking')}
-                >
-                  <span className="std-quick-icon" aria-hidden="true">
-                    <FiUsers size={19} />
-                  </span>
-                  <span className="std-quick-text">
-                    <strong>Class Ranking</strong>
-                    <small>See your academic performance</small>
-                  </span>
-                  <FiArrowRight className="std-quick-arrow" size={18} />
-                </button>
-              </>
-            )}
-          </div>
-        </article>
+        <footer className="std-blessing">
+          <span className="std-blessing-cross" aria-hidden="true">✝</span>
+          <p>ስብሐት ለእግዚአብሔር በኵሉ!</p>
+        </footer>
       </main>
     </section>
   );
