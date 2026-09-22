@@ -9,4 +9,4 @@ const announcementSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Announcement', announcementSchema);
+module.exports = mongoose.model('Announcement', announcementSchema);//one more commit
