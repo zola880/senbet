@@ -141,7 +141,7 @@ const Login = () => {
               id="userId"
               type="text"
               className="login-input"
-              placeholder="e.g., AS-0001, TS-0001, or SS-0001"
+              placeholder="please enter your ID"
               value={userId}
               onChange={handleUserIdChange}
               required
