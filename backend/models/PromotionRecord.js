@@ -26,19 +26,21 @@ const promotionRecordSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    passMark: {
+    promotionScore: {
       type: Number,
       required: true,
     },
+    missingCourses: {
+      type: [String],
+      default: [],
+    },
     status: {
       type: String,
-      enum: ['promoted', 'retained', 'graduated'],
+      enum: ['promoted', 'retained', 'graduated', 'incomplete'],
       required: true,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 promotionRecordSchema.index({ batch: 1 });

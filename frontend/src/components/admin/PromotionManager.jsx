@@ -4,7 +4,6 @@ import {
   FiArrowUpCircle,
   FiCheckCircle,
   FiInbox,
-  FiRefreshCw,
   FiRotateCcw,
   FiSearch,
   FiX,
@@ -18,10 +17,12 @@ const STATUS_LABELS = {
   promoted: 'Promoted',
   retained: 'Retained',
   graduated: 'Graduated',
+  incomplete: 'Incomplete',
 };
 
 const PromotionManager = () => {
   const [academicYear, setAcademicYear] = useState('');
+  const [promotionScore, setPromotionScore] = useState('50');
   const [preview, setPreview] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -57,16 +58,22 @@ const PromotionManager = () => {
       showToast('error', 'Please enter the academic year first.');
       return;
     }
+    const score = Number(promotionScore);
+    if (promotionScore === '' || Number.isNaN(score) || score < 0 || score > 100) {
+      showToast('error', 'Promotion score must be a number between 0 and 100.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await api.get('/api/v1/promotion/preview', {
-        params: { academicYear: year },
+        params: { academicYear: year, promotionScore: score },
       });
       const data = Array.isArray(res.data?.data) ? res.data.data : [];
       setPreview(data);
       setSummary(res.data?.summary || null);
       if (data.length === 0) {
-        showToast('error', 'No students with scores found. Check that classes have assessment configs and entered scores.');
+        showToast('error', 'No students with scores found. Check assessment configs, course assignments and entered scores.');
       }
     } catch (err) {
       showToast('error', err.response?.data?.message || 'Failed to load promotion preview.');
@@ -80,10 +87,11 @@ const PromotionManager = () => {
   const handleApply = async () => {
     if (!preview.length || !summary) return;
     const ok = window.confirm(
-      `Apply promotion for ${academicYear.trim()}?\n\n` +
+      `Apply promotion for ${academicYear.trim()} with promotion score ${promotionScore}?\n\n` +
       `${summary.promoted} student(s) will move to the next class.\n` +
       `${summary.graduated} student(s) will graduate.\n` +
-      `${summary.retained} student(s) will stay in their current class.\n\n` +
+      `${summary.retained} student(s) will stay in their current class.\n` +
+      `${summary.incomplete} student(s) have missing course scores and will NOT be promoted.\n\n` +
       `You can roll this back later from the history below.`
     );
     if (!ok) return;
@@ -92,6 +100,7 @@ const PromotionManager = () => {
     try {
       const res = await api.post('/api/v1/promotion/run', {
         academicYear: academicYear.trim(),
+        promotionScore: Number(promotionScore),
       });
       showToast('success', res.data?.message || 'Promotion applied successfully.');
       setPreview([]);
@@ -106,7 +115,7 @@ const PromotionManager = () => {
 
   const handleRollback = async (batch) => {
     const ok = window.confirm(
-      `Roll back the ${batch.academicYear} promotion?\n\nAll affected students will return to their previous classes.`
+      `Roll back the ${batch.academicYear} promotion?\n\nAll moved students will return to their previous classes.`
     );
     if (!ok) return;
     try {
@@ -138,7 +147,7 @@ const PromotionManager = () => {
           <div>
             <h1 className="pm-title">End of Year Promotion</h1>
             <p className="pm-subtitle">
-              Automatically promote, retain, or graduate students based on their yearly averages.
+              Students are promoted only when ALL course scores are submitted AND their average meets the promotion score you set.
             </p>
           </div>
         </header>
@@ -156,7 +165,21 @@ const PromotionManager = () => {
               onChange={(e) => setAcademicYear(e.target.value)}
               disabled={loading || applying}
             />
-            <small className="pm-hint">Must match the year used in your Assessment Configs.</small>
+            <small className="pm-hint">Label for this promotion batch.</small>
+          </div>
+          <div className="pm-field pm-field--score">
+            <label htmlFor="pm-score" className="pm-label">Promotion Score (0–100)</label>
+            <input
+              id="pm-score"
+              type="number"
+              min="0"
+              max="100"
+              className="pm-input"
+              value={promotionScore}
+              onChange={(e) => setPromotionScore(e.target.value)}
+              disabled={loading || applying}
+            />
+            <small className="pm-hint">Admin-decided pass threshold for this year.</small>
           </div>
           <div className="pm-controls-actions">
             <button className="pm-btn pm-btn--primary" onClick={handlePreview} disabled={loading || applying}>
@@ -179,7 +202,7 @@ const PromotionManager = () => {
           <div className="pm-stats">
             <div className="pm-stat">
               <span className="pm-stat-value">{summary.totalStudents}</span>
-              <span className="pm-stat-label">Total Students</span>
+              <span className="pm-stat-label">Total</span>
             </div>
             <div className="pm-stat pm-stat--promoted">
               <span className="pm-stat-value">{summary.promoted}</span>
@@ -193,6 +216,10 @@ const PromotionManager = () => {
               <span className="pm-stat-value">{summary.graduated}</span>
               <span className="pm-stat-label">Graduated</span>
             </div>
+            <div className="pm-stat pm-stat--incomplete">
+              <span className="pm-stat-value">{summary.incomplete}</span>
+              <span className="pm-stat-label">Incomplete</span>
+            </div>
           </div>
         )}
 
@@ -205,8 +232,9 @@ const PromotionManager = () => {
                   <th>Student</th>
                   <th>Current Class</th>
                   <th>Average</th>
-                  <th>Pass Mark</th>
+                  <th>Promotion Score</th>
                   <th>Status</th>
+                  <th>Missing Courses</th>
                   <th>Next Class</th>
                 </tr>
               </thead>
@@ -219,11 +247,14 @@ const PromotionManager = () => {
                     </td>
                     <td>{r.currentClass}</td>
                     <td className="pm-score">{r.averageScore}%</td>
-                    <td>{r.passMark}%</td>
+                    <td>{r.promotionScore}%</td>
                     <td>
                       <span className={`pm-badge pm-badge--${r.status}`}>
                         {STATUS_LABELS[r.status] || r.status}
                       </span>
+                    </td>
+                    <td className="pm-missing">
+                      {r.missingCourses && r.missingCourses.length > 0 ? r.missingCourses.join(', ') : '—'}
                     </td>
                     <td>{r.nextClass || '—'}</td>
                   </tr>
@@ -236,7 +267,10 @@ const PromotionManager = () => {
             <div className="pm-state">
               <FiArrowUpCircle size={40} />
               <h3>No preview loaded</h3>
-              <p>Enter the academic year and click “Preview Promotion” to see who will be promoted, retained, or graduated — before applying any changes.</p>
+              <p>
+                Enter the academic year and the promotion score, then click “Preview Promotion”.
+                A student is promoted only if every course has submitted scores and their average is at or above the promotion score.
+              </p>
             </div>
           )
         )}
@@ -266,10 +300,10 @@ const PromotionManager = () => {
                       </span>
                     </div>
                     <div className="pm-history-meta">
-                      Run by {batch.runBy?.fullName || 'Unknown'} · {new Date(batch.runAt).toLocaleString()}
+                      Promotion score: {batch.promotionScore ?? 50}% · Run by {batch.runBy?.fullName || 'Unknown'} · {new Date(batch.runAt).toLocaleString()}
                     </div>
                     <div className="pm-history-counts">
-                      {batch.summary?.promoted ?? 0} promoted · {batch.summary?.retained ?? 0} retained · {batch.summary?.graduated ?? 0} graduated
+                      {batch.summary?.promoted ?? 0} promoted · {batch.summary?.retained ?? 0} retained · {batch.summary?.graduated ?? 0} graduated · {batch.summary?.incomplete ?? 0} incomplete
                     </div>
                   </div>
                   {batch.status === 'applied' && (

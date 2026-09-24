@@ -6,6 +6,10 @@ const promotionBatchSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    promotionScore: {
+      type: Number,
+      default: 50,
+    },
     runBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -25,11 +29,10 @@ const promotionBatchSchema = new mongoose.Schema(
       promoted: Number,
       retained: Number,
       graduated: Number,
+      incomplete: Number,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model('PromotionBatch', promotionBatchSchema);

@@ -191,3 +191,16 @@
 @media (prefers-reduced-motion: reduce) {
   .pm-btn, .pm-toast, .pm-spinner, .pm-table tbody tr { transition: none; animation: none; }
 }
+
+/* Incomplete badge + 5-stat layout */
+.pm-badge--incomplete { background: rgba(122, 108, 109, 0.15); color: #7a6c6d; }
+.pm-stats { grid-template-columns: repeat(5, 1fr); }
+.pm-stat--incomplete { border-top: 4px solid #7a6c6d; }
+.pm-stat--incomplete .pm-stat-value { color: #7a6c6d; }
+.pm-field--score { flex: 0 1 180px; }
+.pm-missing { font-size: 0.78rem; color: var(--pm-ink-soft); max-width: 180px; }
+
+@media (max-width: 768px) {
+  .pm-stats { grid-template-columns: repeat(2, 1fr); }
+  .pm-field--score { flex: 1 1 100%; }
+}
