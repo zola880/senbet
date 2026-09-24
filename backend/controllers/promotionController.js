@@ -6,7 +6,6 @@ const TeacherAssignment = require('../models/TeacherAssignment');
 const PromotionBatch = require('../models/PromotionBatch');
 const PromotionRecord = require('../models/PromotionRecord');
 const computeRanking = require('../utils/rankingHelper');
-
 // Class ladder (gradeLevel ordering)
 const GRADE_ORDER = ['Kg1', 'Kg2', 'Kg3', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 

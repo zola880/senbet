@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const User = require('../models/User');
 const Counter = require('../models/Counter');
-const Class = require('../models/Class');
+const Class = require('../models/class');
 
 // Generate 6-digit PIN
 const generatePin = () => {
