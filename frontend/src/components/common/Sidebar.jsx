@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiHome, FiUsers, FiBook, FiGrid, FiEdit, FiClipboard,
   FiCalendar, FiLogOut, FiFolder, FiBell,
-  FiMenu, FiX, FiChevronRight, FiBarChart2,
+  FiMenu, FiX, FiChevronRight, FiBarChart2, FiArrowUpCircle,
 } from 'react-icons/fi';
 import {
   RiTrophyLine,
@@ -39,6 +39,7 @@ const NAV_SECTIONS = {
       links: [
         { to: '/admin/scores', icon: FiEdit, label: 'Score Entry' },
         { to: '/admin/ranking', icon: RiTrophyLine, label: 'Ranking' },
+        { to: '/admin/promotion', icon: FiArrowUpCircle, label: 'End of Year' },
       ],
     },
     {

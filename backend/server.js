@@ -28,6 +28,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const fileRoutes = require('./routes/fileRoutes');
 const churchClothRoutes = require('./routes/churchClothRoutes');
 const developmentRoutes = require('./routes/developmentRoutes');
+const promotionRoutes = require('./routes/promotionRoutes'); // NEW: Promotion routes
 
 // Load environment variables
 dotenv.config();
@@ -186,6 +187,7 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/church-cloth', churchClothRoutes);
 app.use('/api/v1/development', developmentRoutes);
+app.use('/api/v1/promotion', promotionRoutes); // NEW: Promotion API
 
 // 404 handler for undefined routes
 app.use((req, res, next) => {
